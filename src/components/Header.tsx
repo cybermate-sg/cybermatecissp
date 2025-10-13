@@ -15,8 +15,15 @@ export default function Header() {
             </div>
           </Link>
 
-          {/* Auth buttons */}
+          {/* Navigation and Auth buttons */}
           <div className="flex items-center gap-3">
+            {/* Appointment Link - visible to all users */}
+            <Link href="/appointment">
+              <Button variant="ghost" className="text-white hover:text-amber-400 hover:bg-slate-800">
+                Book Appointment
+              </Button>
+            </Link>
+
             <SignedOut>
               <Link href="/sign-in">
                 <Button variant="ghost" className="text-white hover:text-purple-400 hover:bg-slate-800">
