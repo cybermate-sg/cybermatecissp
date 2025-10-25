@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { auth } from "@clerk/nextjs/server";
+import BuyNowButton from "@/components/BuyNowButton";
 
 export default async function Home() {
   const { has } = await auth();
@@ -26,6 +27,23 @@ export default async function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
+              {hasPaidPlan ? (
+                <Link
+                  href="/dashboard"
+                  className="group bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold px-8 py-4 rounded-full transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  Go to Dashboard
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              ) : (
+                <BuyNowButton
+                  priceId={process.env.STRIPE_LIFETIME_PRICE_ID!}
+                  text="BUY NOW"
+                />
+              )}
+            </div>
+
+            {/* <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 href={hasPaidPlan ? "/dashboard" : "/pricing"}
                 className="group bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold px-8 py-4 rounded-full transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105"
@@ -33,7 +51,7 @@ export default async function Home() {
                 {hasPaidPlan ? 'Go to Dashboard' : 'BUY NOW'}
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
-            </div>
+            </div> */}
 
             {/* Student Count */}
             <div className="flex items-center gap-4">
