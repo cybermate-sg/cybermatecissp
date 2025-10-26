@@ -1,10 +1,27 @@
-import { drizzle } from 'drizzle-orm/vercel-postgres';
-import { sql } from '@vercel/postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import * as schema from './schema';
 
-// Drizzle instance optimized for Vercel Postgres
-// Works seamlessly with Vercel Postgres, Neon, Xata.io, or any PostgreSQL compatible service
-export const db = drizzle(sql, { schema });
+// Use DATABASE_URL (supports Xata, Neon, Vercel Postgres, or any PostgreSQL)
+// Xata connection string format: postgresql://[workspace]:[api-key]@[region].sql.xata.sh/[database]:[branch]
+const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL!;
+
+if (!connectionString) {
+  throw new Error('DATABASE_URL or POSTGRES_URL environment variable is required');
+}
+
+// Create postgres client with connection pooling for Xata
+// Xata has a concurrent connection limit, so we use a small pool
+const client = postgres(connectionString, {
+  prepare: false,
+  max: 1, // Xata free tier has strict connection limits
+  idle_timeout: 20,
+  max_lifetime: 60 * 30, // 30 minutes
+});
+
+// Drizzle instance optimized for PostgreSQL
+// Works seamlessly with Xata.io, Vercel Postgres, Neon, or any PostgreSQL compatible service
+export const db = drizzle(client, { schema });
 
 // Export types
 export type User = typeof schema.users.$inferSelect;

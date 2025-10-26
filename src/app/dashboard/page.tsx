@@ -4,72 +4,19 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { db } from "@/lib/db";
+import { domains, userCardProgress, flashcards, topics, decks } from "@/lib/db/schema";
+import { eq, and, sql, asc, inArray } from "drizzle-orm";
 
-const CISSP_DOMAINS = [
-  {
-    id: 1,
-    name: "Security and Risk Management",
-    description: "Security concepts, policies, governance, compliance, and risk management",
-    cardCount: 150,
-    color: "bg-blue-500",
-    progress: 0
-  },
-  {
-    id: 2,
-    name: "Asset Security",
-    description: "Information lifecycle, data handling, privacy, and asset classification",
-    cardCount: 120,
-    color: "bg-green-500",
-    progress: 0
-  },
-  {
-    id: 3,
-    name: "Security Architecture and Engineering",
-    description: "Security models, capabilities, design principles, and cryptography",
-    cardCount: 180,
-    color: "bg-purple-500",
-    progress: 0
-  },
-  {
-    id: 4,
-    name: "Communication and Network Security",
-    description: "Network security, protocols, and secure communications",
-    cardCount: 140,
-    color: "bg-orange-500",
-    progress: 0
-  },
-  {
-    id: 5,
-    name: "Identity and Access Management (IAM)",
-    description: "Physical and logical access control, identification, and authentication",
-    cardCount: 130,
-    color: "bg-pink-500",
-    progress: 0
-  },
-  {
-    id: 6,
-    name: "Security Assessment and Testing",
-    description: "Assessment strategies, security audits, and vulnerability assessments",
-    cardCount: 110,
-    color: "bg-yellow-500",
-    progress: 0
-  },
-  {
-    id: 7,
-    name: "Security Operations",
-    description: "Incident management, investigations, disaster recovery, and logging",
-    cardCount: 140,
-    color: "bg-red-500",
-    progress: 0
-  },
-  {
-    id: 8,
-    name: "Software Development Security",
-    description: "Secure software development lifecycle and application security",
-    cardCount: 130,
-    color: "bg-indigo-500",
-    progress: 0
-  }
+const DOMAIN_COLORS = [
+  "bg-blue-500",
+  "bg-green-500",
+  "bg-purple-500",
+  "bg-orange-500",
+  "bg-pink-500",
+  "bg-yellow-500",
+  "bg-red-500",
+  "bg-indigo-500"
 ];
 
 export default async function DashboardPage() {
@@ -80,9 +27,74 @@ export default async function DashboardPage() {
   }
 
   const hasPaidPlan = has({ plan: 'paid' });
-  const totalCards = CISSP_DOMAINS.reduce((sum, domain) => sum + domain.cardCount, 0);
-  const studiedCards = 0; // TODO: Fetch from database
-  const overallProgress = 0; // TODO: Calculate from database
+
+  // Fetch all domains with their flashcard counts
+  const allDomains = await db.query.domains.findMany({
+    orderBy: [asc(domains.order)],
+    with: {
+      topics: {
+        orderBy: [asc(topics.order)],
+        with: {
+          decks: {
+            orderBy: [asc(decks.order)],
+            with: {
+              flashcards: {
+                where: eq(flashcards.isPublished, true),
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // Calculate total flashcard count and progress for each domain
+  const domainsWithProgress = await Promise.all(
+    allDomains.map(async (domain) => {
+      const flashcardIds = domain.topics.flatMap((topic) =>
+        topic.decks.flatMap((deck) => deck.flashcards.map((card) => card.id))
+      );
+
+      const totalCards = flashcardIds.length;
+
+      // Get user's progress for this domain
+      let progress = 0;
+      if (totalCards > 0 && flashcardIds.length > 0) {
+        const progressRecords = await db
+          .select()
+          .from(userCardProgress)
+          .where(
+            and(
+              eq(userCardProgress.clerkUserId, userId),
+              inArray(userCardProgress.flashcardId, flashcardIds)
+            )
+          );
+
+        progress = Math.round((progressRecords.length / totalCards) * 100);
+      }
+
+      return {
+        id: domain.id,
+        order: domain.order,
+        name: domain.name,
+        description: domain.description,
+        cardCount: totalCards,
+        color: DOMAIN_COLORS[domain.order - 1] || "bg-blue-500",
+        progress,
+      };
+    })
+  );
+
+  const totalCards = domainsWithProgress.reduce((sum, domain) => sum + domain.cardCount, 0);
+
+  // Get user's overall studied cards count
+  const [studiedCardsResult] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(userCardProgress)
+    .where(eq(userCardProgress.clerkUserId, userId));
+
+  const studiedCards = studiedCardsResult?.count || 0;
+  const overallProgress = totalCards > 0 ? Math.round((studiedCards / totalCards) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -170,7 +182,7 @@ export default async function DashboardPage() {
             Study by Domain
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {CISSP_DOMAINS.map((domain) => (
+            {domainsWithProgress.map((domain) => (
               <Link
                 key={domain.id}
                 href={`/dashboard/domain/${domain.id}`}
@@ -183,7 +195,7 @@ export default async function DashboardPage() {
                         <div className="flex items-center gap-2 mb-2">
                           <div className={`w-3 h-3 rounded-full ${domain.color}`}></div>
                           <Badge variant="secondary" className="text-xs">
-                            Domain {domain.id}
+                            Domain {domain.order}
                           </Badge>
                         </div>
                         <CardTitle className="text-lg text-white group-hover:text-purple-400 transition-colors">

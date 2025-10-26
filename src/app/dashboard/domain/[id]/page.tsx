@@ -1,130 +1,98 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, RotateCcw } from "lucide-react";
+import { ArrowLeft, RotateCcw, Loader2 } from "lucide-react";
 import Flashcard from "@/components/Flashcard";
 import ConfidenceRating from "@/components/ConfidenceRating";
+import { toast } from "sonner";
 
-// Sample flashcard data - TODO: Replace with database
-const SAMPLE_FLASHCARDS: Record<string, Array<{ question: string; answer: string }>> = {
-  "1": [
-    {
-      question: "What is the CIA Triad in information security?",
-      answer: "Confidentiality, Integrity, and Availability - the three core principles that form the foundation of information security."
-    },
-    {
-      question: "What is the difference between a vulnerability and a threat?",
-      answer: "A vulnerability is a weakness in a system, while a threat is a potential danger that could exploit that vulnerability. Risk is the likelihood of a threat exploiting a vulnerability."
-    },
-    {
-      question: "What is Defense in Depth?",
-      answer: "A layered security approach that uses multiple security controls at different levels to protect assets. If one layer fails, others continue to provide protection."
-    },
-    {
-      question: "What does the principle of Least Privilege mean?",
-      answer: "Users should only be granted the minimum levels of access or permissions needed to perform their job functions, reducing potential security risks."
-    },
-    {
-      question: "What is Risk Management?",
-      answer: "The process of identifying, assessing, and controlling threats to an organization&apos;s capital and earnings, including strategic, financial, operational, and security risks."
-    }
-  ],
-  "2": [
-    {
-      question: "What is data classification?",
-      answer: "The process of organizing data into categories based on its sensitivity, criticality, and value to help determine appropriate security controls."
-    },
-    {
-      question: "What are the typical data classification levels?",
-      answer: "Common levels include: Public, Internal, Confidential, and Restricted (or Top Secret). The specific levels vary by organization."
-    }
-  ],
-  "3": [
-    {
-      question: "What is symmetric encryption?",
-      answer: "Encryption method that uses the same key for both encryption and decryption. It&apos;s faster but requires secure key distribution."
-    },
-    {
-      question: "What is asymmetric encryption?",
-      answer: "Encryption using a key pair: a public key for encryption and a private key for decryption. Solves key distribution problem but is slower than symmetric encryption."
-    }
-  ],
-  "4": [
-    {
-      question: "What is the OSI Model?",
-      answer: "A 7-layer conceptual framework for network communication: Physical, Data Link, Network, Transport, Session, Presentation, and Application layers."
-    }
-  ],
-  "5": [
-    {
-      question: "What is Multi-Factor Authentication (MFA)?",
-      answer: "A security mechanism requiring two or more verification factors: something you know (password), something you have (token), or something you are (biometric)."
-    }
-  ],
-  "6": [
-    {
-      question: "What is penetration testing?",
-      answer: "An authorized simulated cyberattack on a system to evaluate its security, identify vulnerabilities, and assess the effectiveness of security controls."
-    }
-  ],
-  "7": [
-    {
-      question: "What is an Incident Response Plan?",
-      answer: "A documented process for detecting, responding to, and recovering from security incidents to minimize impact and restore normal operations."
-    }
-  ],
-  "8": [
-    {
-      question: "What is the Secure Software Development Lifecycle (SDLC)?",
-      answer: "A framework integrating security practices into every phase of software development from planning through deployment and maintenance."
-    }
-  ]
-};
+interface FlashcardData {
+  id: string;
+  question: string;
+  answer: string;
+  explanation?: string;
+  difficulty: number;
+  deckName: string;
+  topicName: string;
+}
 
-const DOMAIN_NAMES: Record<string, string> = {
-  "1": "Security and Risk Management",
-  "2": "Asset Security",
-  "3": "Security Architecture and Engineering",
-  "4": "Communication and Network Security",
-  "5": "Identity and Access Management (IAM)",
-  "6": "Security Assessment and Testing",
-  "7": "Security Operations",
-  "8": "Software Development Security"
-};
+interface DomainData {
+  id: string;
+  name: string;
+  description: string;
+}
 
 export default function DomainStudyPage() {
   const params = useParams();
   const domainId = params.id as string;
 
-  const flashcards = SAMPLE_FLASHCARDS[domainId] || [];
-  const domainName = DOMAIN_NAMES[domainId] || "Unknown Domain";
+  const [flashcards, setFlashcards] = useState<FlashcardData[]>([]);
+  const [domain, setDomain] = useState<DomainData | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showRating, setShowRating] = useState(false);
   const [studiedCards, setStudiedCards] = useState<Set<number>>(new Set());
 
   const currentCard = flashcards[currentIndex];
-  const progress = (studiedCards.size / flashcards.length) * 100;
+  const progress = flashcards.length > 0 ? (studiedCards.size / flashcards.length) * 100 : 0;
 
-  const handleRate = (confidence: number) => {
-    // TODO: Save confidence rating to database
-    console.log(`Rated card ${currentIndex} with confidence ${confidence}`);
+  // Load flashcards on mount
+  useEffect(() => {
+    loadFlashcards();
+  }, [domainId]);
 
-    const newStudied = new Set(studiedCards);
-    newStudied.add(currentIndex);
-    setStudiedCards(newStudied);
+  const loadFlashcards = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/domains/${domainId}/flashcards`);
+      if (!res.ok) throw new Error("Failed to load flashcards");
 
-    // Move to next card
-    if (currentIndex < flashcards.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setShowRating(false);
-    } else {
-      // Completed all cards
-      setShowRating(false);
+      const data = await res.json();
+      setDomain(data.domain);
+      setFlashcards(data.flashcards || []);
+    } catch (error) {
+      toast.error("Failed to load flashcards");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRate = async (confidence: number) => {
+    if (!currentCard) return;
+
+    try {
+      // Save confidence rating to database
+      const res = await fetch("/api/progress/card", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          flashcardId: currentCard.id,
+          confidenceLevel: confidence,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to save progress");
+
+      const newStudied = new Set(studiedCards);
+      newStudied.add(currentIndex);
+      setStudiedCards(newStudied);
+
+      // Move to next card
+      if (currentIndex < flashcards.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+        setShowRating(false);
+      } else {
+        // Completed all cards
+        setShowRating(false);
+      }
+    } catch (error) {
+      toast.error("Failed to save your rating");
+      console.error("Error saving progress:", error);
     }
   };
 
@@ -139,6 +107,18 @@ export default function DomainStudyPage() {
     setStudiedCards(new Set());
     setShowRating(false);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex justify-center items-center min-h-[400px]">
+            <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (flashcards.length === 0) {
     return (
@@ -160,6 +140,8 @@ export default function DomainStudyPage() {
   }
 
   const allCardsStudied = studiedCards.size === flashcards.length;
+  const domainName = domain?.name || "Unknown Domain";
+  const domainOrder = flashcards[0]?.topicName ? null : domainId;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -176,7 +158,7 @@ export default function DomainStudyPage() {
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-                Domain {domainId}: {domainName}
+                {domainName}
               </h1>
               <p className="text-gray-400">
                 Card {currentIndex + 1} of {flashcards.length}
