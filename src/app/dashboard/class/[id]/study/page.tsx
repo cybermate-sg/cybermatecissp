@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, RotateCcw, Loader2 } from "lucide-react";
 import Flashcard from "@/components/Flashcard";
-import ConfidenceRating from "@/components/ConfidenceRating";
+import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { toast } from "sonner";
 
 interface FlashcardMedia {
@@ -31,7 +31,6 @@ interface FlashcardData {
 export default function ClassStudyPage() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const classId = params.id as string;
   const mode = searchParams.get('mode') || 'progressive';
   const selectedDecks = searchParams.get('decks'); // Comma-separated deck IDs
@@ -177,6 +176,9 @@ export default function ClassStudyPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Performance Monitoring */}
+      <PerformanceMonitor pageName="Class Study Page" showVisual={false} />
+
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">

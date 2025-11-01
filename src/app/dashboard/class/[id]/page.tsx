@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -17,6 +17,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ArrowLeft, Play, Pencil, Info, Plus, FileUp, Check } from "lucide-react";
+import PerformanceMonitor from "@/components/PerformanceMonitor";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Deck = {
   id: string;
@@ -102,24 +104,16 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
     fetchData();
   }, [userId, classId, router]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-slate-600">Loading...</div>
-      </div>
-    );
-  }
+  // Memoized calculations - must be before conditional returns
+  const totalCards = useMemo(() => decks.reduce((sum, deck) => sum + deck.cardCount, 0), [decks]);
+  const totalStudied = useMemo(() => decks.reduce((sum, deck) => sum + deck.studiedCount, 0), [decks]);
+  const overallProgress = useMemo(
+    () => totalCards > 0 ? Math.round((totalStudied / totalCards) * 100) : 0,
+    [totalCards, totalStudied]
+  );
 
-  if (!classData) {
-    return null;
-  }
-
-  const totalCards = decks.reduce((sum, deck) => sum + deck.cardCount, 0);
-  const totalStudied = decks.reduce((sum, deck) => sum + deck.studiedCount, 0);
-  const overallProgress = totalCards > 0 ? Math.round((totalStudied / totalCards) * 100) : 0;
-
-  // Handle deck selection toggle
-  const toggleDeckSelection = (deckId: string) => {
+  // Handle deck selection toggle - memoized to prevent re-renders
+  const toggleDeckSelection = useCallback((deckId: string) => {
     setSelectedDecks(prev => {
       const newSet = new Set(prev);
       if (newSet.has(deckId)) {
@@ -129,19 +123,57 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
       }
       return newSet;
     });
-  };
+  }, []);
 
-  // Toggle select all decks
-  const toggleSelectAll = () => {
+  // Toggle select all decks - memoized with decks dependency
+  const toggleSelectAll = useCallback(() => {
     if (selectedDecks.size === decks.length) {
       setSelectedDecks(new Set());
     } else {
       setSelectedDecks(new Set(decks.map(d => d.id)));
     }
-  };
+  }, [selectedDecks.size, decks]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <div className="bg-white border-b border-slate-200">
+          <div className="container mx-auto px-4 py-6">
+            <Skeleton className="h-10 w-32 mb-4" />
+            <div className="grid lg:grid-cols-[1fr_auto] gap-8">
+              <div>
+                <Skeleton className="h-8 w-64 mb-2" />
+                <Skeleton className="h-4 w-96 mb-4" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="container mx-auto px-4 py-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="border-slate-200">
+                <CardContent className="p-6">
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-full mb-4" />
+                  <Skeleton className="h-2 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!classData) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Performance Monitoring */}
+      <PerformanceMonitor pageName="Class Detail Page" showVisual={false} />
+
       <div className="bg-white border-b border-slate-200">
         <div className="container mx-auto px-4 py-6">
           {/* Back Button */}

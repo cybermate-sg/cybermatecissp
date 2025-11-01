@@ -6,7 +6,11 @@ import { Toaster } from "@/components/ui/sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  display: 'swap', // Use font-display: swap for better FCP
+  preload: true, // Preload the font
+});
 
 export const metadata: Metadata = {
   title: "CISSP Mastery - Master CISSP with Confidence-Based Learning",

@@ -39,42 +39,48 @@ export async function GET(
     }
 
     // Calculate progress for each deck
-    const decksWithProgress = await Promise.all(
-      classData.decks.map(async (deck) => {
-        const flashcardIds = deck.flashcards.map((card) => card.id);
-        const totalCards = flashcardIds.length;
-
-        // Get user's progress for this deck
-        let studiedCount = 0;
-        if (totalCards > 0 && flashcardIds.length > 0) {
-          const progressRecords = await db
-            .select()
-            .from(userCardProgress)
-            .where(
-              and(
-                eq(userCardProgress.clerkUserId, userId),
-                inArray(userCardProgress.flashcardId, flashcardIds)
-              )
-            );
-
-          studiedCount = progressRecords.length;
-        }
-
-        const progress = totalCards > 0 ? Math.round((studiedCount / totalCards) * 100) : 0;
-
-        return {
-          id: deck.id,
-          name: deck.name,
-          description: deck.description,
-          cardCount: totalCards,
-          studiedCount,
-          progress,
-          order: deck.order,
-        };
-      })
+    // OPTIMIZATION: Fetch all user progress in a single query instead of N queries
+    const allFlashcardIds = classData.decks.flatMap((deck) =>
+      deck.flashcards.map((card) => card.id)
     );
 
-    return NextResponse.json({
+    // Single batch query for all progress records
+    const allProgressRecords = allFlashcardIds.length > 0
+      ? await db
+          .select()
+          .from(userCardProgress)
+          .where(
+            and(
+              eq(userCardProgress.clerkUserId, userId),
+              inArray(userCardProgress.flashcardId, allFlashcardIds)
+            )
+          )
+      : [];
+
+    // Create a Set for O(1) lookup
+    const studiedCardIds = new Set(allProgressRecords.map((record) => record.flashcardId));
+
+    // Calculate progress for each deck (now in-memory, no DB queries)
+    const decksWithProgress = classData.decks.map((deck) => {
+      const flashcardIds = deck.flashcards.map((card) => card.id);
+      const totalCards = flashcardIds.length;
+
+      // Count how many cards in this deck are studied
+      const studiedCount = flashcardIds.filter((id) => studiedCardIds.has(id)).length;
+      const progress = totalCards > 0 ? Math.round((studiedCount / totalCards) * 100) : 0;
+
+      return {
+        id: deck.id,
+        name: deck.name,
+        description: deck.description,
+        cardCount: totalCards,
+        studiedCount,
+        progress,
+        order: deck.order,
+      };
+    });
+
+    const response = NextResponse.json({
       id: classData.id,
       name: classData.name,
       description: classData.description,
@@ -83,6 +89,11 @@ export async function GET(
       createdBy: classData.createdBy,
       decks: decksWithProgress,
     });
+
+    // Enable caching for 60 seconds with stale-while-revalidate
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+
+    return response;
   } catch (error) {
     console.error('Error fetching class:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch class';
