@@ -25,11 +25,13 @@ function getIdentifier(request: NextRequest, userId?: string): string {
 /**
  * Wrap an API route handler with rate limiting
  */
-export function withRateLimit<T extends (...args: any[]) => Promise<Response>>(
+type RouteHandler = (request: NextRequest, ...args: unknown[]) => Promise<Response>;
+
+export function withRateLimit<T extends RouteHandler>(
   handler: T,
   config: RateLimitConfig & { getUserId?: (request: NextRequest) => Promise<string | undefined> }
 ): T {
-  return (async (request: NextRequest, ...args: any[]) => {
+  return (async (request: NextRequest, ...args: unknown[]) => {
     try {
       // Get user ID if auth function provided
       const userId = config.getUserId ? await config.getUserId(request) : undefined;

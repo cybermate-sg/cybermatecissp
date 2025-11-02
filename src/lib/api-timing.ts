@@ -176,11 +176,11 @@ export function addTimingHeaders(response: Response, metrics: TimingMetrics): Re
 /**
  * Helper to wrap API route handlers with timing
  */
-export function withTiming<T extends (...args: any[]) => Promise<Response>>(
+export function withTiming<T extends (...args: never[]) => Promise<Response>>(
   handler: T,
   endpoint: string
 ): T {
-  return (async (...args: any[]) => {
+  return (async (...args: Parameters<T>) => {
     const request = args[0] as Request;
     const method = request.method;
 

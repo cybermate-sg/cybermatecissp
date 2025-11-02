@@ -3,7 +3,7 @@
  * Wraps API routes with distributed tracing
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import {
   extractOrGenerateRequestId,
   requestContextStore,
@@ -11,10 +11,12 @@ import {
   createTraceHeaders,
 } from '@/lib/tracing/request-context';
 
+type RouteHandler = (request: NextRequest, ...args: unknown[]) => Promise<Response>;
+
 /**
  * Wrap an API route handler with request tracing
  */
-export function withTracing<T extends (...args: any[]) => Promise<Response>>(
+export function withTracing<T extends RouteHandler>(
   handler: T,
   options?: {
     logRequest?: boolean;
@@ -23,7 +25,7 @@ export function withTracing<T extends (...args: any[]) => Promise<Response>>(
 ): T {
   const { logRequest = true, logResponse = true } = options || {};
 
-  return (async (request: NextRequest, ...args: any[]) => {
+  return (async (request: NextRequest, ...args: unknown[]) => {
     // Extract or generate request ID
     const requestId = extractOrGenerateRequestId(request.headers);
 
@@ -111,7 +113,7 @@ export function withTracing<T extends (...args: any[]) => Promise<Response>>(
 /**
  * Combine multiple middleware functions
  */
-export function compose<T extends (...args: any[]) => Promise<Response>>(
+export function compose<T extends RouteHandler>(
   ...middlewares: Array<(handler: T) => T>
 ): (handler: T) => T {
   return (handler: T) => {

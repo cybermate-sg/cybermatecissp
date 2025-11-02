@@ -14,7 +14,7 @@ export async function GET() {
       KV_REST_API_URL: !!process.env.KV_REST_API_URL,
       KV_REST_API_TOKEN: !!process.env.KV_REST_API_TOKEN,
     },
-    tests: [] as Array<{ operation: string; success: boolean; value?: any; error?: string }>,
+    tests: [] as Array<{ operation: string; success: boolean; value?: unknown; error?: string }>,
   };
 
   try {

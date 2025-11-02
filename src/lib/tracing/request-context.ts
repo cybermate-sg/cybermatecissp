@@ -21,7 +21,7 @@ export interface RequestContext {
   method: string;
   path: string;
   userId?: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 /**
@@ -70,7 +70,7 @@ class RequestContextStore {
   /**
    * Add metadata to context
    */
-  addMetadata(requestId: string, key: string, value: any): void {
+  addMetadata(requestId: string, key: string, value: unknown): void {
     const context = this.contexts.get(requestId);
     if (context) {
       context.metadata[key] = value;
@@ -141,7 +141,7 @@ export function logWithContext(
   requestId: string,
   level: 'log' | 'info' | 'warn' | 'error',
   message: string,
-  ...args: any[]
+  ...args: unknown[]
 ): void {
   const context = requestContextStore.get(requestId);
   const elapsed = context ? Date.now() - context.startTime : 0;
