@@ -3,15 +3,27 @@ import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
 import { classes, decks } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { handleApiError, assertExists, createApiError } from '@/lib/api/error-handler';
+import { log } from '@/lib/logger';
+import { validateRequest, validatePathParams, validatePartial } from '@/lib/api/validate';
+import { classIdSchema, updateClassSchema } from '@/lib/validations/class';
 
 // GET /api/admin/classes/:id - Get a specific class with its decks
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
-    const { id } = await params;
+    const admin = await requireAdmin();
+    const resolvedParams = await params;
+
+    // Validate path parameters
+    const { id } = validatePathParams(resolvedParams, classIdSchema);
+
+    log.debug('Fetching class', {
+      userId: admin.clerkUserId,
+      classId: id,
+    });
 
     const classData = await db
       .select()
@@ -19,9 +31,7 @@ export async function GET(
       .where(eq(classes.id, id))
       .limit(1);
 
-    if (!classData.length) {
-      return NextResponse.json({ error: 'Class not found' }, { status: 404 });
-    }
+    assertExists(classData[0], 'Class not found', 404);
 
     // Get all decks in this class
     const classDecks = await db
@@ -29,17 +39,21 @@ export async function GET(
       .from(decks)
       .where(eq(decks.classId, id));
 
+    log.info('Class fetched successfully', {
+      userId: admin.clerkUserId,
+      classId: id,
+      deckCount: classDecks.length,
+    });
+
     return NextResponse.json({
       class: classData[0],
       decks: classDecks,
     });
   } catch (error) {
-    console.error('Error fetching class:', error);
-    const message = error instanceof Error ? error.message : 'Failed to fetch class';
-    return NextResponse.json(
-      { error: message },
-      { status: message?.includes('admin') ? 403 : 500 }
-    );
+    return handleApiError(error, 'fetch class', {
+      endpoint: '/api/admin/classes/[id]',
+      method: 'GET',
+    });
   }
 }
 
@@ -49,52 +63,71 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
-    const { id } = await params;
-    const body = await request.json();
+    const admin = await requireAdmin();
+    const resolvedParams = await params;
 
-    const { name, description, order, icon, color, isPublished } = body;
+    // Validate path parameters
+    const { id } = validatePathParams(resolvedParams, classIdSchema);
+
+    // Validate request body (partial update)
+    const validatedData = await validatePartial(request, updateClassSchema);
+
+    // Ensure at least one field is being updated
+    if (Object.keys(validatedData).length === 0) {
+      throw createApiError('No valid fields provided for update', 400, 'NO_UPDATE_FIELDS');
+    }
+
+    log.info('Updating class', {
+      userId: admin.clerkUserId,
+      classId: id,
+      fields: Object.keys(validatedData),
+    });
 
     const updatedClass = await db
       .update(classes)
       .set({
-        ...(name && { name }),
-        ...(description !== undefined && { description }),
-        ...(order !== undefined && { order }),
-        ...(icon !== undefined && { icon }),
-        ...(color !== undefined && { color }),
-        ...(isPublished !== undefined && { isPublished }),
+        ...validatedData,
         updatedAt: new Date(),
       })
       .where(eq(classes.id, id))
       .returning();
 
-    if (!updatedClass.length) {
-      return NextResponse.json({ error: 'Class not found' }, { status: 404 });
-    }
+    assertExists(updatedClass[0], 'Class not found', 404);
+
+    log.info('Class updated successfully', {
+      userId: admin.clerkUserId,
+      classId: id,
+      className: updatedClass[0].name,
+    });
 
     return NextResponse.json({
       class: updatedClass[0],
       message: 'Class updated successfully',
     });
   } catch (error) {
-    console.error('Error updating class:', error);
-    const message = error instanceof Error ? error.message : 'Failed to update class';
-    return NextResponse.json(
-      { error: message },
-      { status: message?.includes('admin') ? 403 : 500 }
-    );
+    return handleApiError(error, 'update class', {
+      endpoint: '/api/admin/classes/[id]',
+      method: 'PUT',
+    });
   }
 }
 
 // DELETE /api/admin/classes/:id - Delete a class
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
-    const { id } = await params;
+    const admin = await requireAdmin();
+    const resolvedParams = await params;
+
+    // Validate path parameters
+    const { id } = validatePathParams(resolvedParams, classIdSchema);
+
+    log.warn('Deleting class', {
+      userId: admin.clerkUserId,
+      classId: id,
+    });
 
     // Check if class exists
     const classData = await db
@@ -103,22 +136,24 @@ export async function DELETE(
       .where(eq(classes.id, id))
       .limit(1);
 
-    if (!classData.length) {
-      return NextResponse.json({ error: 'Class not found' }, { status: 404 });
-    }
+    assertExists(classData[0], 'Class not found', 404);
 
     // Delete class (cascades to decks and flashcards)
     await db.delete(classes).where(eq(classes.id, id));
+
+    log.info('Class deleted successfully', {
+      userId: admin.clerkUserId,
+      classId: id,
+      className: classData[0].name,
+    });
 
     return NextResponse.json({
       message: 'Class deleted successfully',
     });
   } catch (error) {
-    console.error('Error deleting class:', error);
-    const message = error instanceof Error ? error.message : 'Failed to delete class';
-    return NextResponse.json(
-      { error: message },
-      { status: message?.includes('admin') ? 403 : 500 }
-    );
+    return handleApiError(error, 'delete class', {
+      endpoint: '/api/admin/classes/[id]',
+      method: 'DELETE',
+    });
   }
 }
