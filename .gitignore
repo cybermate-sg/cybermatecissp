@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# prevent duplicate/backup files
+*.old.*
+*.new.*
+*.backup.*
+*.bak
