@@ -3,28 +3,38 @@ import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
 import { classes } from '@/lib/db/schema';
 import { desc, asc } from 'drizzle-orm';
+import { handleApiError, assertExists } from '@/lib/api/error-handler';
+import { log } from '@/lib/logger';
 
 // GET /api/admin/classes - Get all classes
 export async function GET() {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
+
+    log.debug('Fetching all classes', {
+      userId: admin.clerkUserId,
+      endpoint: '/api/admin/classes'
+    });
 
     const allClasses = await db
       .select()
       .from(classes)
       .orderBy(asc(classes.order), desc(classes.createdAt));
 
+    log.info('Classes fetched successfully', {
+      userId: admin.clerkUserId,
+      count: allClasses.length,
+    });
+
     return NextResponse.json({
       classes: allClasses,
       total: allClasses.length,
     });
   } catch (error) {
-    console.error('Error fetching classes:', error);
-    const message = error instanceof Error ? error.message : 'Failed to fetch classes';
-    return NextResponse.json(
-      { error: message },
-      { status: message?.includes('admin') ? 403 : 500 }
-    );
+    return handleApiError(error, 'fetch classes', {
+      endpoint: '/api/admin/classes',
+      method: 'GET',
+    });
   }
 }
 
@@ -36,12 +46,13 @@ export async function POST(request: Request) {
 
     const { name, description, order, icon, color, isPublished } = body;
 
-    if (!name) {
-      return NextResponse.json(
-        { error: 'Class name is required' },
-        { status: 400 }
-      );
-    }
+    // Validation
+    assertExists(name, 'Class name is required', 400);
+
+    log.info('Creating new class', {
+      userId: admin.clerkUserId,
+      className: name,
+    });
 
     const newClass = await db
       .insert(classes)
@@ -56,16 +67,20 @@ export async function POST(request: Request) {
       })
       .returning();
 
+    log.info('Class created successfully', {
+      userId: admin.clerkUserId,
+      classId: newClass[0].id,
+      className: newClass[0].name,
+    });
+
     return NextResponse.json({
       class: newClass[0],
       message: 'Class created successfully',
     });
   } catch (error) {
-    console.error('Error creating class:', error);
-    const message = error instanceof Error ? error.message : 'Failed to create class';
-    return NextResponse.json(
-      { error: message },
-      { status: message?.includes('admin') ? 403 : 500 }
-    );
+    return handleApiError(error, 'create class', {
+      endpoint: '/api/admin/classes',
+      method: 'POST',
+    });
   }
 }
