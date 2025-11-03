@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "Sentry": {
+      "url": "https://mcp.sentry.dev/mcp/inner-sharp-consulting-pty-ltd/cissp-mastery",
+      "type": "http"
+    }
+  }
+}
