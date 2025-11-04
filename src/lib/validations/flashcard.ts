@@ -17,7 +17,7 @@ export const flashcardMediaSchema = z.object({
     .string()
     .regex(/^image\/(jpeg|jpg|png|gif|webp|svg\+xml)$/, 'Must be a valid image type'),
   placement: z.enum(['question', 'answer'], {
-    errorMap: () => ({ message: 'Placement must be either "question" or "answer"' }),
+    message: 'Placement must be either "question" or "answer"',
   }),
   order: z.number().int().min(0, 'Order must be 0 or greater'),
   altText: z

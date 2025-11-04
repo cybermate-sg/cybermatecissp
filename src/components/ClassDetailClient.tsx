@@ -33,7 +33,7 @@ interface ClassDetailClientProps {
   isAdmin: boolean;
 }
 
-export default function ClassDetailClient({ classData, isAdmin }: ClassDetailClientProps) {
+export default function ClassDetailClient({ classData }: ClassDetailClientProps) {
   const [studyMode, setStudyMode] = useState<StudyMode>("progressive");
   const [selectedDecks, setSelectedDecks] = useState<Set<string>>(new Set());
   const [showModeInfo, setShowModeInfo] = useState(false);

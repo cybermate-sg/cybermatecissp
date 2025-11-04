@@ -4,7 +4,7 @@
  * Provides type-safe request validation with automatic error handling
  */
 
-import { z, ZodError, ZodSchema } from 'zod';
+import { z, ZodError, ZodSchema, ZodObject, ZodRawShape } from 'zod';
 import { NextRequest } from 'next/server';
 import { createApiError } from './error-handler';
 
@@ -21,7 +21,7 @@ export interface ValidationErrorDetail {
  * Format Zod errors into user-friendly format
  */
 export function formatValidationErrors(error: ZodError): ValidationErrorDetail[] {
-  return error.errors.map((err) => ({
+  return error.issues.map((err) => ({
     field: err.path.join('.'),
     message: err.message,
     code: err.code,
@@ -146,14 +146,14 @@ export function validatePathParams<T>(
  * // Only provided fields are validated
  * ```
  */
-export async function validatePartial<T>(
+export async function validatePartial<T extends ZodRawShape>(
   request: Request | NextRequest,
-  schema: ZodSchema<T>
-): Promise<Partial<T>> {
+  schema: ZodObject<T>
+): Promise<Partial<z.infer<ZodObject<T>>>> {
   try {
     const body = await request.json();
     const partialSchema = schema.partial();
-    return partialSchema.parse(body);
+    return partialSchema.parse(body) as Partial<z.infer<ZodObject<T>>>;
   } catch (error) {
     if (error instanceof ZodError) {
       const details = formatValidationErrors(error);
@@ -272,13 +272,11 @@ export const commonValidators = {
 
   // Enums
   role: z.enum(['user', 'admin'], {
-    errorMap: () => ({ message: 'Role must be either "user" or "admin"' }),
+    message: 'Role must be either "user" or "admin"',
   }),
 
   planType: z.enum(['free', 'pro_monthly', 'pro_yearly', 'lifetime'], {
-    errorMap: () => ({
-      message: 'Invalid plan type',
-    }),
+    message: 'Invalid plan type',
   }),
 
   subscriptionStatus: z.enum([

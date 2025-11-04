@@ -26,7 +26,7 @@ export async function register() {
       debug: false,
 
       // Filter out sensitive data
-      beforeSend(event, hint) {
+      beforeSend(event) {
         // Don't send events in development
         if (process.env.NODE_ENV === 'development') {
           return null;

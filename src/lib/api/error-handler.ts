@@ -3,12 +3,14 @@ import { ZodError } from 'zod';
 
 // Optional Sentry import - only used if package is installed
 let Sentry: typeof import('@sentry/nextjs') | null = null;
-try {
-  Sentry = require('@sentry/nextjs');
-} catch {
-  // Sentry not installed - logging will still work without it
-  console.warn('[Error Handler] Sentry not installed - error tracking disabled');
-}
+(async () => {
+  try {
+    Sentry = await import('@sentry/nextjs');
+  } catch {
+    // Sentry not installed - logging will still work without it
+    console.warn('[Error Handler] Sentry not installed - error tracking disabled');
+  }
+})();
 
 /**
  * Custom API error class
@@ -42,7 +44,7 @@ export interface ErrorContext {
 /**
  * Determine HTTP status code from error
  */
-function getStatusCode(error: unknown, context?: string): number {
+function getStatusCode(error: unknown): number {
   if (error instanceof ApiError) {
     return error.statusCode;
   }
@@ -92,8 +94,12 @@ function getErrorMessage(error: unknown, context?: string): string {
   }
 
   if (error instanceof ZodError) {
-    const firstError = error.errors[0];
-    return `Validation error: ${firstError.path.join('.')} - ${firstError.message}`;
+    const issues = error.issues;
+    if (issues && issues.length > 0) {
+      const firstError = issues[0];
+      return `Validation error: ${firstError.path.join('.')} - ${firstError.message}`;
+    }
+    return 'Validation error occurred';
   }
 
   if (error instanceof Error) {
@@ -117,7 +123,7 @@ function getErrorDetails(error: unknown): Record<string, unknown> {
 
   if (error instanceof ZodError) {
     return {
-      issues: error.errors,
+      issues: error.issues,
       formattedError: error.format(),
     };
   }
@@ -148,7 +154,7 @@ export function handleApiError(
   context?: string,
   additionalContext?: ErrorContext
 ): NextResponse {
-  const statusCode = getStatusCode(error, context);
+  const statusCode = getStatusCode(error);
   const message = getErrorMessage(error, context);
   const errorDetails = getErrorDetails(error);
 
@@ -195,7 +201,7 @@ export function handleApiError(
 
   // Include validation details for 400 errors
   if (statusCode === 400 && error instanceof ZodError) {
-    response.details = error.errors.map(err => ({
+    response.details = error.issues.map(err => ({
       path: err.path.join('.'),
       message: err.message,
     }));

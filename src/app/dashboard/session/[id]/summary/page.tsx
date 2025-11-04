@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, Clock, TrendingUp, Home } from "lucide-react";
 
 export default async function SessionSummaryPage({
-  params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;

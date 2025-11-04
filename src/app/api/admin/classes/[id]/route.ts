@@ -5,7 +5,7 @@ import { classes, decks } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { handleApiError, assertExists, createApiError } from '@/lib/api/error-handler';
 import { log } from '@/lib/logger';
-import { validateRequest, validatePathParams, validatePartial } from '@/lib/api/validate';
+import { validatePathParams, validatePartial } from '@/lib/api/validate';
 import { classIdSchema, updateClassSchema } from '@/lib/validations/class';
 
 // GET /api/admin/classes/:id - Get a specific class with its decks

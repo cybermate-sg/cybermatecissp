@@ -6,14 +6,16 @@
 
 // Optional Sentry import - only used if package is installed
 let Sentry: typeof import('@sentry/nextjs') | null = null;
-try {
-  Sentry = require('@sentry/nextjs');
-} catch {
-  // Sentry not installed - logging will still work without it
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('[Logger] Sentry not installed - error tracking disabled');
+(async () => {
+  try {
+    Sentry = await import('@sentry/nextjs');
+  } catch {
+    // Sentry not installed - logging will still work without it
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[Logger] Sentry not installed - error tracking disabled');
+    }
   }
-}
+})();
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -243,10 +245,10 @@ export function setUserContext(user: {
 }): void {
   if (Sentry) {
     Sentry.setUser({
+      ...user,
       id: user.id,
       email: user.email,
       role: user.role,
-      ...user,
     });
   }
 }

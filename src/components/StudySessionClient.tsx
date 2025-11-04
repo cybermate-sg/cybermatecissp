@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,11 +32,6 @@ export default function StudySessionClient({
   const [showAnswer, setShowAnswer] = useState(false);
   const [studiedCards, setStudiedCards] = useState(new Set<string>());
   const [startTime] = useState(new Date());
-  const [sessionCards, setSessionCards] = useState<Array<{
-    flashcardId: string;
-    confidenceRating: number;
-    responseTime: number;
-  }>>([]);
 
   const currentCard = flashcards[currentIndex];
   const progress = ((currentIndex + 1) / flashcards.length) * 100;
@@ -48,15 +43,6 @@ export default function StudySessionClient({
 
     // Mark card as studied
     setStudiedCards(prev => new Set(prev).add(currentCard.id));
-
-    // Save session card
-    const sessionCard = {
-      flashcardId: currentCard.id,
-      confidenceRating: rating,
-      responseTime,
-    };
-
-    setSessionCards(prev => [...prev, sessionCard]);
 
     // Save to database
     try {
