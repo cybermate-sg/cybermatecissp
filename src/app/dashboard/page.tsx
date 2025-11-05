@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { db } from "@/lib/db";
+import { db, withRetry } from "@/lib/db";
 import { classes, userCardProgress, flashcards, decks, userStats } from "@/lib/db/schema";
 import { eq, and, sql, asc, inArray } from "drizzle-orm";
 import { Play, BookOpen, FileText, Lightbulb, Flame, Bookmark } from "lucide-react";
@@ -37,24 +37,27 @@ export default async function DashboardPage() {
 
   // Fetch all classes with their decks and flashcards
   // OPTIMIZATION: Only load flashcard IDs to reduce memory usage
-  const allClasses = await db.query.classes.findMany({
-    where: eq(classes.isPublished, true),
-    orderBy: [asc(classes.order)],
-    with: {
-      decks: {
-        where: eq(decks.isPublished, true),
-        orderBy: [asc(decks.order)],
-        with: {
-          flashcards: {
-            where: eq(flashcards.isPublished, true),
-            columns: {
-              id: true, // Only load ID to minimize memory usage
+  // Wrapped with retry logic to handle connection timeouts
+  const allClasses = await withRetry(() =>
+    db.query.classes.findMany({
+      where: eq(classes.isPublished, true),
+      orderBy: [asc(classes.order)],
+      with: {
+        decks: {
+          where: eq(decks.isPublished, true),
+          orderBy: [asc(decks.order)],
+          with: {
+            flashcards: {
+              where: eq(flashcards.isPublished, true),
+              columns: {
+                id: true, // Only load ID to minimize memory usage
+              },
             },
           },
         },
       },
-    },
-  });
+    })
+  );
 
   // Calculate total flashcard count and progress for each class
   const classesWithProgress = await Promise.all(
@@ -70,15 +73,17 @@ export default async function DashboardPage() {
       let progress = 0;
       let studiedCount = 0;
       if (totalCards > 0 && flashcardIds.length > 0) {
-        const progressRecords = await db
-          .select()
-          .from(userCardProgress)
-          .where(
-            and(
-              eq(userCardProgress.clerkUserId, userId),
-              inArray(userCardProgress.flashcardId, flashcardIds)
+        const progressRecords = await withRetry(() =>
+          db
+            .select()
+            .from(userCardProgress)
+            .where(
+              and(
+                eq(userCardProgress.clerkUserId, userId),
+                inArray(userCardProgress.flashcardId, flashcardIds)
+              )
             )
-          );
+        );
 
         studiedCount = progressRecords.length;
         // For free users, cap the total cards used in progress calculation
@@ -105,10 +110,12 @@ export default async function DashboardPage() {
   const totalCards = classesWithProgress.reduce((sum, cls) => sum + cls.cardCount, 0);
 
   // Get user's overall studied cards count
-  const [studiedCardsResult] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(userCardProgress)
-    .where(eq(userCardProgress.clerkUserId, userId));
+  const [studiedCardsResult] = await withRetry(() =>
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(userCardProgress)
+      .where(eq(userCardProgress.clerkUserId, userId))
+  );
 
   const studiedCards = studiedCardsResult?.count || 0;
 
@@ -119,11 +126,13 @@ export default async function DashboardPage() {
   const overallProgress = displayTotalCards > 0 ? Math.round((effectiveStudiedCards / displayTotalCards) * 100) : 0;
 
   // Get user stats for daily goal and streak
-  const [userStatsRecord] = await db
-    .select()
-    .from(userStats)
-    .where(eq(userStats.clerkUserId, userId))
-    .limit(1);
+  const [userStatsRecord] = await withRetry(() =>
+    db
+      .select()
+      .from(userStats)
+      .where(eq(userStats.clerkUserId, userId))
+      .limit(1)
+  );
 
   const studyStreak = userStatsRecord?.studyStreakDays || 0;
   const totalStudyTime = userStatsRecord?.totalStudyTime || 0;

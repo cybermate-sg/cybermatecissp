@@ -17,14 +17,62 @@ const client = postgres(connectionString, {
   max: 5, // Increased slightly from 2 to handle concurrent requests better
   idle_timeout: 20, // Release idle connections after 20 seconds
   max_lifetime: 60 * 5, // 5 minutes max lifetime
-  connect_timeout: 10, // Connection timeout (10 seconds)
+  connect_timeout: 30, // Connection timeout increased to 30 seconds for cold starts
+  timeout: 25, // Query timeout (25 seconds) to prevent long-running queries
   fetch_types: false, // Disable type fetching to reduce memory
   onnotice: () => {}, // Suppress notices
+  connection: {
+    application_name: 'cisspmastery', // Add application name for better monitoring
+  },
 });
 
 // Drizzle instance optimized for PostgreSQL
 // Works seamlessly with Xata.io, Vercel Postgres, Neon, or any PostgreSQL compatible service
 export const db = drizzle(client, { schema });
+
+/**
+ * Retry wrapper for database queries to handle transient connection errors
+ * @param fn - The database query function to execute
+ * @param maxRetries - Maximum number of retry attempts (default: 3)
+ * @param delayMs - Initial delay between retries in milliseconds (default: 1000)
+ * @returns The result of the database query
+ */
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  delayMs = 1000
+): Promise<T> {
+  let lastError: Error | unknown;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+
+      // Check if error is retryable (connection/timeout errors)
+      const isRetryable =
+        error?.code === 'ECONNREFUSED' ||
+        error?.code === 'ETIMEDOUT' ||
+        error?.code === 'ENOTFOUND' ||
+        error?.message?.includes('CONNECT_TIMEOUT') ||
+        error?.message?.includes('Connection terminated') ||
+        error?.message?.includes('Connection closed');
+
+      // Don't retry if it's not a connection error or if we've exhausted retries
+      if (!isRetryable || attempt === maxRetries) {
+        throw error;
+      }
+
+      // Exponential backoff
+      const delay = delayMs * attempt;
+      console.warn(`[DB Retry] Attempt ${attempt}/${maxRetries} failed, retrying in ${delay}ms...`, error.message);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError;
+}
 
 // Export types
 export type User = typeof schema.users.$inferSelect;
