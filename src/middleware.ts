@@ -1,4 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
+import { applySecurityHeaders, handleCORSPreflight } from '@/lib/middleware/security-headers';
 
 const isPublicRoute = createRouteMatcher([
   '/',
@@ -10,12 +12,34 @@ const isPublicRoute = createRouteMatcher([
   '/terms-and-conditions',
   '/api/webhooks(.*)',
   '/api/checkout',
+  '/api/health',
+  '/monitoring',
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
+  // Handle CORS preflight requests
+  const corsResponse = handleCORSPreflight(request);
+  if (corsResponse) {
+    return corsResponse;
+  }
+
+  // Protect non-public routes with Clerk authentication
   if (!isPublicRoute(request)) {
     await auth.protect();
   }
+
+  // Get the response
+  const response = NextResponse.next();
+
+  // Apply security headers to all responses
+  applySecurityHeaders(response, {
+    enableCSP: true,
+    enableHSTS: process.env.NODE_ENV === 'production',
+    enableFrameGuard: true,
+    reportOnly: false,
+  });
+
+  return response;
 });
 
 export const config = {

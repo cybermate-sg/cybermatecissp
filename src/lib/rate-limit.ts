@@ -77,13 +77,30 @@ export class RateLimiter {
         reset: now + this.config.windowMs,
       };
     } catch (error) {
-      console.error('Rate limiter error:', error);
-      // On error, allow the request (fail open)
+      console.error('Rate limiter error - failing closed for security:', error);
+
+      // SECURITY: Fail closed - deny the request on error
+      // This prevents rate limit bypass if Redis is unavailable
+      // Only in development, we can be more lenient
+      const shouldFailOpen = process.env.NODE_ENV === 'development';
+
+      if (shouldFailOpen) {
+        console.warn('Development mode: allowing request despite rate limiter error');
+        return {
+          success: true,
+          limit: this.config.maxRequests,
+          remaining: this.config.maxRequests,
+          reset: now + this.config.windowMs,
+        };
+      }
+
+      // Production: Fail closed (deny request)
       return {
-        success: true,
+        success: false,
         limit: this.config.maxRequests,
-        remaining: this.config.maxRequests,
+        remaining: 0,
         reset: now + this.config.windowMs,
+        retryAfter: 60, // Retry after 1 minute
       };
     }
   }
