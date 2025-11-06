@@ -38,25 +38,27 @@ export default async function DashboardPage() {
   // Fetch all classes with their decks and flashcards
   // OPTIMIZATION: Only load flashcard IDs to reduce memory usage
   // Wrapped with retry logic to handle connection timeouts
-  const allClasses = await withRetry(() =>
-    db.query.classes.findMany({
-      where: eq(classes.isPublished, true),
-      orderBy: [asc(classes.order)],
-      with: {
-        decks: {
-          where: eq(decks.isPublished, true),
-          orderBy: [asc(decks.order)],
-          with: {
-            flashcards: {
-              where: eq(flashcards.isPublished, true),
-              columns: {
-                id: true, // Only load ID to minimize memory usage
+  const allClasses = await withRetry(
+    () =>
+      db.query.classes.findMany({
+        where: eq(classes.isPublished, true),
+        orderBy: [asc(classes.order)],
+        with: {
+          decks: {
+            where: eq(decks.isPublished, true),
+            orderBy: [asc(decks.order)],
+            with: {
+              flashcards: {
+                where: eq(flashcards.isPublished, true),
+                columns: {
+                  id: true, // Only load ID to minimize memory usage
+                },
               },
             },
           },
         },
-      },
-    })
+      }),
+    { queryName: 'dashboard-fetch-all-classes' }
   );
 
   // Calculate total flashcard count and progress for each class
@@ -73,16 +75,18 @@ export default async function DashboardPage() {
       let progress = 0;
       let studiedCount = 0;
       if (totalCards > 0 && flashcardIds.length > 0) {
-        const progressRecords = await withRetry(() =>
-          db
-            .select()
-            .from(userCardProgress)
-            .where(
-              and(
-                eq(userCardProgress.clerkUserId, userId),
-                inArray(userCardProgress.flashcardId, flashcardIds)
-              )
-            )
+        const progressRecords = await withRetry(
+          () =>
+            db
+              .select()
+              .from(userCardProgress)
+              .where(
+                and(
+                  eq(userCardProgress.clerkUserId, userId),
+                  inArray(userCardProgress.flashcardId, flashcardIds)
+                )
+              ),
+          { queryName: `dashboard-class-progress-${cls.id}` }
         );
 
         studiedCount = progressRecords.length;
@@ -110,11 +114,13 @@ export default async function DashboardPage() {
   const totalCards = classesWithProgress.reduce((sum, cls) => sum + cls.cardCount, 0);
 
   // Get user's overall studied cards count
-  const [studiedCardsResult] = await withRetry(() =>
-    db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(userCardProgress)
-      .where(eq(userCardProgress.clerkUserId, userId))
+  const [studiedCardsResult] = await withRetry(
+    () =>
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(userCardProgress)
+        .where(eq(userCardProgress.clerkUserId, userId)),
+    { queryName: 'dashboard-overall-progress-count' }
   );
 
   const studiedCards = studiedCardsResult?.count || 0;
@@ -126,12 +132,14 @@ export default async function DashboardPage() {
   const overallProgress = displayTotalCards > 0 ? Math.round((effectiveStudiedCards / displayTotalCards) * 100) : 0;
 
   // Get user stats for daily goal and streak
-  const [userStatsRecord] = await withRetry(() =>
-    db
-      .select()
-      .from(userStats)
-      .where(eq(userStats.clerkUserId, userId))
-      .limit(1)
+  const [userStatsRecord] = await withRetry(
+    () =>
+      db
+        .select()
+        .from(userStats)
+        .where(eq(userStats.clerkUserId, userId))
+        .limit(1),
+    { queryName: 'dashboard-user-stats' }
   );
 
   const studyStreak = userStatsRecord?.studyStreakDays || 0;

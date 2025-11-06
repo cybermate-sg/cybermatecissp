@@ -33,40 +33,72 @@ export const db = drizzle(client, { schema });
 /**
  * Retry wrapper for database queries to handle transient connection errors
  * @param fn - The database query function to execute
- * @param maxRetries - Maximum number of retry attempts (default: 3)
- * @param delayMs - Initial delay between retries in milliseconds (default: 1000)
+ * @param options - Configuration options
  * @returns The result of the database query
  */
 export async function withRetry<T>(
   fn: () => Promise<T>,
-  maxRetries = 3,
-  delayMs = 1000
+  options: {
+    maxRetries?: number;
+    delayMs?: number;
+    queryName?: string;
+  } = {}
 ): Promise<T> {
+  const { maxRetries = 3, delayMs = 1000, queryName = 'unknown-query' } = options;
+
   let lastError: Error | unknown;
+  const startTime = Date.now();
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const attemptStartTime = Date.now();
+
     try {
-      return await fn();
+      const result = await fn();
+
+      // Log successful query metrics
+      const duration = Date.now() - startTime;
+      const attemptDuration = Date.now() - attemptStartTime;
+
+      if (attempt > 1 || duration > 5000) {
+        console.log(`[DB Success] "${queryName}" completed in ${duration}ms (attempt ${attempt}/${maxRetries}, last attempt: ${attemptDuration}ms)`);
+      }
+
+      return result;
     } catch (error: any) {
       lastError = error;
+      const attemptDuration = Date.now() - attemptStartTime;
+
+      // Log detailed error information
+      console.error(`[DB Error] Attempt ${attempt}/${maxRetries} for "${queryName}" failed after ${attemptDuration}ms:`, {
+        errorCode: error?.code,
+        errorMessage: error?.message,
+        errorType: error?.constructor?.name,
+      });
 
       // Check if error is retryable (connection/timeout errors)
       const isRetryable =
         error?.code === 'ECONNREFUSED' ||
         error?.code === 'ETIMEDOUT' ||
         error?.code === 'ENOTFOUND' ||
+        error?.code === 'ECONNRESET' ||
         error?.message?.includes('CONNECT_TIMEOUT') ||
         error?.message?.includes('Connection terminated') ||
-        error?.message?.includes('Connection closed');
+        error?.message?.includes('Connection closed') ||
+        error?.message?.includes('timeout');
 
       // Don't retry if it's not a connection error or if we've exhausted retries
       if (!isRetryable || attempt === maxRetries) {
+        const totalDuration = Date.now() - startTime;
+        console.error(`[DB Failed] "${queryName}" failed permanently after ${totalDuration}ms and ${attempt} attempts:`, {
+          finalError: error?.message,
+          isRetryable,
+        });
         throw error;
       }
 
       // Exponential backoff
       const delay = delayMs * attempt;
-      console.warn(`[DB Retry] Attempt ${attempt}/${maxRetries} failed, retrying in ${delay}ms...`, error.message);
+      console.warn(`[DB Retry] Retrying "${queryName}" in ${delay}ms (attempt ${attempt + 1}/${maxRetries})...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
