@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
-import { flashcards, decks, flashcardMedia } from '@/lib/db/schema';
+import { flashcards, decks, flashcardMedia, quizQuestions } from '@/lib/db/schema';
 import { eq, desc, asc } from 'drizzle-orm';
 import { CacheInvalidation, safeInvalidate } from '@/lib/redis/invalidation';
+import { validateQuizFile } from '@/lib/validations/quiz';
 
 /**
  * GET /api/admin/flashcards
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
     const admin = await requireAdmin();
 
     const body = await request.json();
-    const { deckId, question, answer, explanation, order, isPublished, media } = body;
+    const { deckId, question, answer, explanation, order, isPublished, media, quizData } = body;
 
     if (!deckId || !question || !answer) {
       return NextResponse.json(
@@ -143,6 +144,32 @@ export async function POST(request: NextRequest) {
           altText: m.altText || null,
         }))
       );
+    }
+
+    // Insert quiz questions if provided
+    if (quizData) {
+      // Validate quiz data
+      const validationResult = validateQuizFile(quizData);
+      if (!validationResult.success) {
+        return NextResponse.json(
+          { error: `Invalid quiz data: ${validationResult.error}` },
+          { status: 400 }
+        );
+      }
+
+      // Insert quiz questions
+      if (validationResult.data.questions.length > 0) {
+        await db.insert(quizQuestions).values(
+          validationResult.data.questions.map((q, index) => ({
+            flashcardId: flashcard.id,
+            questionText: q.question,
+            options: q.options, // Store as JSON
+            explanation: q.explanation || null,
+            order: index,
+            createdBy: admin.clerkUserId,
+          }))
+        );
+      }
     }
 
     // Update deck card count

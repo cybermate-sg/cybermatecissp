@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Flashcard from "@/components/Flashcard";
+import { QuizModal } from "@/components/QuizModal";
 import { toast } from "sonner";
 
 interface FlashcardMedia {
@@ -38,6 +39,7 @@ function BookmarkStudyContent() {
   const [bookmarks, setBookmarks] = useState<BookmarkedCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(startIndex);
+  const [showQuizModal, setShowQuizModal] = useState(false);
 
   const currentCard = bookmarks[currentIndex];
   const progress = bookmarks.length > 0 ? ((currentIndex + 1) / bookmarks.length) * 100 : 0;
@@ -147,7 +149,7 @@ function BookmarkStudyContent() {
   };
 
   const handleTest = () => {
-    toast.info("Test feature coming soon! This will allow you to test your knowledge with practice questions.");
+    setShowQuizModal(true);
   };
 
   if (loading) {
@@ -273,6 +275,16 @@ function BookmarkStudyContent() {
           </div>
         </div>
       </div>
+
+      {/* Quiz Modal */}
+      {currentCard && (
+        <QuizModal
+          isOpen={showQuizModal}
+          onClose={() => setShowQuizModal(false)}
+          flashcardId={currentCard.flashcardId}
+          flashcardQuestion={currentCard.question}
+        />
+      )}
     </div>
   );
 }

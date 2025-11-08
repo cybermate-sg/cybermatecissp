@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
-import { flashcards, decks, flashcardMedia } from '@/lib/db/schema';
+import { flashcards, decks, flashcardMedia, quizQuestions } from '@/lib/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { deleteMultipleImagesFromBlob } from '@/lib/blob';
 import { CacheInvalidation, safeInvalidate } from '@/lib/redis/invalidation';
+import { validateQuizFile } from '@/lib/validations/quiz';
 
 /**
  * PATCH /api/admin/flashcards/[id]
@@ -15,11 +16,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
     const { id } = await params;
 
     const body = await request.json();
-    const { question, answer, explanation, order, isPublished, media } = body;
+    const { question, answer, explanation, order, isPublished, media, quizData } = body;
 
     // Check if flashcard exists with media
     const existingCard = await db.query.flashcards.findFirst({
@@ -114,6 +115,40 @@ export async function PATCH(
             .update(flashcardMedia)
             .set({ order: m.order })
             .where(eq(flashcardMedia.id, existingMedia.id));
+        }
+      }
+    }
+
+    // Handle quiz questions if provided
+    if (quizData !== undefined) {
+      if (quizData === null) {
+        // Delete all existing quiz questions for this flashcard
+        await db.delete(quizQuestions).where(eq(quizQuestions.flashcardId, id));
+      } else {
+        // Validate quiz data
+        const validationResult = validateQuizFile(quizData);
+        if (!validationResult.success) {
+          return NextResponse.json(
+            { error: `Invalid quiz data: ${validationResult.error}` },
+            { status: 400 }
+          );
+        }
+
+        // Delete existing quiz questions
+        await db.delete(quizQuestions).where(eq(quizQuestions.flashcardId, id));
+
+        // Insert new quiz questions
+        if (validationResult.data.questions.length > 0) {
+          await db.insert(quizQuestions).values(
+            validationResult.data.questions.map((q, index) => ({
+              flashcardId: id,
+              questionText: q.question,
+              options: q.options, // Store as JSON
+              explanation: q.explanation || null,
+              order: index,
+              createdBy: admin.clerkUserId,
+            }))
+          );
         }
       }
     }

@@ -9,6 +9,7 @@ import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
 import Flashcard from "@/components/Flashcard";
 import ConfidenceRating from "@/components/ConfidenceRating";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
+import { QuizModal } from "@/components/QuizModal";
 import { toast } from "sonner";
 
 interface FlashcardMedia {
@@ -51,6 +52,7 @@ export default function DeckStudyPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showRating, setShowRating] = useState(false);
   const [studiedCards, setStudiedCards] = useState<Set<number>>(new Set());
+  const [showQuizModal, setShowQuizModal] = useState(false);
 
   const currentCard = flashcards[currentIndex];
   const progress = flashcards.length > 0 ? (studiedCards.size / flashcards.length) * 100 : 0;
@@ -142,7 +144,7 @@ export default function DeckStudyPage() {
   };
 
   const handleTest = () => {
-    toast.info("Test feature coming soon! This will allow you to test your knowledge with practice questions.");
+    setShowQuizModal(true);
   };
 
   const handlePrevious = () => {
@@ -411,6 +413,16 @@ export default function DeckStudyPage() {
           </div>
         )}
       </div>
+
+      {/* Quiz Modal */}
+      {currentCard && (
+        <QuizModal
+          isOpen={showQuizModal}
+          onClose={() => setShowQuizModal(false)}
+          flashcardId={currentCard.id}
+          flashcardQuestion={currentCard.question}
+        />
+      )}
 
       <style jsx>{`
         @keyframes fade-in {

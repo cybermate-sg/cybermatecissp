@@ -18,8 +18,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Plus, Edit2, Trash2, ArrowLeft, Image as ImageIcon } from "lucide-react";
+import { Loader2, Plus, Edit2, Trash2, ArrowLeft, Image as ImageIcon, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
+import { validateQuizFile, type QuizFile } from "@/lib/validations/quiz";
 
 interface DeckData {
   id: string;
@@ -32,6 +33,14 @@ interface DeckData {
   };
 }
 
+interface QuizQuestion {
+  id: string;
+  questionText: string;
+  options: Array<{ text: string; isCorrect: boolean }>;
+  explanation: string | null;
+  order: number;
+}
+
 interface Flashcard {
   id: string;
   question: string;
@@ -40,6 +49,7 @@ interface Flashcard {
   order: number;
   isPublished: boolean;
   media?: FlashcardMedia[];
+  quizQuestions?: QuizQuestion[];
 }
 
 interface FlashcardMedia {
@@ -88,6 +98,8 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
   const [questionImages, setQuestionImages] = useState<ImageUpload[]>([]);
   const [answerImages, setAnswerImages] = useState<ImageUpload[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [quizData, setQuizData] = useState<QuizFile | null>(null);
+  const [quizFileName, setQuizFileName] = useState<string>("");
 
   // Unwrap params
   useEffect(() => {
@@ -139,6 +151,8 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
     });
     setQuestionImages([]);
     setAnswerImages([]);
+    setQuizData(null);
+    setQuizFileName("");
     setActiveTab("edit");
     setIsDialogOpen(true);
   };
@@ -194,6 +208,10 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
       setAnswerImages([]);
     }
 
+    // TODO: Load existing quiz data if available
+    setQuizData(null);
+    setQuizFileName("");
+
     setActiveTab("edit");
     setIsDialogOpen(true);
   };
@@ -247,6 +265,39 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
     setImages(newImages);
   };
 
+  const handleQuizFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      const result = validateQuizFile(json);
+
+      if (!result.success) {
+        toast.error(`Invalid quiz file: ${result.error}`);
+        setQuizData(null);
+        setQuizFileName("");
+        return;
+      }
+
+      setQuizData(result.data);
+      setQuizFileName(file.name);
+      toast.success(`${result.data.questions.length} question(s) loaded from ${file.name}`);
+    } catch (error) {
+      toast.error('Failed to parse JSON file. Please check the file format.');
+      setQuizData(null);
+      setQuizFileName("");
+      console.error('Quiz file parsing error:', error);
+    }
+  };
+
+  const handleRemoveQuiz = () => {
+    setQuizData(null);
+    setQuizFileName("");
+    toast.success('Quiz removed');
+  };
+
   const handleSaveCard = async () => {
     if (!formData.question.trim() || !formData.answer.trim()) {
       toast.error("Question and answer are required");
@@ -269,6 +320,7 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
         body: JSON.stringify({
           ...formData,
           deckId: deckId,
+          quizData: quizData,
         }),
       });
 
@@ -461,6 +513,15 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
                           <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
                             <span className="text-2xl font-bold text-slate-700">{index + 1}</span>
                           </div>
+                          {/* Quiz Indicator */}
+                          {card.quizQuestions && card.quizQuestions.length > 0 && (
+                            <div className="mt-2 flex items-center justify-center">
+                              <div className="flex items-center gap-1 bg-purple-50 border border-purple-200 rounded-md px-2 py-1">
+                                <ClipboardList className="w-3 h-3 text-purple-600" />
+                                <span className="text-xs font-medium text-purple-600">{card.quizQuestions.length}</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         {/* Question Column */}
@@ -678,6 +739,82 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
                   </div>
                 )}
               </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">
+                Quiz/Test Questions (Optional)
+              </Label>
+              <p className="text-sm text-slate-600">
+                Upload a JSON file with multiple-choice questions for this flashcard
+              </p>
+
+              <Input
+                type="file"
+                accept=".json"
+                onChange={handleQuizFileSelect}
+                className="bg-white border-slate-300 cursor-pointer"
+              />
+
+              {quizData && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-blue-900">
+                        ✓ {quizData.questions.length} question{quizData.questions.length !== 1 ? 's' : ''} loaded
+                      </p>
+                      <p className="text-xs text-blue-700 mt-1">{quizFileName}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRemoveQuiz}
+                      className="text-blue-700 hover:text-blue-900 hover:bg-blue-100"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-blue-200">
+                    <p className="text-xs text-blue-700 font-medium mb-2">Preview:</p>
+                    <div className="space-y-2">
+                      {quizData.questions.slice(0, 2).map((q, idx) => (
+                        <div key={idx} className="text-xs text-blue-800">
+                          <p className="font-medium">Q{idx + 1}: {q.question}</p>
+                          <p className="text-blue-600 ml-2 mt-1">
+                            {q.options.length} options, {q.options.filter(o => o.isCorrect).length} correct
+                          </p>
+                        </div>
+                      ))}
+                      {quizData.questions.length > 2 && (
+                        <p className="text-xs text-blue-600 italic">
+                          +{quizData.questions.length - 2} more question(s)...
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <details className="text-xs text-slate-600">
+                <summary className="cursor-pointer font-medium text-slate-700 hover:text-slate-900">
+                  Expected JSON Format
+                </summary>
+                <pre className="mt-2 p-3 bg-slate-100 rounded border border-slate-200 overflow-x-auto">
+{`{
+  "questions": [
+    {
+      "question": "What does IAM stand for?",
+      "options": [
+        { "text": "Identity Access Management", "isCorrect": true },
+        { "text": "Internet Access Module", "isCorrect": false }
+      ],
+      "explanation": "Optional explanation"
+    }
+  ]
+}`}
+                </pre>
+              </details>
             </div>
 
             <div className="space-y-3">

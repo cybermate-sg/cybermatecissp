@@ -20,6 +20,7 @@ export async function GET(
         flashcards: {
           with: {
             media: true,
+            quizQuestions: true,
           },
         },
       },

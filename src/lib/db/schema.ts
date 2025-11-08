@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp, boolean, varchar, uuid, decimal, pgEnum, index } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, timestamp, boolean, varchar, uuid, decimal, pgEnum, index, json } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Enums
@@ -128,6 +128,25 @@ export const flashcardMedia = pgTable('flashcard_media', {
   altText: varchar('alt_text', { length: 255 }), // Accessibility description
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+// Quiz Questions table - Multiple choice questions for flashcards
+// ✅ ADMIN CREATES ONLY (via JSON upload)
+export const quizQuestions = pgTable('quiz_questions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  flashcardId: uuid('flashcard_id').notNull().references(() => flashcards.id, { onDelete: 'cascade' }),
+  questionText: text('question_text').notNull(),
+  options: json('options').notNull(), // Array of {text: string, isCorrect: boolean, order: number}
+  explanation: text('explanation'), // Explanation for the correct answer
+  order: integer('order').notNull().default(0),
+  createdBy: varchar('created_by', { length: 255 }).notNull().references(() => users.clerkUserId),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Index for fetching all questions for a flashcard
+  flashcardIdx: index('idx_quiz_questions_flashcard').on(table.flashcardId),
+  // Index for ordering questions within a flashcard
+  flashcardOrderIdx: index('idx_quiz_questions_flashcard_order').on(table.flashcardId, table.order),
+}));
 
 // ============================================
 // USER PROGRESS & STUDY TRACKING
@@ -262,6 +281,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   createdClasses: many(classes),
   createdDecks: many(decks),
   createdFlashcards: many(flashcards),
+  createdQuizQuestions: many(quizQuestions),
 }));
 
 export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
@@ -307,12 +327,24 @@ export const flashcardsRelations = relations(flashcards, ({ one, many }) => ({
   bookmarkedBy: many(bookmarkedFlashcards),
   sessionCards: many(sessionCards),
   media: many(flashcardMedia),
+  quizQuestions: many(quizQuestions),
 }));
 
 export const flashcardMediaRelations = relations(flashcardMedia, ({ one }) => ({
   flashcard: one(flashcards, {
     fields: [flashcardMedia.flashcardId],
     references: [flashcards.id],
+  }),
+}));
+
+export const quizQuestionsRelations = relations(quizQuestions, ({ one }) => ({
+  flashcard: one(flashcards, {
+    fields: [quizQuestions.flashcardId],
+    references: [flashcards.id],
+  }),
+  createdBy: one(users, {
+    fields: [quizQuestions.createdBy],
+    references: [users.clerkUserId],
   }),
 }));
 

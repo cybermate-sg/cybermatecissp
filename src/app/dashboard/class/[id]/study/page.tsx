@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, RotateCcw, Loader2 } from "lucide-react";
 import Flashcard from "@/components/Flashcard";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
+import { QuizModal } from "@/components/QuizModal";
 import { toast } from "sonner";
 
 interface FlashcardMedia {
@@ -42,6 +43,7 @@ export default function ClassStudyPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showRating, setShowRating] = useState(false);
   const [studiedCards, setStudiedCards] = useState<Set<number>>(new Set());
+  const [showQuizModal, setShowQuizModal] = useState(false);
 
   const currentCard = flashcards[currentIndex];
   const progress = flashcards.length > 0 ? (studiedCards.size / flashcards.length) * 100 : 0;
@@ -225,6 +227,7 @@ export default function ClassStudyPage() {
             {/* Flashcard */}
             <Flashcard
               key={currentCard.id}
+              flashcardId={currentCard.id}
               question={currentCard.question}
               answer={currentCard.answer}
               questionImages={currentCard.media?.filter(m => m.placement === 'question').sort((a, b) => a.order - b.order).map(m => ({
@@ -242,6 +245,7 @@ export default function ClassStudyPage() {
                 order: m.order
               }))}
               onFlip={handleFlip}
+              onTest={() => setShowQuizModal(true)}
             />
           </div>
         ) : (
@@ -333,6 +337,16 @@ export default function ClassStudyPage() {
           animation: fade-in 0.3s ease-out;
         }
       `}</style>
+
+      {/* Quiz Modal */}
+      {currentCard && (
+        <QuizModal
+          isOpen={showQuizModal}
+          onClose={() => setShowQuizModal(false)}
+          flashcardId={currentCard.id}
+          flashcardQuestion={currentCard.question}
+        />
+      )}
     </div>
   );
 }
