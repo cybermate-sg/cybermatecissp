@@ -273,6 +273,7 @@ export class AuditLogger {
   /**
    * Send to SIEM system (placeholder for integration)
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private sendToSIEM(_event: SecurityEvent & { environment: string; application: string }): void {
     // TODO: Integrate with SIEM system (e.g., Splunk, ELK, DataDog)
     // This is a placeholder for future implementation
