@@ -19,9 +19,13 @@ export default async function AdminLayout({
   }
 
   // Check if user is admin
-  const user = await db.query.users.findFirst({
-    where: eq(users.clerkUserId, userId),
-  });
+  const userResult = await db
+    .select()
+    .from(users)
+    .where(eq(users.clerkUserId, userId))
+    .limit(1);
+
+  const user = userResult[0];
 
   if (!user || user.role !== 'admin') {
     redirect("/dashboard");

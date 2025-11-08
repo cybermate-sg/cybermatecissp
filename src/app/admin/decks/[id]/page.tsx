@@ -153,6 +153,9 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
       isPublished: card.isPublished,
     });
 
+    console.log('Opening edit dialog for card:', card);
+    console.log('Card media:', card.media);
+
     // Load existing images as previews
     if (card.media && card.media.length > 0) {
       const questionMedia: ImageUpload[] = card.media
@@ -166,6 +169,8 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
           isExisting: true,
         }));
 
+      console.log('Question media loaded:', questionMedia);
+
       const answerMedia: ImageUpload[] = card.media
         .filter(m => m.placement === 'answer')
         .sort((a, b) => a.order - b.order)
@@ -177,9 +182,14 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
           isExisting: true,
         }));
 
+      console.log('Answer media loaded:', answerMedia);
+
       setQuestionImages(questionMedia);
       setAnswerImages(answerMedia);
+
+      console.log('State updated - questionImages:', questionMedia.length, 'answerImages:', answerMedia.length);
     } else {
+      console.log('No media found for this card');
       setQuestionImages([]);
       setAnswerImages([]);
     }
@@ -590,12 +600,16 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
                     {questionImages.map((img, index) => (
                       <div key={index} className="relative group">
                         <Image
-                          src={img.preview}
+                          src={img.preview || '/placeholder.png'}
                           alt={`Question image ${index + 1}`}
                           width={200}
                           height={96}
                           className="w-full h-24 object-cover rounded border border-slate-300"
                           unoptimized
+                          onError={() => {
+                            console.error('Failed to load image:', img.preview);
+                            console.error('Image object:', img);
+                          }}
                         />
                         <Button
                           type="button"
@@ -639,12 +653,16 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
                     {answerImages.map((img, index) => (
                       <div key={index} className="relative group">
                         <Image
-                          src={img.preview}
+                          src={img.preview || '/placeholder.png'}
                           alt={`Answer image ${index + 1}`}
                           width={200}
                           height={96}
                           className="w-full h-24 object-cover rounded border border-slate-300"
                           unoptimized
+                          onError={() => {
+                            console.error('Failed to load answer image:', img.preview);
+                            console.error('Image object:', img);
+                          }}
                         />
                         <Button
                           type="button"

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Flashcard Image URL</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #1e293b;
+      color: white;
+    }
+    .test-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #334155;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    .image-test {
+      margin: 20px 0;
+      border: 2px solid #475569;
+      padding: 15px;
+      border-radius: 4px;
+    }
+    img {
+      max-width: 100%;
+      border: 1px solid #64748b;
+      border-radius: 4px;
+    }
+    .status {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    .success {
+      background: #166534;
+      color: #86efac;
+    }
+    .error {
+      background: #991b1b;
+      color: #fca5a5;
+    }
+    .loading {
+      background: #ca8a04;
+      color: #fef08a;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <h1>Test Flashcard Image Loading</h1>
+    <p>Testing image URL from Vercel Blob Storage for "Test Question with Image 02"</p>
+
+    <div class="image-test">
+      <h2>Question Image</h2>
+      <div id="question-status" class="status loading">Loading...</div>
+      <img
+        id="question-img"
+        src="https://nh4plxkh0fvhisyi.public.blob.vercel-storage.com/flashcard-755aadb3-52d1-401f-85f7-17ef7a8a80cc-question-0-1762421023627.png"
+        alt="Question image"
+        onload="handleImageLoad('question')"
+        onerror="handleImageError('question')"
+      />
+      <div id="question-details" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="image-test">
+      <h2>Answer Image</h2>
+      <div id="answer-status" class="status loading">Loading...</div>
+      <img
+        id="answer-img"
+        src="https://nh4plxkh0fvhisyi.public.blob.vercel-storage.com/flashcard-755aadb3-52d1-401f-85f7-17ef7a8a80cc-answer-0-1762421027056.png"
+        alt="Answer image"
+        onload="handleImageLoad('answer')"
+        onerror="handleImageError('answer')"
+      />
+      <div id="answer-details" style="margin-top: 10px;"></div>
+    </div>
+
+    <div id="diagnostic-info" style="margin-top: 30px; padding: 15px; background: #1e293b; border-radius: 4px;">
+      <h3>Diagnostic Information</h3>
+      <div id="browser-info"></div>
+    </div>
+  </div>
+
+  <script>
+    function handleImageLoad(type) {
+      const statusEl = document.getElementById(`${type}-status`);
+      const detailsEl = document.getElementById(`${type}-details`);
+      const img = document.getElementById(`${type}-img`);
+
+      statusEl.className = 'status success';
+      statusEl.textContent = '✅ Image loaded successfully!';
+
+      detailsEl.innerHTML = `
+        <p><strong>Natural Size:</strong> ${img.naturalWidth} x ${img.naturalHeight}</p>
+        <p><strong>URL:</strong> <code style="word-break: break-all;">${img.src}</code></p>
+      `;
+    }
+
+    function handleImageError(type) {
+      const statusEl = document.getElementById(`${type}-status`);
+      const detailsEl = document.getElementById(`${type}-details`);
+      const img = document.getElementById(`${type}-img`);
+
+      statusEl.className = 'status error';
+      statusEl.textContent = '❌ Failed to load image';
+
+      detailsEl.innerHTML = `
+        <p><strong>Error:</strong> Image could not be loaded</p>
+        <p><strong>URL:</strong> <code style="word-break: break-all;">${img.src}</code></p>
+        <p><strong>Possible reasons:</strong></p>
+        <ul>
+          <li>CORS issue</li>
+          <li>Image was deleted from blob storage</li>
+          <li>Network connectivity problem</li>
+          <li>URL is incorrect or expired</li>
+        </ul>
+      `;
+    }
+
+    // Show browser info
+    const browserInfo = document.getElementById('browser-info');
+    browserInfo.innerHTML = `
+      <p><strong>User Agent:</strong> ${navigator.userAgent}</p>
+      <p><strong>Online:</strong> ${navigator.onLine}</p>
+      <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+    `;
+  </script>
+</body>
+</html>

@@ -38,6 +38,8 @@ export function getSecurityHeaders(config: SecurityHeadersConfig = {}): Record<s
     const cspDirectives = customCSP || [
       "default-src 'self'",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://clerk.cisspmastery.com.au https://js.stripe.com https://*.clerk.accounts.dev https://challenges.cloudflare.com",
+      "worker-src 'self' blob:",
+      "child-src 'self' blob:",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
       "img-src 'self' data: blob: https: http:",
@@ -98,11 +100,14 @@ export function getSecurityHeaders(config: SecurityHeadersConfig = {}): Record<s
 
   // Cross-Origin-Resource-Policy
   // Controls resource loading
-  headers['Cross-Origin-Resource-Policy'] = 'same-origin';
+  // Note: Using 'cross-origin' to allow Vercel Blob images
+  headers['Cross-Origin-Resource-Policy'] = 'cross-origin';
 
   // Cross-Origin-Embedder-Policy
   // Controls cross-origin embedding
-  headers['Cross-Origin-Embedder-Policy'] = 'require-corp';
+  // Note: Using 'credentialless' to allow cross-origin images without CORP headers
+  // This is more secure than 'unsafe-none' and allows Vercel Blob images to load
+  headers['Cross-Origin-Embedder-Policy'] = 'credentialless';
 
   return headers;
 }
