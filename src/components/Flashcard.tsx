@@ -166,7 +166,7 @@ export default function Flashcard({
             {/* Scrollable content area */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden px-2" style={{ maxHeight: 'calc(500px - 120px)' }}>
               <div className="flex flex-col items-center">
-                <p className="text-xl sm:text-2xl text-white text-center leading-relaxed mb-6">
+                <p className="text-xl sm:text-2xl text-white text-center leading-relaxed mb-6 whitespace-pre-wrap">
                   {question}
                 </p>
 
@@ -261,7 +261,7 @@ export default function Flashcard({
             {/* Scrollable content area */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden px-2" style={{ maxHeight: 'calc(500px - 120px)' }}>
               <div className="flex flex-col items-center">
-                <p className="text-xl sm:text-2xl text-white text-center leading-relaxed mb-6">
+                <p className="text-xl sm:text-2xl text-white text-center leading-relaxed mb-6 whitespace-pre-wrap">
                   {answer}
                 </p>
 

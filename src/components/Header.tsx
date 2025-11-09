@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 export default function Header() {
   return (
@@ -9,8 +10,15 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <Image
+              src="/images/cybermate-logo.jpeg"
+              alt="Cybermate Logo"
+              width={40}
+              height={40}
+              className="rounded"
+            />
             <div className="text-2xl font-bold">
-              <span className="text-amber-400">CISSP</span>
+              <span className="text-amber-400">Cybermate</span>
               <span className="text-white"> Mastery</span>
             </div>
           </Link>
