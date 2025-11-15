@@ -1,9 +1,22 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
 import { auth } from "@clerk/nextjs/server";
-import BuyNowButton from "@/components/BuyNowButton";
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
+
+// Lazy load icons to reduce initial bundle
+const ArrowRight = dynamic(
+  () => import("lucide-react").then(mod => ({ default: mod.ArrowRight })),
+  { ssr: false }
+);
+
+// Lazy load BuyNowButton for better initial page performance - no SSR to reduce hydration cost
+const BuyNowButton = dynamic(() => import("@/components/BuyNowButton"), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold px-8 py-4 rounded-full animate-pulse h-14 w-64" />
+  ),
+});
 
 // Separate component for auth-dependent content
 async function AuthDependentContent() {
@@ -98,7 +111,7 @@ export default function Home() {
 
           {/* Right Image */}
           <div className="relative">
-            <div className="relative w-full aspect-[4/5] lg:aspect-square rounded-2xl overflow-hidden shadow-2xl">
+            <div className="relative w-full aspect-[4/5] lg:aspect-square rounded-2xl overflow-hidden shadow-2xl bg-slate-800">
               <Image
                 src="/images/raju.jpg"
                 alt="CISSP Security Expert"
@@ -106,11 +119,13 @@ export default function Home() {
                 className="object-cover"
                 priority
                 fetchPriority="high"
-                sizes="(max-width: 768px) 100vw, 50vw"
-                quality={85}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 600px"
+                quality={75}
+                placeholder="blur"
+                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
               />
               {/* Badge Overlay */}
-              <div className="absolute top-6 left-6 bg-green-600 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg">
+              <div className="absolute top-6 left-6 bg-green-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg">
                 #CISSP
               </div>
             </div>
@@ -118,6 +133,7 @@ export default function Home() {
         </div>
 
         {/* Features Section - Reduced backdrop-blur for better performance */}
+        <h2 className="sr-only">Key Features</h2>
         <div className="mt-24 grid md:grid-cols-3 gap-8">
           <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 hover:bg-slate-800/70 transition-colors">
             <div className="text-purple-400 text-4xl font-bold mb-3">8</div>

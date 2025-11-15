@@ -1,7 +1,33 @@
+"use client";
+
 import Link from "next/link";
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import dynamic from "next/dynamic";
+import { Suspense } from "react";
+
+// Lazy load Clerk components to reduce initial bundle
+const SignedIn = dynamic(() => import("@clerk/nextjs").then(mod => ({ default: mod.SignedIn })), {
+  ssr: false,
+});
+
+const SignedOut = dynamic(() => import("@clerk/nextjs").then(mod => ({ default: mod.SignedOut })), {
+  ssr: false,
+});
+
+const UserButton = dynamic(() => import("@clerk/nextjs").then(mod => ({ default: mod.UserButton })), {
+  ssr: false,
+});
+
+// Loading skeleton for auth buttons
+function AuthButtonsSkeleton() {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="w-20 h-9 bg-slate-700/50 rounded animate-pulse" />
+      <div className="w-20 h-9 bg-slate-700/50 rounded animate-pulse" />
+    </div>
+  );
+}
 
 export default function Header() {
   return (
@@ -16,6 +42,8 @@ export default function Header() {
               width={40}
               height={40}
               className="rounded"
+              quality={75}
+              sizes="40px"
             />
             <div className="text-2xl font-bold">
               <span className="text-amber-400">Cybermate</span>
@@ -24,29 +52,31 @@ export default function Header() {
           </Link>
 
           {/* Navigation and Auth buttons */}
-          <div className="flex items-center gap-3">
-            <SignedOut>
-              <Link href="/sign-in">
-                <Button variant="ghost" className="text-white hover:text-purple-400 hover:bg-slate-800">
-                  Sign in
-                </Button>
-              </Link>
-              <Link href="/sign-up">
-                <Button className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white">
-                  Sign up
-                </Button>
-              </Link>
-            </SignedOut>
-            <SignedIn>
-              <UserButton
-                appearance={{
-                  elements: {
-                    avatarBox: "w-10 h-10"
-                  }
-                }}
-              />
-            </SignedIn>
-          </div>
+          <Suspense fallback={<AuthButtonsSkeleton />}>
+            <div className="flex items-center gap-3">
+              <SignedOut>
+                <Link href="/sign-in">
+                  <Button variant="ghost" className="text-white hover:text-purple-400 hover:bg-slate-800">
+                    Sign in
+                  </Button>
+                </Link>
+                <Link href="/sign-up">
+                  <Button className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white">
+                    Sign up
+                  </Button>
+                </Link>
+              </SignedOut>
+              <SignedIn>
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox: "w-10 h-10"
+                    }
+                  }}
+                />
+              </SignedIn>
+            </div>
+          </Suspense>
         </div>
       </div>
     </header>
