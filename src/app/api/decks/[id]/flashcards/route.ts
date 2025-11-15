@@ -40,8 +40,9 @@ export async function GET(
     if (cachedData) {
       const response = NextResponse.json(cachedData);
       response.headers.set('X-Cache', 'HIT');
-      // Add HTTP caching headers for better browser caching
-      response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+      // Reduce cache duration to 10 seconds to show updates faster
+      // Use must-revalidate to ensure fresh data after cache expires
+      response.headers.set('Cache-Control', 'public, s-maxage=10, must-revalidate');
       return response;
     }
 
@@ -110,8 +111,9 @@ export async function GET(
 
     const response = NextResponse.json(responseData);
     response.headers.set('X-Cache', 'MISS');
-    // Add HTTP caching headers for better browser caching
-    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+    // Reduce cache duration to 10 seconds to show updates faster
+    // Use must-revalidate to ensure fresh data after cache expires
+    response.headers.set('Cache-Control', 'public, s-maxage=10, must-revalidate');
     return response;
 
   } catch (error) {

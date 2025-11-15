@@ -67,9 +67,9 @@ export default function DeckStudyPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/decks/${deckId}/flashcards`, {
-        // Enable browser caching with Next.js fetch cache
-        next: { revalidate: 60 }, // Revalidate every 60 seconds
-        cache: 'force-cache', // Use cached data when possible
+        // Use default caching to respect server Cache-Control headers
+        // This allows updates to be visible within 10 seconds
+        cache: 'default',
       });
       if (!res.ok) throw new Error("Failed to load flashcards");
 
