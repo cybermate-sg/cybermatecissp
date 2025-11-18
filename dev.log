@@ -1,0 +1,59 @@
+
+> cisspmastery@0.1.0 dev C:\Projects\cisspmastery
+> next dev
+
+   ▲ Next.js 15.5.4
+   - Local:        http://localhost:3000
+   - Network:      http://10.0.4.85:3000
+   - Environments: .env.local
+   - Experiments (use with caution):
+     ✓ optimizeCss
+     · serverActions
+     · clientTraceMetadata
+     · ...
+
+ ✓ Starting...
+ ○ Compiling /instrumentation ...
+ ✓ Compiled /instrumentation in 4.4s (1267 modules)
+[DB Warmup] Scheduling initial warmup in 3 seconds...
+[DB Warmup] Periodic warmup scheduled (every 5 minutes)
+[Instrumentation] Server initialized with:
+  ✅ Sentry monitoring enabled
+  ✅ Database connection warmup enabled
+  ✅ Performance monitoring active
+ ✓ Ready in 7.3s
+[DB Warmup] Connection pool warmed up successfully
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 1438ms (589 modules)
+ ○ Compiling /admin/decks/[id] ...
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (176kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ✓ Compiled /admin/decks/[id] in 70.3s (4516 modules)
+ ✓ Compiled in 1541ms (888 modules)
+ GET /admin/decks/e87557f2-79ad-421c-a8f3-35e78f5c09dc 200 in 81596ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /api/admin/decks/[id] in 5.6s (3633 modules)
+ ✓ Compiled in 1457ms (875 modules)
+ GET /favicon.ico 200 in 8729ms
+ POST /admin/decks/e87557f2-79ad-421c-a8f3-35e78f5c09dc 200 in 8318ms
+[SECURITY EVENT] {
+  "type": "authz.admin.access",
+  "severity": "low",
+  "message": "Authorization event: authz.admin.access",
+  "success": true,
+  "context": {
+    "timestamp": "2025-11-18T12:00:16.637Z",
+    "userId": "user_33oqZCsrKLsESLa3hoPcJpUHEFf",
+    "email": "enmadhavan@gmail.com"
+  },
+  "environment": "development",
+  "application": "cisspmastery"
+}
+ GET /api/admin/decks/e87557f2-79ad-421c-a8f3-35e78f5c09dc 200 in 15160ms
+[DB Warmup] Connection pool warmed up successfully
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 5.2s (4508 modules)
+ GET /admin/decks/e87557f2-79ad-421c-a8f3-35e78f5c09dc 404 in 8010ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 3.4s (3634 modules)
+ GET /favicon.ico 200 in 3765ms
+[DB Warmup] Connection pool warmed up successfully

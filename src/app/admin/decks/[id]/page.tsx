@@ -8,7 +8,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import RichTextEditor from "@/components/admin/RichTextEditor";
 import { Loader2, Plus, Edit2, Trash2, ArrowLeft, Image as ImageIcon, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { validateQuizFile, type QuizFile } from "@/lib/validations/quiz";
@@ -688,13 +688,11 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
 
           <div className="space-y-6 py-4">
             <div className="space-y-3">
-              <Label htmlFor="question" className="text-base font-semibold">Question *</Label>
-              <Textarea
-                id="question"
-                value={formData.question}
-                onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-                placeholder="Enter the question..."
-                className="bg-white border-slate-300 text-slate-900 min-h-[120px]"
+              <RichTextEditor
+                label="Question *"
+                content={formData.question}
+                onChange={(html) => setFormData({ ...formData, question: html })}
+                placeholder="Enter the question... You can use formatting, lists, and tables."
               />
               <div className="space-y-2">
                 <div className="flex gap-2">
@@ -741,13 +739,11 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
             </div>
 
             <div className="space-y-3">
-              <Label htmlFor="answer" className="text-base font-semibold">Answer *</Label>
-              <Textarea
-                id="answer"
-                value={formData.answer}
-                onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
-                placeholder="Enter the answer..."
-                className="bg-white border-slate-300 text-slate-900 min-h-[120px]"
+              <RichTextEditor
+                label="Answer *"
+                content={formData.answer}
+                onChange={(html) => setFormData({ ...formData, answer: html })}
+                placeholder="Enter the answer... You can use formatting, lists, and tables."
               />
               <div className="space-y-2">
                 <div className="flex gap-2">

@@ -219,7 +219,7 @@ export default function DeckStudyPage() {
               <div className="h-2 w-full bg-slate-700 rounded" />
             </div>
             {/* Card skeleton */}
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-7xl mx-auto">
               <div className="h-96 bg-slate-800 border border-slate-700 rounded-2xl" />
             </div>
           </div>
@@ -315,7 +315,7 @@ export default function DeckStudyPage() {
         {!allCardsStudied ? (
           <div className="space-y-8">
             {/* Navigation buttons and Flashcard */}
-            <div className="flex items-center gap-4 max-w-3xl mx-auto">
+            <div className="flex items-center gap-4 max-w-7xl mx-auto">
               {/* Previous Button */}
               <Button
                 onClick={handlePrevious}

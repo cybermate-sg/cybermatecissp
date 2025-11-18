@@ -19,6 +19,7 @@ import { Plus, Pencil, Trash2, Loader2, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { MultiImageUpload, MediaFile } from "@/components/admin/MultiImageUpload";
 import { ImageLightbox } from "@/components/admin/ImageLightbox";
+import RichTextEditor from "@/components/admin/RichTextEditor";
 
 // Updated interfaces for Class → Deck structure
 interface Class {
@@ -553,13 +554,11 @@ export default function AdminFlashcardsPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="question">Question (Required)</Label>
-                  <Textarea
-                    id="question"
-                    placeholder="Enter the question..."
-                    value={formData.question}
-                    onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-                    className="bg-slate-900 border-slate-700 text-white min-h-[100px]"
+                  <RichTextEditor
+                    label="Question (Required)"
+                    content={formData.question}
+                    onChange={(html) => setFormData({ ...formData, question: html })}
+                    placeholder="Enter the question... You can use formatting, lists, and tables."
                   />
 
                   {/* Question Images */}
@@ -577,13 +576,11 @@ export default function AdminFlashcardsPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="answer">Answer (Required)</Label>
-                  <Textarea
-                    id="answer"
-                    placeholder="Enter the answer..."
-                    value={formData.answer}
-                    onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
-                    className="bg-slate-900 border-slate-700 text-white min-h-[100px]"
+                  <RichTextEditor
+                    label="Answer (Required)"
+                    content={formData.answer}
+                    onChange={(html) => setFormData({ ...formData, answer: html })}
+                    placeholder="Enter the answer... You can use formatting, lists, and tables."
                   />
 
                   {/* Answer Images */}
