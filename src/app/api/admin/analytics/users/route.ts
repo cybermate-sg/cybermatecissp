@@ -3,91 +3,88 @@ import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
 import { users, userStats, userCardProgress, flashcards } from '@/lib/db/schema';
 import { eq, sql, desc, and, inArray } from 'drizzle-orm';
+import { withErrorHandling } from '@/lib/api/error-handler';
+import { withTracing } from '@/lib/middleware/with-tracing';
 
 /**
  * GET /api/admin/analytics/users
  * Get performance analytics for all users (admin only)
  */
-export async function GET(request: NextRequest) {
-  try {
-    await requireAdmin();
+async function getUsersAnalytics(request: NextRequest) {
+  await requireAdmin();
 
-    const searchParams = request.nextUrl.searchParams;
-    const userId = searchParams.get('userId');
-    const domainId = searchParams.get('domainId');
+  const searchParams = request.nextUrl.searchParams;
+  const userId = searchParams.get('userId');
+  const domainId = searchParams.get('domainId');
 
-    // If specific user requested
-    if (userId) {
-      return getUserAnalytics(userId, domainId);
-    }
-
-    // OPTIMIZED: Single aggregated query instead of N+1 queries
-    // Get all users with their stats AND mastery breakdown in one query
-    const usersWithProgress = await db
-      .select({
-        clerkUserId: users.clerkUserId,
-        email: users.email,
-        name: users.name,
-        role: users.role,
-        createdAt: users.createdAt,
-        totalCardsStudied: userStats.totalCardsStudied,
-        studyStreakDays: userStats.studyStreakDays,
-        totalStudyTime: userStats.totalStudyTime,
-        lastActiveDate: userStats.lastActiveDate,
-        // Aggregate mastery counts in single query
-        newCount: sql<number>`COUNT(CASE WHEN ${userCardProgress.masteryStatus} = 'new' THEN 1 END)::int`,
-        learningCount: sql<number>`COUNT(CASE WHEN ${userCardProgress.masteryStatus} = 'learning' THEN 1 END)::int`,
-        masteredCount: sql<number>`COUNT(CASE WHEN ${userCardProgress.masteryStatus} = 'mastered' THEN 1 END)::int`,
-      })
-      .from(users)
-      .leftJoin(userStats, eq(users.clerkUserId, userStats.clerkUserId))
-      .leftJoin(userCardProgress, eq(users.clerkUserId, userCardProgress.clerkUserId))
-      .groupBy(
-        users.clerkUserId,
-        users.email,
-        users.name,
-        users.role,
-        users.createdAt,
-        userStats.totalCardsStudied,
-        userStats.studyStreakDays,
-        userStats.totalStudyTime,
-        userStats.lastActiveDate
-      )
-      .orderBy(desc(userStats.totalCardsStudied))
-      .then((results) =>
-        results.map((user) => ({
-          clerkUserId: user.clerkUserId,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          createdAt: user.createdAt,
-          totalCardsStudied: user.totalCardsStudied,
-          studyStreakDays: user.studyStreakDays,
-          totalStudyTime: user.totalStudyTime,
-          lastActiveDate: user.lastActiveDate,
-          masteryBreakdown: {
-            new: user.newCount || 0,
-            learning: user.learningCount || 0,
-            mastered: user.masteredCount || 0,
-          },
-          totalCardsInProgress: (user.newCount || 0) + (user.learningCount || 0) + (user.masteredCount || 0),
-        }))
-      );
-
-    return NextResponse.json({
-      users: usersWithProgress,
-      total: usersWithProgress.length,
-    });
-
-  } catch (error) {
-    console.error('Error fetching user analytics:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch analytics';
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: errorMessage.includes('Unauthorized') ? 403 : 500 }
-    );
+  // If specific user requested
+  if (userId) {
+    return getUserAnalytics(userId, domainId);
   }
+
+  // OPTIMIZED: Single aggregated query instead of N+1 queries
+  // Get all users with their stats AND mastery breakdown in one query
+  const usersWithProgress = await db
+    .select({
+      clerkUserId: users.clerkUserId,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+      createdAt: users.createdAt,
+      totalCardsStudied: userStats.totalCardsStudied,
+      studyStreakDays: userStats.studyStreakDays,
+      totalStudyTime: userStats.totalStudyTime,
+      lastActiveDate: userStats.lastActiveDate,
+      // Aggregate mastery counts in single query
+      newCount: sql<number>`COUNT(CASE WHEN ${userCardProgress.masteryStatus} = 'new' THEN 1 END)::int`,
+      learningCount: sql<number>`COUNT(CASE WHEN ${userCardProgress.masteryStatus} = 'learning' THEN 1 END)::int`,
+      masteredCount: sql<number>`COUNT(CASE WHEN ${userCardProgress.masteryStatus} = 'mastered' THEN 1 END)::int`,
+    })
+    .from(users)
+    .leftJoin(userStats, eq(users.clerkUserId, userStats.clerkUserId))
+    .leftJoin(userCardProgress, eq(users.clerkUserId, userCardProgress.clerkUserId))
+    .groupBy(
+      users.clerkUserId,
+      users.email,
+      users.name,
+      users.role,
+      users.createdAt,
+      userStats.totalCardsStudied,
+      userStats.studyStreakDays,
+      userStats.totalStudyTime,
+      userStats.lastActiveDate
+    )
+    .orderBy(desc(userStats.totalCardsStudied))
+    .then((results) =>
+      results.map((user) => ({
+        clerkUserId: user.clerkUserId,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        createdAt: user.createdAt,
+        totalCardsStudied: user.totalCardsStudied,
+        studyStreakDays: user.studyStreakDays,
+        totalStudyTime: user.totalStudyTime,
+        lastActiveDate: user.lastActiveDate,
+        masteryBreakdown: {
+          new: user.newCount || 0,
+          learning: user.learningCount || 0,
+          mastered: user.masteredCount || 0,
+        },
+        totalCardsInProgress: (user.newCount || 0) + (user.learningCount || 0) + (user.masteredCount || 0),
+      }))
+    );
+
+  return NextResponse.json({
+    users: usersWithProgress,
+    total: usersWithProgress.length,
+  });
 }
+
+export const GET = withTracing(
+  withErrorHandling(getUsersAnalytics, 'get admin user analytics'),
+  { logRequest: true, logResponse: true }
+);
 
 /**
  * Get detailed analytics for a specific user

@@ -3,8 +3,10 @@ import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { userCardProgress } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { withErrorHandling } from '@/lib/api/error-handler';
+import { withTracing } from '@/lib/middleware/with-tracing';
 
-export async function POST(request: NextRequest) {
+async function updateProgress(request: NextRequest) {
   try {
     const { userId } = await auth();
 
@@ -67,9 +69,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating progress:', error);
-    return NextResponse.json(
-      { error: 'Failed to update progress' },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const POST = withTracing(
+  withErrorHandling(updateProgress, 'update card progress (legacy endpoint)'),
+  { logRequest: true, logResponse: false }
+);

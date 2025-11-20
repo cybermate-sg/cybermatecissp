@@ -5,12 +5,14 @@ import { bookmarkedFlashcards, flashcards } from '@/lib/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { cache } from '@/lib/redis';
 import { CacheKeys, CacheTTL } from '@/lib/redis/cache-keys';
+import { withErrorHandling } from '@/lib/api/error-handler';
+import { withTracing } from '@/lib/middleware/with-tracing';
 
 /**
  * GET /api/bookmarks
  * Get all bookmarked flashcards for the authenticated user
  */
-export async function GET() {
+async function getBookmarks(_request: NextRequest) {
   try {
     const { userId } = await auth();
 
@@ -77,19 +79,20 @@ export async function GET() {
 
   } catch (error) {
     console.error('Error fetching bookmarks:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch bookmarks';
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const GET = withTracing(
+  withErrorHandling(getBookmarks, 'get bookmarks'),
+  { logRequest: true, logResponse: false }
+);
 
 /**
  * POST /api/bookmarks
  * Add a flashcard to bookmarks
  */
-export async function POST(request: NextRequest) {
+async function addBookmark(request: NextRequest) {
   try {
     const { userId } = await auth();
 
@@ -149,10 +152,11 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error adding bookmark:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to add bookmark';
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const POST = withTracing(
+  withErrorHandling(addBookmark, 'add bookmark'),
+  { logRequest: true, logResponse: false }
+);

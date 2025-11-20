@@ -256,7 +256,33 @@ export function withErrorHandling<T extends unknown[]>(
     try {
       return await handler(...args);
     } catch (error) {
-      return handleApiError(error, context);
+      let additionalContext: ErrorContext | undefined;
+
+      // Try to derive basic request context (method, endpoint, trace ID)
+      try {
+        const maybeRequest = args[0] as unknown as {
+          method?: string;
+          url?: string;
+          headers?: Headers | { get(name: string): string | null };
+        };
+
+        if (maybeRequest && maybeRequest.url && maybeRequest.method) {
+          const url = new URL(maybeRequest.url);
+          const headers = maybeRequest.headers as Headers | undefined;
+
+          const requestId = headers?.get?.('x-request-id') ?? headers?.get?.('X-Request-ID') ?? undefined;
+
+          additionalContext = {
+            endpoint: url.pathname,
+            method: maybeRequest.method,
+            requestId,
+          };
+        }
+      } catch {
+        // Swallow context derivation errors; they should never break error handling
+      }
+
+      return handleApiError(error, context, additionalContext);
     }
   };
 }

@@ -3,13 +3,15 @@ import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { classes, flashcards, userCardProgress } from '@/lib/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
+import { withErrorHandling } from '@/lib/api/error-handler';
+import { withTracing } from '@/lib/middleware/with-tracing';
 
 /**
  * GET /api/progress/domain/[domainId]
  * Get user's progress statistics for a specific class (formerly domain)
  * Note: This endpoint maintains backward compatibility by using the old "domain" naming
  */
-export async function GET(
+async function getDomainProgress(
   _request: NextRequest,
   { params }: { params: Promise<{ domainId: string }> }
 ) {
@@ -85,9 +87,11 @@ export async function GET(
 
   } catch (error) {
     console.error('Error fetching domain progress:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch domain progress' },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const GET = withTracing(
+  withErrorHandling(getDomainProgress, 'get domain progress'),
+  { logRequest: true, logResponse: false }
+);

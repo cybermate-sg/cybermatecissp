@@ -3,8 +3,10 @@ import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { studySessions, userStats, sessionCards } from '@/lib/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
+import { withErrorHandling } from '@/lib/api/error-handler';
+import { withTracing } from '@/lib/middleware/with-tracing';
 
-export async function POST(request: NextRequest) {
+async function endSession(request: NextRequest) {
   try {
     const { userId } = await auth();
 
@@ -133,9 +135,11 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error ending session:', error);
-    return NextResponse.json(
-      { error: 'Failed to end session' },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const POST = withTracing(
+  withErrorHandling(endSession, 'end study session'),
+  { logRequest: true, logResponse: false }
+);

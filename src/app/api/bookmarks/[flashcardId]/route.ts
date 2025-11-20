@@ -5,12 +5,14 @@ import { bookmarkedFlashcards } from '@/lib/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { cache } from '@/lib/redis';
 import { CacheKeys } from '@/lib/redis/cache-keys';
+import { withErrorHandling } from '@/lib/api/error-handler';
+import { withTracing } from '@/lib/middleware/with-tracing';
 
 /**
  * DELETE /api/bookmarks/[flashcardId]
  * Remove a flashcard from bookmarks
  */
-export async function DELETE(
+async function deleteBookmark(
   _request: NextRequest,
   { params }: { params: Promise<{ flashcardId: string }> }
 ) {
@@ -59,19 +61,20 @@ export async function DELETE(
 
   } catch (error) {
     console.error('Error removing bookmark:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to remove bookmark';
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const DELETE = withTracing(
+  withErrorHandling(deleteBookmark, 'delete bookmark'),
+  { logRequest: true, logResponse: false }
+);
 
 /**
  * GET /api/bookmarks/[flashcardId]
  * Check if a flashcard is bookmarked
  */
-export async function GET(
+async function getBookmark(
   _request: NextRequest,
   { params }: { params: Promise<{ flashcardId: string }> }
 ) {
@@ -115,10 +118,11 @@ export async function GET(
 
   } catch (error) {
     console.error('Error checking bookmark:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to check bookmark';
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const GET = withTracing(
+  withErrorHandling(getBookmark, 'get bookmark status'),
+  { logRequest: true, logResponse: false }
+);

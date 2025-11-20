@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { studySessions } from '@/lib/db/schema';
+import { withErrorHandling } from '@/lib/api/error-handler';
+import { withTracing } from '@/lib/middleware/with-tracing';
 
-export async function POST(request: NextRequest) {
-  try {
+async function createSession(request: NextRequest) {
     const { userId } = await auth();
 
     if (!userId) {
@@ -43,9 +44,11 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error creating session:', error);
-    return NextResponse.json(
-      { error: 'Failed to create session' },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const POST = withTracing(
+  withErrorHandling(createSession, 'create study session'),
+  { logRequest: true, logResponse: true }
+);
