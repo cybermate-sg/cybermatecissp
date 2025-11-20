@@ -6,6 +6,7 @@ import { withErrorHandling } from '@/lib/api/error-handler';
 import { withTracing } from '@/lib/middleware/with-tracing';
 
 async function createSession(request: NextRequest) {
+  try {
     const { userId } = await auth();
 
     if (!userId) {
