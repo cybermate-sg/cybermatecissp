@@ -77,6 +77,7 @@ export const decks = pgTable('decks', {
   classId: uuid('class_id').notNull().references(() => classes.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
+  type: varchar('type', { length: 50 }).notNull().default('flashcard'), // 'flashcard' or 'quiz'
   cardCount: integer('card_count').notNull().default(0), // Automatically updated
   order: integer('order').notNull().default(0),
   isPremium: boolean('is_premium').default(false), // true = requires Pro subscription

@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { classId, name, description, order, isPremium, isPublished } = body;
+    const { classId, name, description, type, order, isPremium, isPublished } = body;
 
     if (!classId || !name) {
       return NextResponse.json(
@@ -30,6 +30,7 @@ export async function POST(request: Request) {
         classId,
         name,
         description: description || null,
+        type: type || 'flashcard',
         order: order || 0,
         isPremium: isPremium || false,
         isPublished: isPublished !== undefined ? isPublished : true,

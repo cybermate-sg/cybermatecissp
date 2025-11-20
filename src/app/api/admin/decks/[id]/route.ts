@@ -51,13 +51,14 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    const { name, description, order, isPremium, isPublished } = body;
+    const { name, description, type, order, isPremium, isPublished } = body;
 
     const updatedDeck = await db
       .update(decks)
       .set({
         ...(name && { name }),
         ...(description !== undefined && { description }),
+        ...(type && { type }),
         ...(order !== undefined && { order }),
         ...(isPremium !== undefined && { isPremium }),
         ...(isPublished !== undefined && { isPublished }),
