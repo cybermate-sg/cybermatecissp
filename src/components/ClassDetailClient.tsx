@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Play, Check } from "lucide-react";
+import { Play, Check, Layers, ClipboardList } from "lucide-react";
 import type { ClassData } from "@/lib/api/class-server";
 
 // Lazy load Dialog for better initial bundle size
@@ -212,6 +212,19 @@ export default function ClassDetailClient({ classData, userName, daysLeft }: Cla
                         </div>
                       </div>
 
+                      {/* Deck Type Icon */}
+                      <div className="flex-shrink-0">
+                        {deck.type === 'quiz' ? (
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-blue-500/20 border border-blue-500/50 flex items-center justify-center" title="Quiz Deck">
+                            <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-green-500/20 border border-green-500/50 flex items-center justify-center" title="Flashcard Deck">
+                            <Layers className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
+                          </div>
+                        )}
+                      </div>
+
                       {/* Progress Indicator */}
                       <div className="flex-shrink-0">
                         <div className="text-xl sm:text-2xl font-bold text-white">
@@ -221,9 +234,18 @@ export default function ClassDetailClient({ classData, userName, daysLeft }: Cla
 
                       {/* Deck Info */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-base sm:text-lg font-semibold text-white mb-1 truncate">
-                          {deck.name}
-                        </h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-base sm:text-lg font-semibold text-white truncate">
+                            {deck.name}
+                          </h3>
+                          <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${
+                            deck.type === 'quiz'
+                              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                              : 'bg-green-500/20 text-green-300 border border-green-500/30'
+                          }`}>
+                            {deck.type === 'quiz' ? 'Quiz' : 'Flashcard'}
+                          </span>
+                        </div>
                         <p className="text-xs sm:text-sm text-gray-400">
                           {deck.studiedCount} of {deck.cardCount} unique cards studied
                         </p>

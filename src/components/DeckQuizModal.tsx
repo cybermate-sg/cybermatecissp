@@ -121,6 +121,9 @@ export function DeckQuizModal({ isOpen, onClose, deckId, deckName }: DeckQuizMod
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-w-2xl bg-white">
+          <DialogHeader>
+            <DialogTitle className="sr-only">Loading quiz questions</DialogTitle>
+          </DialogHeader>
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
           </div>

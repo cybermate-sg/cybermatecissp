@@ -10,6 +10,7 @@ export type Deck = {
   id: string;
   name: string;
   description: string | null;
+  type: 'flashcard' | 'quiz';
   cardCount: number;
   studiedCount: number;
   progress: number;
@@ -113,6 +114,7 @@ export const getClassWithProgress = reactCache(async (classId: string): Promise<
       id: deck.id,
       name: deck.name,
       description: deck.description,
+      type: deck.type as 'flashcard' | 'quiz',
       cardCount: totalCards,
       studiedCount,
       progress,
