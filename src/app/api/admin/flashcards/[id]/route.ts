@@ -5,6 +5,7 @@ import { flashcards, flashcardMedia, quizQuestions } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { updateFlashcardSchema } from '@/lib/validations/flashcard';
 import { validateQuizFile } from '@/lib/validations/quiz';
+import { deleteMultipleImagesFromBlob } from '@/lib/blob';
 import { withErrorHandling } from '@/lib/api/error-handler';
 import { withTracing } from '@/lib/middleware/with-tracing';
 
@@ -72,8 +73,30 @@ async function updateFlashcard(
 
     // Handle media updates if provided
     if (validatedData.media !== undefined) {
-      // Delete existing media
+      // Get existing media before deleting
+      const oldMedia = await db.query.flashcardMedia.findMany({
+        where: eq(flashcardMedia.flashcardId, id),
+      });
+
+      // Delete existing media from database
       await db.delete(flashcardMedia).where(eq(flashcardMedia.flashcardId, id));
+
+      // Delete old images from blob storage that are no longer used
+      if (oldMedia.length > 0) {
+        const newMediaUrls = validatedData.media.map((m) => m.url);
+        const urlsToDelete = oldMedia
+          .map((m) => m.fileUrl)
+          .filter((url) => !newMediaUrls.includes(url));
+
+        if (urlsToDelete.length > 0) {
+          try {
+            await deleteMultipleImagesFromBlob(urlsToDelete);
+          } catch (error) {
+            console.error('Error deleting old images from blob storage:', error);
+            // Continue even if blob deletion fails
+          }
+        }
+      }
 
       // Insert new media
       if (validatedData.media.length > 0) {
@@ -153,9 +176,12 @@ async function deleteFlashcard(
     await requireAdmin();
     const { id } = await params;
 
-    // Check if flashcard exists
+    // Check if flashcard exists and get its media
     const existingFlashcard = await db.query.flashcards.findFirst({
       where: eq(flashcards.id, id),
+      with: {
+        media: true,
+      },
     });
 
     if (!existingFlashcard) {
@@ -165,7 +191,19 @@ async function deleteFlashcard(
       );
     }
 
-    // Delete the flashcard (cascades to media and quiz questions)
+    // Delete images from blob storage first
+    if (existingFlashcard.media && existingFlashcard.media.length > 0) {
+      const imageUrls = existingFlashcard.media.map((m) => m.fileUrl);
+      try {
+        await deleteMultipleImagesFromBlob(imageUrls);
+      } catch (error) {
+        console.error('Error deleting images from blob storage:', error);
+        // Continue with database deletion even if blob deletion fails
+        // This prevents orphaned database records
+      }
+    }
+
+    // Delete the flashcard (cascades to media and quiz questions in database)
     await db.delete(flashcards).where(eq(flashcards.id, id));
 
     return NextResponse.json({
