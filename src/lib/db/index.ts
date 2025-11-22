@@ -22,7 +22,7 @@ const client = postgres(effectiveConnectionString!, {
   max: 10, // Increased from 5 to handle more concurrent requests (reduces queue time)
   idle_timeout: 30, // Increased from 20s to keep warm connections longer
   max_lifetime: 60 * 10, // Increased to 10 minutes to reduce reconnection overhead
-  connect_timeout: 10, // Reduced from 45s - fail fast if DB is unreachable
+  connect_timeout: 30, // Increased to 30s to allow for slower initial connections
   fetch_types: false, // Disable type fetching to reduce memory
   onnotice: () => {}, // Suppress notices
   connection: {
@@ -78,6 +78,8 @@ export async function withRetry<T>(
         errorCode: err?.code,
         errorMessage: err?.message,
         errorType: err?.constructor?.name,
+        fullError: error, // Log the full error object
+        errorStack: err?.stack?.split('\n').slice(0, 3).join('\n'), // First 3 lines of stack
       });
 
       // Check if error is retryable (connection/timeout errors)

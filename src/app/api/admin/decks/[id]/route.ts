@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
 import { decks } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { deleteMultipleImagesFromBlob } from '@/lib/blob';
 import { withErrorHandling } from '@/lib/api/error-handler';
 import { withTracing } from '@/lib/middleware/with-tracing';
 
@@ -98,22 +99,49 @@ async function deleteDeck(
     await requireAdmin();
     const { id } = await params;
 
-    // Check if deck exists
-    const deck = await db
-      .select()
-      .from(decks)
-      .where(eq(decks.id, id))
-      .limit(1);
+    // Check if deck exists and get all its flashcards with media
+    const deck = await db.query.decks.findFirst({
+      where: eq(decks.id, id),
+      with: {
+        flashcards: {
+          with: {
+            media: true,
+          },
+        },
+      },
+    });
 
-    if (!deck.length) {
+    if (!deck) {
       return NextResponse.json({ error: 'Deck not found' }, { status: 404 });
     }
 
-    // Delete deck (cascades to flashcards)
+    // Collect all image URLs from all flashcards
+    const allImageUrls: string[] = [];
+    for (const flashcard of deck.flashcards) {
+      if (flashcard.media && flashcard.media.length > 0) {
+        const imageUrls = flashcard.media.map((m) => m.fileUrl);
+        allImageUrls.push(...imageUrls);
+      }
+    }
+
+    // Delete all images from blob storage first
+    if (allImageUrls.length > 0) {
+      try {
+        await deleteMultipleImagesFromBlob(allImageUrls);
+        console.log(`[Deck Delete] Deleted ${allImageUrls.length} images from blob storage`);
+      } catch (error) {
+        console.error('Error deleting images from blob storage:', error);
+        // Continue with database deletion even if blob deletion fails
+      }
+    }
+
+    // Delete deck (cascades to flashcards, media records, and quiz questions)
     await db.delete(decks).where(eq(decks.id, id));
 
     return NextResponse.json({
       message: 'Deck deleted successfully',
+      deletedImages: allImageUrls.length,
+      deletedFlashcards: deck.flashcards.length,
     });
   } catch (error) {
     console.error('Error deleting deck:', error);

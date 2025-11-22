@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
-import { classes, decks } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { classes, decks, flashcards } from '@/lib/db/schema';
+import { eq, count } from 'drizzle-orm';
 import { handleApiError, assertExists, createApiError } from '@/lib/api/error-handler';
 import { log } from '@/lib/logger';
 import { validatePathParams, validatePartial } from '@/lib/api/validate';
@@ -39,15 +39,30 @@ export async function GET(
       .from(decks)
       .where(eq(decks.classId, id));
 
+    // Get flashcard count for each deck
+    const decksWithCount = await Promise.all(
+      classDecks.map(async (deck) => {
+        const [countResult] = await db
+          .select({ count: count() })
+          .from(flashcards)
+          .where(eq(flashcards.deckId, deck.id));
+
+        return {
+          ...deck,
+          cardCount: countResult.count,
+        };
+      })
+    );
+
     log.info('Class fetched successfully', {
       userId: admin.clerkUserId,
       classId: id,
-      deckCount: classDecks.length,
+      deckCount: decksWithCount.length,
     });
 
     return NextResponse.json({
       class: classData[0],
-      decks: classDecks,
+      decks: decksWithCount,
     });
   } catch (error) {
     return handleApiError(error, 'fetch class', {

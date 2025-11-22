@@ -10,7 +10,6 @@ import type { ClassData } from "@/lib/api/class-server";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -52,16 +51,54 @@ export default function ClassDetailClient({ classData, userName, daysLeft }: Cla
     });
   }, []);
 
-  // Toggle select all decks - memoized with decks dependency
-  const toggleSelectAll = useCallback(() => {
-    if (selectedDecks.size === decks.length) {
-      setSelectedDecks(new Set());
-    } else {
-      setSelectedDecks(new Set(decks.map(d => d.id)));
-    }
-  }, [selectedDecks.size, decks]);
+  // Get flashcard decks only (quiz decks can't be studied in class mode)
+  const flashcardDecks = useMemo(() => decks.filter(d => d.type === 'flashcard'), [decks]);
 
-  const allSelected = selectedDecks.size === decks.length && decks.length > 0;
+  // Toggle select all flashcard decks - memoized with flashcardDecks dependency
+  const toggleSelectAll = useCallback(() => {
+    const flashcardDeckIds = flashcardDecks.map(d => d.id);
+    const allFlashcardsSelected = flashcardDeckIds.every(id => selectedDecks.has(id));
+
+    if (allFlashcardsSelected && flashcardDeckIds.length > 0) {
+      // Deselect all flashcard decks (keep any quiz decks selected)
+      setSelectedDecks(prev => {
+        const newSet = new Set(prev);
+        flashcardDeckIds.forEach(id => newSet.delete(id));
+        return newSet;
+      });
+    } else {
+      // Select all flashcard decks (keep any quiz decks selected)
+      setSelectedDecks(prev => {
+        const newSet = new Set(prev);
+        flashcardDeckIds.forEach(id => newSet.add(id));
+        return newSet;
+      });
+    }
+  }, [selectedDecks, flashcardDecks]);
+
+  const allFlashcardsSelected = useMemo(() => {
+    if (flashcardDecks.length === 0) return false;
+    return flashcardDecks.every(d => selectedDecks.has(d.id));
+  }, [selectedDecks, flashcardDecks]);
+
+  // Check deck types in selection
+  const decksToStudy = selectedDecks.size > 0
+    ? decks.filter(d => selectedDecks.has(d.id))
+    : decks;
+  const hasFlashcardDecks = decksToStudy.some(d => d.type === 'flashcard');
+  const hasQuizDecks = decksToStudy.some(d => d.type === 'quiz');
+  const onlyQuizDecks = !hasFlashcardDecks && hasQuizDecks;
+  const hasBothTypes = hasFlashcardDecks && hasQuizDecks;
+
+  // Get flashcard-only deck IDs for study route
+  const flashcardDeckIds = decksToStudy
+    .filter(d => d.type === 'flashcard')
+    .map(d => d.id);
+
+  // Get quiz deck names for info message
+  const quizDeckNames = decksToStudy
+    .filter(d => d.type === 'quiz')
+    .map(d => d.name);
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -134,30 +171,58 @@ export default function ClassDetailClient({ classData, userName, daysLeft }: Cla
             className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors text-gray-600 hover:text-gray-900 ml-auto"
           >
             <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-              allSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-400'
+              allFlashcardsSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-400'
             }`}>
-              {allSelected && <Check className="w-3 h-3 text-white" />}
+              {allFlashcardsSelected && <Check className="w-3 h-3 text-white" />}
             </div>
             <span className="text-sm font-medium">Select All</span>
           </button>
         </div>
 
         {/* Study Button */}
-        <Link
-          href={
-            selectedDecks.size > 0
-              ? `/dashboard/class/${classData.id}/study?mode=${studyMode}&decks=${Array.from(selectedDecks).join(',')}`
-              : `/dashboard/class/${classData.id}/study?mode=${studyMode}`
-          }
-        >
-          <Button
-            size="lg"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base py-6 mb-6"
-          >
-            <Play className="w-5 h-5 mr-2 fill-white" />
-            STUDY
-          </Button>
-        </Link>
+        {onlyQuizDecks ? (
+          <div>
+            <Button
+              size="lg"
+              disabled
+              className="w-full bg-gray-400 text-white font-semibold text-base py-6 mb-2 cursor-not-allowed"
+            >
+              <Play className="w-5 h-5 mr-2 fill-white" />
+              STUDY
+            </Button>
+            <p className="text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded mb-6 border border-amber-200">
+              Quiz decks cannot be studied in class mode. Use the quick play button on each quiz deck to take the test.
+            </p>
+          </div>
+        ) : (
+          <div>
+            <Link
+              href={
+                selectedDecks.size > 0 && flashcardDeckIds.length > 0
+                  ? `/dashboard/class/${classData.id}/study?mode=${studyMode}&decks=${flashcardDeckIds.join(',')}`
+                  : `/dashboard/class/${classData.id}/study?mode=${studyMode}`
+              }
+            >
+              <Button
+                size="lg"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base py-6 mb-2"
+              >
+                <Play className="w-5 h-5 mr-2 fill-white" />
+                STUDY
+              </Button>
+            </Link>
+            {hasBothTypes && (
+              <p className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded mb-6 border border-blue-200 flex items-start gap-2">
+                <span className="text-blue-600 font-semibold flex-shrink-0">ℹ️</span>
+                <span>
+                  <strong>{flashcardDeckIds.length} flashcard deck{flashcardDeckIds.length !== 1 ? 's' : ''}</strong> will be studied.
+                  Quiz deck{quizDeckNames.length !== 1 ? 's' : ''} ({quizDeckNames.join(', ')}) should be accessed via {quizDeckNames.length !== 1 ? 'their' : 'its'} quick play button.
+                </span>
+              </p>
+            )}
+            {!hasBothTypes && <div className="mb-6" />}
+          </div>
+        )}
       </div>
 
       {/* Deck List */}
@@ -263,7 +328,7 @@ export default function ClassDetailClient({ classData, userName, daysLeft }: Cla
         <DialogContent className="bg-white border-gray-200">
           <DialogHeader>
             <DialogTitle className="text-gray-900">Study Modes</DialogTitle>
-            <DialogDescription className="space-y-4 pt-4 text-gray-600">
+            <div className="space-y-4 pt-4 text-gray-600">
               <div>
                 <h4 className="font-semibold text-gray-900 mb-1">Progressive Mode</h4>
                 <p className="text-sm">
@@ -278,7 +343,7 @@ export default function ClassDetailClient({ classData, userName, daysLeft }: Cla
                   Perfect for simulating exam conditions.
                 </p>
               </div>
-            </DialogDescription>
+            </div>
           </DialogHeader>
         </DialogContent>
       </Dialog>

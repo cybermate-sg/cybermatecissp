@@ -37,6 +37,11 @@ export function QuizModal({ isOpen, onClose, flashcardId, flashcardQuestion }: Q
   const [loading, setLoading] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
 
+  // Strip HTML tags from question text for display
+  const stripHtml = (html: string) => {
+    return html.replace(/<[^>]*>/g, '').trim();
+  };
+
   const fetchQuizQuestions = useCallback(async () => {
     setLoading(true);
     try {
@@ -121,6 +126,7 @@ export function QuizModal({ isOpen, onClose, flashcardId, flashcardQuestion }: Q
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-w-2xl bg-white">
+          <DialogTitle className="sr-only">Loading quiz questions</DialogTitle>
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
           </div>
@@ -141,7 +147,7 @@ export function QuizModal({ isOpen, onClose, flashcardId, flashcardQuestion }: Q
       <DialogContent className="max-w-3xl bg-white max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-slate-800">
-            Quiz: {flashcardQuestion}
+            Quiz: {stripHtml(flashcardQuestion)}
           </DialogTitle>
           <div className="flex items-center justify-between text-sm text-slate-600 mt-2">
             <span>
