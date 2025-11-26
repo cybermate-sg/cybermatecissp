@@ -119,16 +119,32 @@ export class ClassTestHelpers {
     action: 'Create' | 'Update' = 'Create',
     waitForClose: boolean = true
   ) {
+    // Click the submit button
     await this.page.click(`button:has-text("${action} Class")`);
 
     if (waitForClose) {
-      // Wait for dialog to close
-      await this.page.waitForSelector('div[role="dialog"]', {
-        state: 'hidden',
-        timeout: 10000,
-      });
-      // Wait a moment for the page to update
-      await this.page.waitForTimeout(500);
+      try {
+        // Wait for dialog to close with a reasonable timeout
+        await this.page.waitForSelector('div[role="dialog"]', {
+          state: 'hidden',
+          timeout: 15000, // Increased timeout for API calls
+        });
+        // Wait a moment for the page to update
+        await this.page.waitForTimeout(500);
+      } catch (error) {
+        // If dialog didn't close, check if there's an error message
+        const dialogStillOpen = await this.page.locator('div[role="dialog"]').isVisible();
+        if (dialogStillOpen) {
+          // Capture the current state for debugging
+          const buttonText = await this.page.locator('div[role="dialog"] button').allTextContents();
+          throw new Error(
+            `Dialog did not close after clicking "${action} Class". ` +
+            `Dialog is still open. Buttons visible: ${buttonText.join(', ')}. ` +
+            `This may indicate an API error or timeout.`
+          );
+        }
+        throw error;
+      }
     } else {
       // For validation errors, just wait a bit for the error to appear
       await this.page.waitForTimeout(500);
@@ -263,25 +279,44 @@ export class ClassTestHelpers {
    * Wait for toast message and ensure page updates complete
    */
   async waitForToast(message: string) {
-    // Wait for toast to appear
-    await this.page.waitForSelector(`text="${message}"`, { timeout: 10000 });
+    try {
+      // Check if page is still alive before waiting
+      if (this.page.isClosed()) {
+        throw new Error('Page was closed before waiting for toast');
+      }
 
-    // Wait for toast to disappear (indicates operation completed)
-    await this.page.waitForSelector(`text="${message}"`, {
-      state: 'hidden',
-      timeout: 10000
-    }).catch(() => {
-      // Toast might auto-dismiss, which is fine
-    });
+      // Wait for toast to appear
+      await this.page.waitForSelector(`text="${message}"`, { timeout: 10000 });
 
-    // Wait for any pending network requests to complete
-    // Use a shorter timeout and catch errors since the page might already be idle
-    await this.page.waitForLoadState('networkidle', { timeout: 3000 }).catch(() => {
-      // Network might already be idle
-    });
+      // Wait for toast to disappear (indicates operation completed)
+      await this.page.waitForSelector(`text="${message}"`, {
+        state: 'hidden',
+        timeout: 10000
+      }).catch(() => {
+        // Toast might auto-dismiss, which is fine
+      });
 
-    // Small delay to allow React state updates to propagate
-    await this.page.waitForTimeout(500);
+      // Check page is still alive before waiting for network
+      if (!this.page.isClosed()) {
+        // Wait for any pending network requests to complete
+        // Use a shorter timeout and catch errors since the page might already be idle
+        await this.page.waitForLoadState('networkidle', { timeout: 3000 }).catch(() => {
+          // Network might already be idle
+        });
+
+        // Small delay to allow React state updates to propagate
+        await this.page.waitForTimeout(500);
+      }
+    } catch (error) {
+      // Provide more context if the error is due to page closure
+      if (this.page.isClosed()) {
+        throw new Error(
+          `Page was closed while waiting for toast message: "${message}". ` +
+          `This may indicate a navigation or browser crash.`
+        );
+      }
+      throw error;
+    }
   }
 
   /**
