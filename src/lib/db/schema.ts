@@ -140,6 +140,8 @@ export const quizQuestions = pgTable('quiz_questions', {
   explanation: text('explanation'), // Explanation for the correct answer
   eliminationTactics: text('elimination_tactics'), // Stepwise logic for eliminating wrong answers and distractors
   correctAnswerWithJustification: text('correct_answer_with_justification'), // Clear rationale for the correct option
+  compareRemainingOptionsWithJustification: text('compare_remaining_options_with_justification'), // Comparison of remaining options after elimination
+  correctOptionsJustification: text('correct_options_justification'), // Detailed justification for correct options
   order: integer('order').notNull().default(0),
   createdBy: varchar('created_by', { length: 255 }).notNull().references(() => users.clerkUserId),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -162,6 +164,8 @@ export const deckQuizQuestions = pgTable('deck_quiz_questions', {
   explanation: text('explanation'), // Explanation for the correct answer
   eliminationTactics: text('elimination_tactics'), // Stepwise logic for eliminating wrong answers and distractors
   correctAnswerWithJustification: text('correct_answer_with_justification'), // Clear rationale for the correct option
+  compareRemainingOptionsWithJustification: text('compare_remaining_options_with_justification'), // Comparison of remaining options after elimination
+  correctOptionsJustification: text('correct_options_justification'), // Detailed justification for correct options
   order: integer('order').notNull().default(0),
   difficulty: integer('difficulty'), // Optional: 1-5 difficulty level
   createdBy: varchar('created_by', { length: 255 }).notNull().references(() => users.clerkUserId),

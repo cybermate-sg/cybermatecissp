@@ -59,6 +59,8 @@ export async function GET(
         explanation: q.explanation,
         eliminationTactics: safeJsonParse(q.eliminationTactics),
         correctAnswerWithJustification: safeJsonParse(q.correctAnswerWithJustification),
+        compareRemainingOptionsWithJustification: safeJsonParse(q.compareRemainingOptionsWithJustification),
+        correctOptionsJustification: safeJsonParse(q.correctOptionsJustification),
         order: q.order,
         difficulty: q.difficulty,
       })),

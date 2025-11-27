@@ -81,6 +81,8 @@ async function createFlashcard(request: NextRequest) {
             explanation: q.explanation || null,
             eliminationTactics: q.elimination_tactics ? JSON.stringify(q.elimination_tactics) : null,
             correctAnswerWithJustification: q.correct_answer_with_justification ? JSON.stringify(q.correct_answer_with_justification) : null,
+            compareRemainingOptionsWithJustification: q.compare_remaining_options_with_justification ? JSON.stringify(q.compare_remaining_options_with_justification) : null,
+            correctOptionsJustification: q.correct_options_justification ? JSON.stringify(q.correct_options_justification) : null,
             order: index,
             difficulty: null,
             createdBy: admin.clerkUserId,

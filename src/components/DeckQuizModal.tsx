@@ -18,6 +18,8 @@ interface QuizQuestion {
   explanation: string | null;
   eliminationTactics?: Record<string, string> | null;
   correctAnswerWithJustification?: Record<string, string> | null;
+  compareRemainingOptionsWithJustification?: Record<string, string> | null;
+  correctOptionsJustification?: Record<string, string> | null;
   order: number;
   difficulty?: number | null;
 }
@@ -227,34 +229,47 @@ export function DeckQuizModal({ isOpen, onClose, deckId, deckName }: DeckQuizMod
 
             {/* Explanation */}
             {showExplanation && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
+              <div className="bg-blue-50 rounded-lg p-6 space-y-6">
                 {currentQuestion.explanation && (
                   <div>
-                    <p className="text-sm font-semibold text-blue-900 mb-2">Explanation:</p>
-                    <p className="text-sm text-blue-800">{currentQuestion.explanation}</p>
+                    <h3 className="text-base font-semibold text-blue-900 mb-3">Explanation</h3>
+                    <p className="text-sm text-blue-800 leading-relaxed">{currentQuestion.explanation}</p>
                   </div>
                 )}
 
                 {currentQuestion.eliminationTactics && typeof currentQuestion.eliminationTactics === 'object' && Object.keys(currentQuestion.eliminationTactics).length > 0 && (
                   <div>
-                    <p className="text-sm font-semibold text-blue-900 mb-2">Elimination Tactics:</p>
-                    <div className="space-y-2">
+                    <h3 className="text-base font-semibold text-blue-900 mb-3">Elimination Tactics</h3>
+                    <div className="space-y-3">
                       {Object.entries(currentQuestion.eliminationTactics).map(([option, reason]) => (
-                        <div key={option} className="text-sm text-blue-800">
-                          <span className="font-medium">{option}:</span> {reason}
+                        <div key={option} className="text-sm text-blue-800 leading-relaxed">
+                          <span className="font-semibold text-blue-900">{option}:</span> {reason}
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {currentQuestion.correctAnswerWithJustification && typeof currentQuestion.correctAnswerWithJustification === 'object' && Object.keys(currentQuestion.correctAnswerWithJustification).length > 0 && (
+                {currentQuestion.compareRemainingOptionsWithJustification && typeof currentQuestion.compareRemainingOptionsWithJustification === 'object' && Object.keys(currentQuestion.compareRemainingOptionsWithJustification).length > 0 && (
                   <div>
-                    <p className="text-sm font-semibold text-blue-900 mb-2">Correct Answer with Justification:</p>
-                    <div className="space-y-2">
-                      {Object.entries(currentQuestion.correctAnswerWithJustification).map(([option, justification]) => (
-                        <div key={option} className="text-sm text-blue-800">
-                          <span className="font-medium">{option}:</span> {justification}
+                    <h3 className="text-base font-semibold text-blue-900 mb-3">Compare Remaining Options</h3>
+                    <div className="space-y-3">
+                      {Object.entries(currentQuestion.compareRemainingOptionsWithJustification).map(([option, comparison]) => (
+                        <div key={option} className="text-sm text-blue-800 leading-relaxed">
+                          <span className="font-semibold text-blue-900">{option}:</span> {comparison}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {currentQuestion.correctOptionsJustification && typeof currentQuestion.correctOptionsJustification === 'object' && Object.keys(currentQuestion.correctOptionsJustification).length > 0 && (
+                  <div>
+                    <h3 className="text-base font-semibold text-blue-900 mb-3">Correct Option Justification</h3>
+                    <div className="space-y-3">
+                      {Object.entries(currentQuestion.correctOptionsJustification).map(([option, justification]) => (
+                        <div key={option} className="text-sm text-blue-800 leading-relaxed">
+                          <p className="text-sm text-blue-800 leading-relaxed">{justification}</p>
                         </div>
                       ))}
                     </div>
