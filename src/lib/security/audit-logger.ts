@@ -8,6 +8,7 @@
  */
 
 import { NextRequest } from 'next/server';
+import { sanitizeLogString } from '@/lib/logger';
 
 // Optional Sentry import
 let Sentry: typeof import('@sentry/nextjs') | null = null;
@@ -334,7 +335,7 @@ export function logSQLInjectionAttempt(
   auditLogger.logSecurityViolation(
     SecurityEventType.SQL_INJECTION_ATTEMPT,
     context,
-    { suspiciousInput: input.substring(0, 200) } // Log only first 200 chars
+    { suspiciousInput: sanitizeLogString(input.substring(0, 200)) } // Sanitize and log only first 200 chars
   );
 }
 
@@ -345,7 +346,7 @@ export function logXSSAttempt(
   auditLogger.logSecurityViolation(
     SecurityEventType.XSS_ATTEMPT,
     context,
-    { suspiciousInput: input.substring(0, 200) }
+    { suspiciousInput: sanitizeLogString(input.substring(0, 200)) }
   );
 }
 

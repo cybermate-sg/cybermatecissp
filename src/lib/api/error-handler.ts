@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
+import { sanitizeLogString } from '@/lib/logger';
 
 // Optional Sentry import - only used if package is installed
 let Sentry: typeof import('@sentry/nextjs') | null = null;
@@ -160,10 +161,11 @@ export function handleApiError(
 
   // Log to console in development
   if (process.env.NODE_ENV === 'development') {
-    console.error(`[API Error] ${context || 'Unknown operation'}:`, {
-      message,
+    // Use separate arguments to prevent format string injection
+    console.error('[API Error]', sanitizeLogString(context || 'Unknown operation'), {
+      message: sanitizeLogString(message),
       statusCode,
-      error: error instanceof Error ? error.stack : error,
+      error: error instanceof Error ? sanitizeLogString(error.stack || error.message) : sanitizeLogString(String(error)),
       context: additionalContext,
       details: errorDetails,
     });

@@ -35,12 +35,37 @@ interface LogMessage {
 }
 
 /**
+ * Sanitize string to prevent CRLF injection in logs
+ * Replaces CR, LF, and other control characters to prevent log forgery
+ *
+ * @param input - String to sanitize
+ * @returns Sanitized string with CRLF characters escaped
+ *
+ * @example
+ * ```typescript
+ * sanitizeLogString("User input\r\nFake log entry") // "User input\\r\\nFake log entry"
+ * ```
+ */
+export function sanitizeLogString(input: string): string {
+  if (typeof input !== 'string') {
+    return String(input);
+  }
+
+  return input
+    .replace(/\r/g, '\\r')  // Escape carriage return
+    .replace(/\n/g, '\\n')  // Escape line feed
+    .replace(/\t/g, '\\t')  // Escape tab
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ''); // Remove other control chars
+}
+
+/**
  * Format log message for console output
  */
 function formatLogMessage(logMessage: LogMessage): string {
   const { level, message, timestamp } = logMessage;
   const prefix = `[${level.toUpperCase()}] [${timestamp}]`;
-  return `${prefix} ${message}`;
+  const sanitizedMessage = sanitizeLogString(message);
+  return `${prefix} ${sanitizedMessage}`;
 }
 
 /**
