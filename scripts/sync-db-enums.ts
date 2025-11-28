@@ -4,13 +4,14 @@
  */
 
 import { Pool } from 'pg';
+import format from 'pg-format';
 import * as dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.local' });
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+  ssl: { rejectUnauthorized: true },
 });
 
 // Enum types that SHOULD exist according to schema.ts
@@ -70,7 +71,7 @@ async function main() {
       console.log('   (You can run these in Xata.io SQL console or uncomment the deletion code below)\n');
 
       excessEnums.forEach(enumType => {
-        console.log(`DROP TYPE IF EXISTS "${enumType}" CASCADE;`);
+        console.log(format('DROP TYPE IF EXISTS %I CASCADE;', enumType));
       });
 
       console.log('\n⚠️  WARNING: CASCADE will also drop any columns using these types!');
@@ -82,7 +83,7 @@ async function main() {
       console.log('\n🔄 Deleting excess enum types...\n');
       for (const enumType of excessEnums) {
         try {
-          await pool.query(`DROP TYPE IF EXISTS "${enumType}" CASCADE`);
+          await pool.query(format('DROP TYPE IF EXISTS %I CASCADE', enumType));
           console.log(`  ✅ Deleted: ${enumType}`);
         } catch (error) {
           console.error(`  ❌ Failed to delete ${enumType}:`, error);

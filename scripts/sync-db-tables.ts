@@ -4,13 +4,14 @@
  */
 
 import { Pool } from 'pg';
+import format from 'pg-format';
 import * as dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.local' });
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+  ssl: { rejectUnauthorized: true },
 });
 
 // Tables that SHOULD exist according to schema.ts
@@ -95,7 +96,7 @@ async function main() {
       console.log('   (You can run these in Xata.io SQL console or uncomment the deletion code below)\n');
 
       excessTables.forEach(table => {
-        console.log(`DROP TABLE IF EXISTS "${table}" CASCADE;`);
+        console.log(format('DROP TABLE IF EXISTS %I CASCADE;', table));
       });
 
       console.log('\n⚠️  WARNING: Deletion is permanent! Make sure you have backups.');
@@ -106,7 +107,7 @@ async function main() {
       console.log('\n🔄 Deleting excess tables...\n');
       for (const table of excessTables) {
         try {
-          await pool.query(`DROP TABLE IF EXISTS "${table}" CASCADE`);
+          await pool.query(format('DROP TABLE IF EXISTS %I CASCADE', table));
           console.log(`  ✅ Deleted: ${table}`);
         } catch (error) {
           console.error(`  ❌ Failed to delete ${table}:`, error);

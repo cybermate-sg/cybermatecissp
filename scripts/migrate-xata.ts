@@ -11,7 +11,7 @@ async function runMigration() {
 
   const client = new Client({
     connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: true }
   });
 
   try {
