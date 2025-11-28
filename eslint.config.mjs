@@ -12,6 +12,22 @@ const compat = new FlatCompat({
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
+    languageOptions: {
+      ecmaVersion: 2015,
+      sourceType: "module",
+      globals: {
+        // Node.js globals
+        __dirname: "readonly",
+        __filename: "readonly",
+        require: "readonly",
+        module: "readonly",
+        exports: "readonly",
+        process: "readonly",
+        console: "readonly",
+      },
+    },
+  },
+  {
     ignores: [
       "node_modules/**",
       ".next/**",
