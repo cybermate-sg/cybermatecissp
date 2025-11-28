@@ -95,6 +95,9 @@ importers:
       pg:
         specifier: ^8.16.3
         version: 8.16.3
+      pg-format:
+        specifier: 1.0.4
+        version: 1.0.4
       postgres:
         specifier: ^3.4.7
         version: 3.4.7
@@ -172,9 +175,6 @@ importers:
       eslint-config-next:
         specifier: 15.5.4
         version: 15.5.4(eslint@9.39.1(jiti@1.21.7))(typescript@5.9.3)
-      pg-format:
-        specifier: 1.0.4
-        version: 1.0.4
       postcss:
         specifier: 8.5.6
         version: 8.5.6

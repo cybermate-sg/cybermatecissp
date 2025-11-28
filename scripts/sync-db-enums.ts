@@ -6,9 +6,7 @@
 import { Pool } from 'pg';
 import * as dotenv from 'dotenv';
 
-// pg-format is a CommonJS module, use require
-// eslint-disable-next-line @typescript-eslint/no-require-imports, import/no-unresolved
-const format = require('pg-format') as (fmt: string, ...args: any[]) => string;
+import format from 'pg-format';
 
 dotenv.config({ path: '.env.local' });
 
