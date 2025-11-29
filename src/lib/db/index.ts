@@ -104,7 +104,7 @@ export async function withRetry<T>(
       const attemptDuration = Date.now() - attemptStartTime;
 
       if (attempt > 1 || duration > 5000) {
-        console.log(`[DB Success] "${queryName}" completed in ${duration}ms (attempt ${attempt}/${maxRetries}, last attempt: ${attemptDuration}ms)`);
+        console.log('[DB Success]', queryName, 'completed in', duration, 'ms (attempt', attempt, '/', maxRetries, ', last attempt:', attemptDuration, 'ms)');
       }
 
       return result;
@@ -114,7 +114,7 @@ export async function withRetry<T>(
       const attemptDuration = Date.now() - attemptStartTime;
 
       // Log detailed error information
-      console.error(`[DB Error] Attempt ${attempt}/${maxRetries} for "${queryName}" failed after ${attemptDuration}ms:`, {
+      console.error('[DB Error] Attempt', attempt, '/', maxRetries, 'for', queryName, 'failed after', attemptDuration, 'ms:', {
         errorCode: err?.code,
         errorMessage: err?.message,
         errorType: err?.constructor?.name,
@@ -138,7 +138,7 @@ export async function withRetry<T>(
       // Don't retry if it's not a connection error or if we've exhausted retries
       if (!isRetryable || attempt === maxRetries) {
         const totalDuration = Date.now() - startTime;
-        console.error(`[DB Failed] "${queryName}" failed permanently after ${totalDuration}ms and ${attempt} attempts:`, {
+        console.error('[DB Failed]', queryName, 'failed permanently after', totalDuration, 'ms and', attempt, 'attempts:', {
           finalError: err?.message,
           isRetryable,
         });
@@ -147,7 +147,7 @@ export async function withRetry<T>(
 
       // Exponential backoff
       const delay = delayMs * attempt;
-      console.warn(`[DB Retry] Retrying "${queryName}" in ${delay}ms (attempt ${attempt + 1}/${maxRetries})...`);
+      console.warn('[DB Retry] Retrying', queryName, 'in', delay, 'ms (attempt', attempt + 1, '/', maxRetries, ')...');
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }

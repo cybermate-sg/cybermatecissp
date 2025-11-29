@@ -74,11 +74,11 @@ export default async function ClassDetailPage({
       { queryName: 'fetch-all-user-subscriptions' }
     );
 
-    console.log(`[Subscription Debug] User ID: ${userId}`);
-    console.log(`[Subscription Debug] Total subscriptions found: ${allUserSubscriptions.length}`);
+    console.log('[Subscription Debug] User ID:', userId);
+    console.log('[Subscription Debug] Total subscriptions found:', allUserSubscriptions.length);
     if (allUserSubscriptions.length > 0) {
       allUserSubscriptions.forEach((sub, index) => {
-        console.log(`[Subscription Debug] Sub ${index + 1}: Status='${sub.status}', CreatedAt='${sub.createdAt}', ID='${sub.id}'`);
+        console.log('[Subscription Debug] Sub', index + 1, ': Status=', sub.status, ', CreatedAt=', sub.createdAt, ', ID=', sub.id);
       });
     }
 

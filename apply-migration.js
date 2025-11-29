@@ -91,7 +91,7 @@ async function applyMigration() {
                 } else {
                     errorCount++;
                     // Use separate arguments to avoid format string injection
-                    console.log('  ✗ Error in statement', i + 1 + ':', error.message);
+                    console.log('  ✗ Error in statement', i + 1, ':', error.message);
                 }
             }
         }
