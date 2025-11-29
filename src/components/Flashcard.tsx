@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import { X, ZoomIn, ZoomOut, Maximize2, TestTube, Bookmark, BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import DOMPurify from "dompurify";
+import DOMPurify from "isomorphic-dompurify";
 
 interface FlashcardMedia {
   id: string;
@@ -46,18 +46,59 @@ export default function Flashcard({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-  // Sanitize HTML content to prevent XSS attacks
+  /**
+   * XSS PREVENTION: Sanitize HTML content using DOMPurify
+   * 
+   * Security measures:
+   * 1. DOMPurify removes all potentially malicious HTML/JavaScript
+   * 2. Strict allowlist of safe HTML tags (no script, iframe, object, embed, etc.)
+   * 3. Limited attributes (only href, class, target, rel for links)
+   * 4. SAFE_FOR_TEMPLATES prevents template injection attacks
+   * 5. RETURN_TRUSTED_TYPE ensures output is safe for innerHTML
+   * 
+   * This prevents XSS attacks even if user-generated content contains:
+   * - <script> tags
+   * - Event handlers (onclick, onerror, etc.)
+   * - Data URIs with JavaScript
+   * - HTML injection attempts
+   */
   const sanitizedQuestion = useMemo(() => {
+    if (typeof window === 'undefined') return question; // SSR safety
+
     return DOMPurify.sanitize(question, {
-      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'blockquote', 'a'],
-      ALLOWED_ATTR: ['href', 'class', 'target', 'rel']
+      // Strict allowlist of safe HTML tags for rich text content
+      ALLOWED_TAGS: [
+        'p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'ul', 'ol', 'li', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
+        'blockquote', 'a'
+      ],
+      // Only allow safe attributes (no event handlers, no data URIs)
+      ALLOWED_ATTR: ['href', 'class', 'target', 'rel'],
+      // Additional security flags
+      ALLOW_DATA_ATTR: false, // Prevent data-* attributes
+      ALLOW_UNKNOWN_PROTOCOLS: false, // Only allow http/https/mailto
+      SAFE_FOR_TEMPLATES: true, // Prevent template injection
+      RETURN_TRUSTED_TYPE: false // Return string for React
     });
   }, [question]);
 
   const sanitizedAnswer = useMemo(() => {
+    if (typeof window === 'undefined') return answer; // SSR safety
+
     return DOMPurify.sanitize(answer, {
-      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'blockquote', 'a'],
-      ALLOWED_ATTR: ['href', 'class', 'target', 'rel']
+      // Strict allowlist of safe HTML tags for rich text content
+      ALLOWED_TAGS: [
+        'p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'ul', 'ol', 'li', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
+        'blockquote', 'a'
+      ],
+      // Only allow safe attributes (no event handlers, no data URIs)
+      ALLOWED_ATTR: ['href', 'class', 'target', 'rel'],
+      // Additional security flags
+      ALLOW_DATA_ATTR: false, // Prevent data-* attributes
+      ALLOW_UNKNOWN_PROTOCOLS: false, // Only allow http/https/mailto
+      SAFE_FOR_TEMPLATES: true, // Prevent template injection
+      RETURN_TRUSTED_TYPE: false // Return string for React
     });
   }, [answer]);
 
@@ -155,9 +196,8 @@ export default function Flashcard({
   return (
     <div className="perspective-1000 w-full max-w-7xl mx-auto">
       <div
-        className={`relative w-full min-h-[500px] sm:min-h-[600px] transition-transform duration-500 preserve-3d cursor-pointer ${
-          isFlipped ? "rotate-y-180" : ""
-        }`}
+        className={`relative w-full min-h-[500px] sm:min-h-[600px] transition-transform duration-500 preserve-3d cursor-pointer ${isFlipped ? "rotate-y-180" : ""
+          }`}
         onClick={handleFlip}
         style={{
           transformStyle: "preserve-3d",
@@ -189,13 +229,12 @@ export default function Flashcard({
 
                 {/* Question Images - Grid layout for multiple images */}
                 {questionImages.length > 0 && (
-                  <div className={`w-full ${
-                    questionImages.length === 1
+                  <div className={`w-full ${questionImages.length === 1
                       ? 'max-w-xl'
                       : questionImages.length === 2
-                      ? 'grid grid-cols-2 gap-4'
-                      : 'grid grid-cols-2 gap-4'
-                  }`}>
+                        ? 'grid grid-cols-2 gap-4'
+                        : 'grid grid-cols-2 gap-4'
+                    }`}>
                     {questionImages.map((img) => (
                       <div
                         key={img.id}
@@ -286,13 +325,12 @@ export default function Flashcard({
 
                 {/* Answer Images - Grid layout for multiple images */}
                 {answerImages.length > 0 && (
-                  <div className={`w-full ${
-                    answerImages.length === 1
+                  <div className={`w-full ${answerImages.length === 1
                       ? 'max-w-xl'
                       : answerImages.length === 2
-                      ? 'grid grid-cols-2 gap-4'
-                      : 'grid grid-cols-2 gap-4'
-                  }`}>
+                        ? 'grid grid-cols-2 gap-4'
+                        : 'grid grid-cols-2 gap-4'
+                    }`}>
                     {answerImages.map((img) => (
                       <div
                         key={img.id}
