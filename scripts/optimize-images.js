@@ -5,12 +5,22 @@ const path = require('path');
 async function optimizeImages() {
   const publicDir = path.join(__dirname, '..', 'public', 'images');
 
+  // Security check: Ensure we are operating within the allowed directory
+  const validatePath = (filePath) => {
+    const resolvedPath = path.resolve(filePath);
+    const resolvedPublicDir = path.resolve(publicDir);
+    if (!resolvedPath.startsWith(resolvedPublicDir)) {
+      throw new Error(`Security Error: Access denied for path ${filePath}`);
+    }
+    return filePath;
+  };
+
   console.log('🖼️  Optimizing images...\n');
 
   // Optimize hero image (raju.jpg) - convert to WebP and resize
-  const heroInput = path.join(publicDir, 'raju.jpg');
-  const heroOutputWebP = path.join(publicDir, 'raju.webp');
-  const heroOutputAvif = path.join(publicDir, 'raju.avif');
+  const heroInput = validatePath(path.join(publicDir, 'raju.jpg'));
+  const heroOutputWebP = validatePath(path.join(publicDir, 'raju.webp'));
+  const heroOutputAvif = validatePath(path.join(publicDir, 'raju.avif'));
 
   if (fs.existsSync(heroInput)) {
     console.log('📸 Processing hero image (raju.jpg)...');
@@ -45,8 +55,9 @@ async function optimizeImages() {
   }
 
   // Optimize logo
-  const logoInput = path.join(publicDir, 'cybermate-logo.jpeg');
-  const logoOutputWebP = path.join(publicDir, 'cybermate-logo.webp');
+  // Optimize logo
+  const logoInput = validatePath(path.join(publicDir, 'cybermate-logo.jpeg'));
+  const logoOutputWebP = validatePath(path.join(publicDir, 'cybermate-logo.webp'));
 
   if (fs.existsSync(logoInput)) {
     console.log('🏷️  Processing logo (cybermate-logo.jpeg)...');
