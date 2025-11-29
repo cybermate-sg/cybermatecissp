@@ -37,15 +37,22 @@ engines:
   stylelint:
     exclude_paths:
       - 'src/app/globals.css'
-  
+
   # Disable SQL Server-specific linters (we use PostgreSQL)
   sqlint:
     enabled: false
-  
-  # Keep other engines enabled with default settings
+
+  # Disable ESLint9 - it can't load Next.js configs in Codacy's container
+  # Local ESLint still works fine for development
   eslint:
+    enabled: false
+
+  # Disable Semgrep pattern that causes false positives with styled-jsx and JSON examples
+  semgrep:
     enabled: true
-  
+    exclude_patterns:
+      - 'detect-missing-template-string'
+
   typescript:
     enabled: true
 
