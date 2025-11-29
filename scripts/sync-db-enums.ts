@@ -36,7 +36,7 @@ async function listAllEnums() {
     ORDER BY t.typname;
   `);
 
-  return result.rows.map((row: any) => row.enum_name);
+  return result.rows.map(function (row: { enum_name: string }) { return row.enum_name; });
 }
 
 async function main() {
@@ -47,23 +47,23 @@ async function main() {
 
     console.log('📊 Enum Types Analysis:\n');
     console.log('Expected enum types (from schema.ts):');
-    EXPECTED_ENUMS.forEach(enumType => {
+    EXPECTED_ENUMS.forEach(function (enumType) {
       const exists = allEnums.includes(enumType);
       console.log(`  ${exists ? '✅' : '❌'} ${enumType}`);
     });
 
     console.log('\n📦 All enum types in database:');
-    allEnums.forEach(enumType => {
+    allEnums.forEach(function (enumType) {
       const isExpected = EXPECTED_ENUMS.has(enumType);
       console.log(`  ${isExpected ? '✅' : '⚠️ '} ${enumType} ${!isExpected ? '(EXCESS - not in schema)' : ''}`);
     });
 
     // Identify excess enums
-    const excessEnums = allEnums.filter(enumType => !EXPECTED_ENUMS.has(enumType));
+    const excessEnums = allEnums.filter(function (enumType) { return !EXPECTED_ENUMS.has(enumType); });
 
     if (excessEnums.length > 0) {
       console.log('\n🗑️  Excess enum types to DELETE:\n');
-      excessEnums.forEach(enumType => {
+      excessEnums.forEach(function (enumType) {
         console.log(`  ⚠️  ${enumType}`);
       });
 
@@ -96,13 +96,13 @@ async function main() {
     }
 
     // Check for missing enums
-    const missingEnums = Array.from(EXPECTED_ENUMS).filter(
-      enumType => !allEnums.includes(enumType)
-    );
+    const missingEnums = Array.from(EXPECTED_ENUMS).filter(function (enumType) {
+      return !allEnums.includes(enumType);
+    });
 
     if (missingEnums.length > 0) {
       console.log('\n⚠️  Missing enum types (defined in schema.ts but not in database):\n');
-      missingEnums.forEach(enumType => {
+      missingEnums.forEach(function (enumType) {
         console.log(`  ❌ ${enumType}`);
       });
       console.log('\n💡 Run `npm run db:push` to create missing enum types.');
