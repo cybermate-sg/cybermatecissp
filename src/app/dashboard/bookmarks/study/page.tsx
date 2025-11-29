@@ -3,22 +3,12 @@
 import { useState, useEffect, Suspense, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { QuizModal } from "@/components/QuizModal";
+import { FlashcardDynamic as Flashcard } from "@/components/FlashcardDynamic";
 import { toast } from "sonner";
-
-// Dynamically import Flashcard to avoid SSR issues with DOMPurify
-const Flashcard = dynamic(() => import("@/components/Flashcard"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex justify-center items-center min-h-[500px]">
-      <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
-    </div>
-  ),
-});
 
 interface FlashcardMedia {
   id: string;
