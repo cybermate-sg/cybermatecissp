@@ -53,34 +53,33 @@ function getZodStatusCode(): number {
 }
 
 /**
+ * Error patterns mapped to HTTP status codes
+ */
+const ERROR_PATTERNS = [
+  { keywords: ['admin', 'unauthorized'], statusCode: 403 },
+  { keywords: ['unauthenticated', 'not authenticated'], statusCode: 401 },
+  { keywords: ['not found'], statusCode: 404 },
+  { keywords: ['invalid', 'required'], statusCode: 400 },
+  { keywords: ['rate limit', 'too many'], statusCode: 429 },
+] as const;
+
+/**
+ * Check if message contains any of the keywords
+ */
+function messageContainsKeyword(message: string, keywords: readonly string[]): boolean {
+  return keywords.some(keyword => message.includes(keyword));
+}
+
+/**
  * Get status code for standard Error based on message content
  */
 function getErrorStatusCode(error: Error): number {
   const message = error.message.toLowerCase();
 
-  // Admin/Authorization errors
-  if (message.includes('admin') || message.includes('unauthorized')) {
-    return 403;
-  }
-
-  // Authentication errors
-  if (message.includes('unauthenticated') || message.includes('not authenticated')) {
-    return 401;
-  }
-
-  // Not found errors
-  if (message.includes('not found')) {
-    return 404;
-  }
-
-  // Validation errors
-  if (message.includes('invalid') || message.includes('required')) {
-    return 400;
-  }
-
-  // Rate limit errors
-  if (message.includes('rate limit') || message.includes('too many')) {
-    return 429;
+  for (const pattern of ERROR_PATTERNS) {
+    if (messageContainsKeyword(message, pattern.keywords)) {
+      return pattern.statusCode;
+    }
   }
 
   return 500;

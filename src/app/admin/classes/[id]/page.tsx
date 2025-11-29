@@ -244,27 +244,39 @@ export default function AdminClassDetailPage({ params }: { params: Promise<{ id:
     }
   };
 
+  const deleteDeckRequest = async (deckId: string) => {
+    const res = await fetch(`/api/admin/decks/${deckId}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || "Failed to delete deck");
+    }
+  };
+
+  const cleanupAfterDelete = () => {
+    toast.success("Deck deleted successfully");
+    setIsDeleteDialogOpen(false);
+    setDeletingDeck(null);
+    loadClassData();
+  };
+
+  const handleDeleteError = (error: unknown) => {
+    console.error("Error deleting deck:", error);
+    const message = error instanceof Error ? error.message : "Failed to delete deck";
+    toast.error(message);
+  };
+
   const handleDeleteDeck = async () => {
     if (!deletingDeck) return;
 
     setIsSaving(true);
     try {
-      const res = await fetch(`/api/admin/decks/${deletingDeck.id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to delete deck");
-      }
-
-      toast.success("Deck deleted successfully");
-      setIsDeleteDialogOpen(false);
-      setDeletingDeck(null);
-      loadClassData();
+      await deleteDeckRequest(deletingDeck.id);
+      cleanupAfterDelete();
     } catch (error) {
-      console.error("Error deleting deck:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to delete deck");
+      handleDeleteError(error);
     } finally {
       setIsSaving(false);
     }

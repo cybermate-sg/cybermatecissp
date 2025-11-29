@@ -45,6 +45,58 @@ const getColorClass = (color: string | null) => {
   return colorMap[color || "purple"] || "bg-purple-500";
 };
 
+/**
+ * Get all decks for a class
+ */
+const getClassDecks = (classes: ClassWithProgress[], classId: string): Deck[] => {
+  return classes.find(c => c.id === classId)?.decks || [];
+};
+
+/**
+ * Remove all decks from a class
+ */
+const removeClassDecks = (
+  deckSet: Set<string>,
+  decks: Deck[]
+): Set<string> => {
+  const newSet = new Set(deckSet);
+  decks.forEach(deck => newSet.delete(deck.id));
+  return newSet;
+};
+
+/**
+ * Add all decks from a class
+ */
+const addClassDecks = (
+  deckSet: Set<string>,
+  decks: Deck[]
+): Set<string> => {
+  const newSet = new Set(deckSet);
+  decks.forEach(deck => newSet.add(deck.id));
+  return newSet;
+};
+
+/**
+ * Check if any decks from class are selected
+ */
+const hasAnyDeckSelected = (
+  deckSet: Set<string>,
+  decks: Deck[]
+): boolean => {
+  return decks.some(deck => deckSet.has(deck.id));
+};
+
+/**
+ * Check if all decks from class are selected
+ */
+const areAllDecksSelected = (
+  deckSet: Set<string>,
+  decks: Deck[],
+  includingDeckId?: string
+): boolean => {
+  return decks.every(deck => deckSet.has(deck.id) || deck.id === includingDeckId);
+};
+
 export default function SessionSelector({ classes, userId }: SessionSelectorProps) {
   const router = useRouter();
   const [selectedClasses, setSelectedClasses] = useState<Set<string>>(new Set());
@@ -55,25 +107,16 @@ export default function SessionSelector({ classes, userId }: SessionSelectorProp
   const toggleClass = (classId: string) => {
     setSelectedClasses(prev => {
       const newSet = new Set(prev);
+      const classDecks = getClassDecks(classes, classId);
+
       if (newSet.has(classId)) {
         newSet.delete(classId);
-        // Remove all decks from this class
-        const classDecks = classes.find(c => c.id === classId)?.decks || [];
-        setSelectedDecks(prevDecks => {
-          const newDecks = new Set(prevDecks);
-          classDecks.forEach(deck => newDecks.delete(deck.id));
-          return newDecks;
-        });
+        setSelectedDecks(prevDecks => removeClassDecks(prevDecks, classDecks));
       } else {
         newSet.add(classId);
-        // Add all decks from this class
-        const classDecks = classes.find(c => c.id === classId)?.decks || [];
-        setSelectedDecks(prevDecks => {
-          const newDecks = new Set(prevDecks);
-          classDecks.forEach(deck => newDecks.add(deck.id));
-          return newDecks;
-        });
+        setSelectedDecks(prevDecks => addClassDecks(prevDecks, classDecks));
       }
+
       return newSet;
     });
   };
@@ -81,12 +124,12 @@ export default function SessionSelector({ classes, userId }: SessionSelectorProp
   const toggleDeck = (classId: string, deckId: string) => {
     setSelectedDecks(prev => {
       const newSet = new Set(prev);
+      const classDecks = getClassDecks(classes, classId);
+
       if (newSet.has(deckId)) {
         newSet.delete(deckId);
-        // Check if all decks from this class are deselected
-        const classDecks = classes.find(c => c.id === classId)?.decks || [];
-        const hasAnySelected = classDecks.some(deck => newSet.has(deck.id));
-        if (!hasAnySelected) {
+
+        if (!hasAnyDeckSelected(newSet, classDecks)) {
           setSelectedClasses(prevClasses => {
             const newClasses = new Set(prevClasses);
             newClasses.delete(classId);
@@ -95,13 +138,12 @@ export default function SessionSelector({ classes, userId }: SessionSelectorProp
         }
       } else {
         newSet.add(deckId);
-        // Check if all decks from this class are now selected
-        const classDecks = classes.find(c => c.id === classId)?.decks || [];
-        const allSelected = classDecks.every(deck => newSet.has(deck.id) || deck.id === deckId);
-        if (allSelected) {
+
+        if (areAllDecksSelected(newSet, classDecks, deckId)) {
           setSelectedClasses(prevClasses => new Set(prevClasses).add(classId));
         }
       }
+
       return newSet;
     });
   };

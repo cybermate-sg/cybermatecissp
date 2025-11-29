@@ -6,6 +6,39 @@ import { auth } from '@clerk/nextjs/server';
 import { withErrorHandling } from '@/lib/api/error-handler';
 import { withTracing } from '@/lib/middleware/with-tracing';
 
+interface DeckInput {
+  classId?: string;
+  name?: string;
+  description?: string | null;
+  type?: string;
+  order?: number;
+  isPremium?: boolean;
+  isPublished?: boolean;
+}
+
+/**
+ * Build deck values with defaults
+ */
+function buildDeckValues(input: DeckInput, userId: string) {
+  return {
+    classId: input.classId!,
+    name: input.name!,
+    description: input.description ?? null,
+    type: input.type ?? 'flashcard',
+    order: input.order ?? 0,
+    isPremium: input.isPremium ?? false,
+    isPublished: input.isPublished ?? true,
+    createdBy: userId,
+  };
+}
+
+/**
+ * Validate required deck fields
+ */
+function validateDeckInput(input: DeckInput): input is Required<Pick<DeckInput, 'classId' | 'name'>> & DeckInput {
+  return Boolean(input.classId && input.name);
+}
+
 // POST /api/admin/decks - Create a new deck
 async function createDeck(request: NextRequest) {
   try {
@@ -17,28 +50,16 @@ async function createDeck(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { classId, name, description, type, order, isPremium, isPublished } = body;
 
-    if (!classId || !name) {
+    if (!validateDeckInput(body)) {
       return NextResponse.json(
         { error: 'Class ID and name are required' },
         { status: 400 }
       );
     }
 
-    const newDeck = await db
-      .insert(decks)
-      .values({
-        classId,
-        name,
-        description: description || null,
-        type: type || 'flashcard',
-        order: order || 0,
-        isPremium: isPremium || false,
-        isPublished: isPublished !== undefined ? isPublished : true,
-        createdBy: userId,
-      })
-      .returning();
+    const deckValues = buildDeckValues(body, userId);
+    const newDeck = await db.insert(decks).values(deckValues).returning();
 
     return NextResponse.json({
       deck: newDeck[0],

@@ -10,6 +10,166 @@ import { withTracing } from '@/lib/middleware/with-tracing';
 import { invalidateFlashcardCache } from '@/lib/flashcard/cache';
 import { insertQuizQuestions } from '@/lib/flashcard/quiz';
 
+interface FlashcardUpdateData {
+  question?: string;
+  answer?: string;
+  explanation?: string | null;
+  order?: number;
+  isPublished?: boolean;
+  updatedAt: Date;
+}
+
+interface ValidatedFlashcardData {
+  question?: string;
+  answer?: string;
+  explanation?: string | null;
+  order?: number;
+  isPublished?: boolean;
+  media?: Array<{
+    url: string;
+    key: string;
+    fileName: string;
+    fileSize: number;
+    mimeType: string;
+    placement: string;
+    order: number;
+    altText?: string;
+  }>;
+}
+
+/**
+ * Build flashcard update data from validated input
+ */
+function buildFlashcardUpdateData(validatedData: ValidatedFlashcardData): FlashcardUpdateData {
+  const updateData: FlashcardUpdateData = {
+    updatedAt: new Date(),
+  };
+
+  if (validatedData.question !== undefined) {
+    updateData.question = validatedData.question;
+  }
+  if (validatedData.answer !== undefined) {
+    updateData.answer = validatedData.answer;
+  }
+  if (validatedData.explanation !== undefined) {
+    updateData.explanation = validatedData.explanation || null;
+  }
+  if (validatedData.order !== undefined) {
+    updateData.order = validatedData.order;
+  }
+  if (validatedData.isPublished !== undefined) {
+    updateData.isPublished = validatedData.isPublished;
+  }
+
+  return updateData;
+}
+
+/**
+ * Get URLs that need to be deleted from blob storage
+ */
+function getUrlsToDelete(
+  oldMedia: Array<{ fileUrl: string }>,
+  newMediaUrls: string[]
+): string[] {
+  return oldMedia
+    .map((m) => m.fileUrl)
+    .filter((url) => !newMediaUrls.includes(url));
+}
+
+/**
+ * Delete old media files from blob storage
+ */
+async function deleteOldMediaFiles(
+  oldMedia: Array<{ fileUrl: string }>,
+  newMediaUrls: string[]
+): Promise<void> {
+  if (oldMedia.length === 0) return;
+
+  const urlsToDelete = getUrlsToDelete(oldMedia, newMediaUrls);
+
+  if (urlsToDelete.length === 0) return;
+
+  try {
+    await deleteMultipleImagesFromBlob(urlsToDelete);
+  } catch (error) {
+    console.error('Error deleting old images from blob storage:', error);
+    // Continue even if blob deletion fails
+  }
+}
+
+/**
+ * Insert new media for a flashcard
+ */
+async function insertFlashcardMedia(
+  flashcardId: string,
+  media: ValidatedFlashcardData['media']
+): Promise<void> {
+  if (!media || media.length === 0) return;
+
+  await db.insert(flashcardMedia).values(
+    media.map((m) => ({
+      flashcardId,
+      fileUrl: m.url,
+      fileKey: m.key,
+      fileName: m.fileName,
+      fileSize: m.fileSize,
+      mimeType: m.mimeType,
+      placement: m.placement,
+      order: m.order,
+      altText: m.altText || null,
+    }))
+  );
+}
+
+/**
+ * Update flashcard media (delete old, insert new)
+ */
+async function updateFlashcardMedia(
+  flashcardId: string,
+  newMedia: ValidatedFlashcardData['media']
+): Promise<void> {
+  // Get existing media before deleting
+  const oldMedia = await db.query.flashcardMedia.findMany({
+    where: eq(flashcardMedia.flashcardId, flashcardId),
+  });
+
+  // Delete existing media from database
+  await db.delete(flashcardMedia).where(eq(flashcardMedia.flashcardId, flashcardId));
+
+  // Delete old images from blob storage that are no longer used
+  const newMediaUrls = newMedia?.map((m) => m.url) || [];
+  await deleteOldMediaFiles(oldMedia, newMediaUrls);
+
+  // Insert new media
+  await insertFlashcardMedia(flashcardId, newMedia);
+}
+
+/**
+ * Update quiz questions for a flashcard
+ */
+async function updateQuizQuestions(
+  flashcardId: string,
+  quizData: unknown,
+  userId: string
+): Promise<NextResponse | null> {
+  // Delete existing quiz questions
+  await db.delete(quizQuestions).where(eq(quizQuestions.flashcardId, flashcardId));
+
+  if (!quizData) {
+    return null;
+  }
+
+  const result = await insertQuizQuestions(flashcardId, quizData, userId);
+  if (!result.success) {
+    return NextResponse.json(
+      { error: result.error },
+      { status: 400 }
+    );
+  }
+
+  return null;
+}
+
 /**
  * PATCH /api/admin/flashcards/[id]
  * Update an existing flashcard with optional media and quiz questions
@@ -50,86 +210,22 @@ async function updateFlashcard(
 
     const validatedData = validation.data;
 
-    // Update the flashcard
-    const updateData: {
-      question?: string;
-      answer?: string;
-      explanation?: string | null;
-      order?: number;
-      isPublished?: boolean;
-      updatedAt: Date;
-    } = {
-      updatedAt: new Date(),
-    };
-
-    if (validatedData.question !== undefined) updateData.question = validatedData.question;
-    if (validatedData.answer !== undefined) updateData.answer = validatedData.answer;
-    if (validatedData.explanation !== undefined) updateData.explanation = validatedData.explanation || null;
-    if (validatedData.order !== undefined) updateData.order = validatedData.order;
-    if (validatedData.isPublished !== undefined) updateData.isPublished = validatedData.isPublished;
-
+    // Build and apply the flashcard update
+    const updateData = buildFlashcardUpdateData(validatedData);
     await db.update(flashcards)
       .set(updateData)
       .where(eq(flashcards.id, id));
 
     // Handle media updates if provided
     if (validatedData.media !== undefined) {
-      // Get existing media before deleting
-      const oldMedia = await db.query.flashcardMedia.findMany({
-        where: eq(flashcardMedia.flashcardId, id),
-      });
-
-      // Delete existing media from database
-      await db.delete(flashcardMedia).where(eq(flashcardMedia.flashcardId, id));
-
-      // Delete old images from blob storage that are no longer used
-      if (oldMedia.length > 0) {
-        const newMediaUrls = validatedData.media.map((m) => m.url);
-        const urlsToDelete = oldMedia
-          .map((m) => m.fileUrl)
-          .filter((url) => !newMediaUrls.includes(url));
-
-        if (urlsToDelete.length > 0) {
-          try {
-            await deleteMultipleImagesFromBlob(urlsToDelete);
-          } catch (error) {
-            console.error('Error deleting old images from blob storage:', error);
-            // Continue even if blob deletion fails
-          }
-        }
-      }
-
-      // Insert new media
-      if (validatedData.media.length > 0) {
-        await db.insert(flashcardMedia).values(
-          validatedData.media.map((m) => ({
-            flashcardId: id,
-            fileUrl: m.url,
-            fileKey: m.key,
-            fileName: m.fileName,
-            fileSize: m.fileSize,
-            mimeType: m.mimeType,
-            placement: m.placement,
-            order: m.order,
-            altText: m.altText || null,
-          }))
-        );
-      }
+      await updateFlashcardMedia(id, validatedData.media);
     }
 
     // Handle quiz questions if provided
     if (quizData !== undefined) {
-      // Delete existing quiz questions
-      await db.delete(quizQuestions).where(eq(quizQuestions.flashcardId, id));
-
-      if (quizData) {
-        const result = await insertQuizQuestions(id, quizData, admin.clerkUserId);
-        if (!result.success) {
-          return NextResponse.json(
-            { error: result.error },
-            { status: 400 }
-          );
-        }
+      const errorResponse = await updateQuizQuestions(id, quizData, admin.clerkUserId);
+      if (errorResponse) {
+        return errorResponse;
       }
     }
 
