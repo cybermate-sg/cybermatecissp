@@ -78,7 +78,7 @@ function applyStudyMode(
   switch (mode) {
     case 'progressive': {
       const now = new Date();
-      let studyCards = allFlashcards.filter(card =>
+      const studyCards = allFlashcards.filter(card =>
         shouldIncludeInProgressiveMode(progressMap.get(card.id), now)
       );
 

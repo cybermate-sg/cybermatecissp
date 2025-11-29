@@ -47,7 +47,6 @@ function FlashcardContentArea({
         {/* nosemgrep: react-dangerouslysetinnerhtml - Content is sanitized with DOMPurify using strict allowlist */}
         <div
           className="text-sm sm:text-base text-white text-left leading-relaxed mb-6 max-w-5xl prose prose-invert prose-sm sm:prose-base max-w-none"
-          // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
         />
 
