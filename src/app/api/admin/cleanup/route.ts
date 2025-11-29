@@ -4,12 +4,15 @@ import { flashcardMedia } from '@/lib/db/schema';
 import { list } from '@vercel/blob';
 import { findOrphanedImages, deleteMultipleImagesFromBlob } from '@/lib/blob';
 import { requireAdmin } from '@/lib/auth/admin';
+import { withErrorHandling } from '@/lib/api/error-handler';
+import { withTracing } from '@/lib/middleware/with-tracing';
 
 /**
  * GET /api/admin/cleanup
  * Find orphaned images in blob storage
  */
-export async function GET() {
+async function getCleanupReport(_request: NextRequest) {
+  void _request;
   try {
     await requireAdmin();
 
@@ -35,18 +38,20 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Error finding orphaned images:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to find orphaned images' },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const GET = withTracing(
+  withErrorHandling(getCleanupReport, 'admin cleanup report'),
+  { logRequest: true, logResponse: false }
+);
 
 /**
  * DELETE /api/admin/cleanup
  * Delete orphaned images from blob storage
  */
-export async function DELETE(request: NextRequest) {
+async function deleteCleanupOrphans(request: NextRequest) {
   try {
     await requireAdmin();
 
@@ -77,9 +82,11 @@ export async function DELETE(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error deleting orphaned images:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to delete orphaned images' },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const DELETE = withTracing(
+  withErrorHandling(deleteCleanupOrphans, 'admin cleanup delete orphans'),
+  { logRequest: true, logResponse: false }
+);

@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from '@clerk/nextjs';
 import "./globals.css";
-import { Toaster } from "@/components/ui/sonner";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import { ClerkProvider } from "@clerk/nextjs";
+import LayoutWrapper from "@/components/LayoutWrapper";
 
 // Note: Using system fonts for better build compatibility
 // If Google Fonts are needed, they can be loaded via CDN in production
@@ -11,6 +9,12 @@ import Footer from "@/components/Footer";
 export const metadata: Metadata = {
   title: "CISSP Mastery - Master CISSP with Confidence-Based Learning",
   description: "Master CISSP certification with our confidence-based flashcard system. Adaptive spaced repetition, progress tracking, and 1000+ flashcards across 8 domains.",
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({
@@ -25,10 +29,7 @@ export default function RootLayout({
           className="font-sans antialiased"
           suppressHydrationWarning
         >
-          <Header />
-          {children}
-          <Footer />
-          <Toaster />
+          <LayoutWrapper>{children}</LayoutWrapper>
         </body>
       </html>
     </ClerkProvider>

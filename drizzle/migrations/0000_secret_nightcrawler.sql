@@ -3,6 +3,39 @@ CREATE TYPE "public"."payment_status" AS ENUM('succeeded', 'failed', 'pending');
 CREATE TYPE "public"."plan_type" AS ENUM('free', 'pro_monthly', 'pro_yearly', 'lifetime');--> statement-breakpoint
 CREATE TYPE "public"."subscription_status" AS ENUM('active', 'canceled', 'past_due', 'trialing', 'inactive');--> statement-breakpoint
 CREATE TYPE "public"."user_role" AS ENUM('user', 'admin');--> statement-breakpoint
+CREATE TABLE "bookmarked_flashcards" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"clerk_user_id" varchar(255) NOT NULL,
+	"flashcard_id" uuid NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "class_progress" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"clerk_user_id" varchar(255) NOT NULL,
+	"class_id" uuid NOT NULL,
+	"total_decks" integer DEFAULT 0,
+	"decks_started" integer DEFAULT 0,
+	"decks_completed" integer DEFAULT 0,
+	"overall_mastery_percentage" numeric(5, 2) DEFAULT '0',
+	"last_studied" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "classes" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" varchar(255) NOT NULL,
+	"description" text,
+	"order" integer DEFAULT 0 NOT NULL,
+	"icon" varchar(100),
+	"color" varchar(50),
+	"is_published" boolean DEFAULT true,
+	"created_by" varchar(255) NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "deck_progress" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"clerk_user_id" varchar(255) NOT NULL,
@@ -16,26 +49,31 @@ CREATE TABLE "deck_progress" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "decks" (
+CREATE TABLE "deck_quiz_questions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"topic_id" uuid NOT NULL,
-	"name" varchar(255) NOT NULL,
-	"description" text,
-	"card_count" integer DEFAULT 0 NOT NULL,
-	"order" integer NOT NULL,
-	"is_premium" boolean DEFAULT false,
-	"created_by" varchar(255),
+	"deck_id" uuid NOT NULL,
+	"question_text" text NOT NULL,
+	"options" json NOT NULL,
+	"explanation" text,
+	"elimination_tactics" text,
+	"correct_answer_with_justification" text,
+	"order" integer DEFAULT 0 NOT NULL,
+	"difficulty" integer,
+	"created_by" varchar(255) NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "domains" (
+CREATE TABLE "decks" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"class_id" uuid NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"description" text,
-	"order" integer NOT NULL,
-	"icon" varchar(100),
-	"created_by" varchar(255),
+	"card_count" integer DEFAULT 0 NOT NULL,
+	"order" integer DEFAULT 0 NOT NULL,
+	"is_premium" boolean DEFAULT false,
+	"is_published" boolean DEFAULT true,
+	"created_by" varchar(255) NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -60,10 +98,10 @@ CREATE TABLE "flashcards" (
 	"question" text NOT NULL,
 	"answer" text NOT NULL,
 	"explanation" text,
-	"difficulty" integer DEFAULT 3,
-	"order" integer NOT NULL,
-	"created_by" varchar(255) NOT NULL,
+	"difficulty" integer,
+	"order" integer DEFAULT 0 NOT NULL,
 	"is_published" boolean DEFAULT true,
+	"created_by" varchar(255) NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -77,6 +115,20 @@ CREATE TABLE "payments" (
 	"status" "payment_status" NOT NULL,
 	"payment_method" varchar(100),
 	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "quiz_questions" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"flashcard_id" uuid NOT NULL,
+	"question_text" text NOT NULL,
+	"options" json NOT NULL,
+	"explanation" text,
+	"elimination_tactics" text,
+	"correct_answer_with_justification" text,
+	"order" integer DEFAULT 0 NOT NULL,
+	"created_by" varchar(255) NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "session_cards" (
@@ -110,17 +162,6 @@ CREATE TABLE "subscriptions" (
 	"current_period_start" timestamp,
 	"current_period_end" timestamp,
 	"cancel_at_period_end" boolean DEFAULT false,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "topics" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"domain_id" uuid NOT NULL,
-	"name" varchar(255) NOT NULL,
-	"description" text,
-	"order" integer NOT NULL,
-	"created_by" varchar(255),
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -163,22 +204,43 @@ CREATE TABLE "users" (
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
+ALTER TABLE "bookmarked_flashcards" ADD CONSTRAINT "bookmarked_flashcards_clerk_user_id_users_clerk_user_id_fk" FOREIGN KEY ("clerk_user_id") REFERENCES "public"."users"("clerk_user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "bookmarked_flashcards" ADD CONSTRAINT "bookmarked_flashcards_flashcard_id_flashcards_id_fk" FOREIGN KEY ("flashcard_id") REFERENCES "public"."flashcards"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "class_progress" ADD CONSTRAINT "class_progress_clerk_user_id_users_clerk_user_id_fk" FOREIGN KEY ("clerk_user_id") REFERENCES "public"."users"("clerk_user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "class_progress" ADD CONSTRAINT "class_progress_class_id_classes_id_fk" FOREIGN KEY ("class_id") REFERENCES "public"."classes"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "classes" ADD CONSTRAINT "classes_created_by_users_clerk_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("clerk_user_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "deck_progress" ADD CONSTRAINT "deck_progress_clerk_user_id_users_clerk_user_id_fk" FOREIGN KEY ("clerk_user_id") REFERENCES "public"."users"("clerk_user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "deck_progress" ADD CONSTRAINT "deck_progress_deck_id_decks_id_fk" FOREIGN KEY ("deck_id") REFERENCES "public"."decks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "decks" ADD CONSTRAINT "decks_topic_id_topics_id_fk" FOREIGN KEY ("topic_id") REFERENCES "public"."topics"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "deck_quiz_questions" ADD CONSTRAINT "deck_quiz_questions_deck_id_decks_id_fk" FOREIGN KEY ("deck_id") REFERENCES "public"."decks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "deck_quiz_questions" ADD CONSTRAINT "deck_quiz_questions_created_by_users_clerk_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("clerk_user_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "decks" ADD CONSTRAINT "decks_class_id_classes_id_fk" FOREIGN KEY ("class_id") REFERENCES "public"."classes"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "decks" ADD CONSTRAINT "decks_created_by_users_clerk_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("clerk_user_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "domains" ADD CONSTRAINT "domains_created_by_users_clerk_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("clerk_user_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "flashcard_media" ADD CONSTRAINT "flashcard_media_flashcard_id_flashcards_id_fk" FOREIGN KEY ("flashcard_id") REFERENCES "public"."flashcards"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "flashcards" ADD CONSTRAINT "flashcards_deck_id_decks_id_fk" FOREIGN KEY ("deck_id") REFERENCES "public"."decks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "flashcards" ADD CONSTRAINT "flashcards_created_by_users_clerk_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("clerk_user_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "payments" ADD CONSTRAINT "payments_clerk_user_id_users_clerk_user_id_fk" FOREIGN KEY ("clerk_user_id") REFERENCES "public"."users"("clerk_user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "quiz_questions" ADD CONSTRAINT "quiz_questions_flashcard_id_flashcards_id_fk" FOREIGN KEY ("flashcard_id") REFERENCES "public"."flashcards"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "quiz_questions" ADD CONSTRAINT "quiz_questions_created_by_users_clerk_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("clerk_user_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session_cards" ADD CONSTRAINT "session_cards_session_id_study_sessions_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."study_sessions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session_cards" ADD CONSTRAINT "session_cards_flashcard_id_flashcards_id_fk" FOREIGN KEY ("flashcard_id") REFERENCES "public"."flashcards"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "study_sessions" ADD CONSTRAINT "study_sessions_clerk_user_id_users_clerk_user_id_fk" FOREIGN KEY ("clerk_user_id") REFERENCES "public"."users"("clerk_user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "study_sessions" ADD CONSTRAINT "study_sessions_deck_id_decks_id_fk" FOREIGN KEY ("deck_id") REFERENCES "public"."decks"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_clerk_user_id_users_clerk_user_id_fk" FOREIGN KEY ("clerk_user_id") REFERENCES "public"."users"("clerk_user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "topics" ADD CONSTRAINT "topics_domain_id_domains_id_fk" FOREIGN KEY ("domain_id") REFERENCES "public"."domains"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "topics" ADD CONSTRAINT "topics_created_by_users_clerk_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("clerk_user_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_card_progress" ADD CONSTRAINT "user_card_progress_clerk_user_id_users_clerk_user_id_fk" FOREIGN KEY ("clerk_user_id") REFERENCES "public"."users"("clerk_user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_card_progress" ADD CONSTRAINT "user_card_progress_flashcard_id_flashcards_id_fk" FOREIGN KEY ("flashcard_id") REFERENCES "public"."flashcards"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "user_stats" ADD CONSTRAINT "user_stats_clerk_user_id_users_clerk_user_id_fk" FOREIGN KEY ("clerk_user_id") REFERENCES "public"."users"("clerk_user_id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "user_stats" ADD CONSTRAINT "user_stats_clerk_user_id_users_clerk_user_id_fk" FOREIGN KEY ("clerk_user_id") REFERENCES "public"."users"("clerk_user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "idx_bookmarked_unique" ON "bookmarked_flashcards" USING btree ("clerk_user_id","flashcard_id");--> statement-breakpoint
+CREATE INDEX "idx_bookmarked_user" ON "bookmarked_flashcards" USING btree ("clerk_user_id");--> statement-breakpoint
+CREATE INDEX "idx_bookmarked_flashcard" ON "bookmarked_flashcards" USING btree ("flashcard_id");--> statement-breakpoint
+CREATE INDEX "idx_deck_quiz_questions_deck" ON "deck_quiz_questions" USING btree ("deck_id");--> statement-breakpoint
+CREATE INDEX "idx_deck_quiz_questions_deck_order" ON "deck_quiz_questions" USING btree ("deck_id","order");--> statement-breakpoint
+CREATE INDEX "idx_decks_class_published" ON "decks" USING btree ("class_id","is_published");--> statement-breakpoint
+CREATE INDEX "idx_decks_class_order" ON "decks" USING btree ("class_id","order");--> statement-breakpoint
+CREATE INDEX "idx_flashcards_deck_published" ON "flashcards" USING btree ("deck_id","is_published");--> statement-breakpoint
+CREATE INDEX "idx_flashcards_deck_order" ON "flashcards" USING btree ("deck_id","order");--> statement-breakpoint
+CREATE INDEX "idx_quiz_questions_flashcard" ON "quiz_questions" USING btree ("flashcard_id");--> statement-breakpoint
+CREATE INDEX "idx_quiz_questions_flashcard_order" ON "quiz_questions" USING btree ("flashcard_id","order");--> statement-breakpoint
+CREATE INDEX "idx_study_sessions_user_deck" ON "study_sessions" USING btree ("clerk_user_id","deck_id");--> statement-breakpoint
+CREATE INDEX "idx_study_sessions_user_started" ON "study_sessions" USING btree ("clerk_user_id","started_at");--> statement-breakpoint
+CREATE INDEX "idx_user_card_progress_user_flashcard" ON "user_card_progress" USING btree ("clerk_user_id","flashcard_id");--> statement-breakpoint
+CREATE INDEX "idx_user_card_progress_mastery" ON "user_card_progress" USING btree ("clerk_user_id","mastery_status");

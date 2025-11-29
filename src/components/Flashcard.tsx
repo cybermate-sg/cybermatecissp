@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import { X, ZoomIn, ZoomOut, Maximize2, TestTube, Bookmark, BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import DOMPurify from "dompurify";
 
 interface FlashcardMedia {
   id: string;
@@ -44,6 +45,21 @@ export default function Flashcard({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  // Sanitize HTML content to prevent XSS attacks
+  const sanitizedQuestion = useMemo(() => {
+    return DOMPurify.sanitize(question, {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'blockquote', 'a'],
+      ALLOWED_ATTR: ['href', 'class', 'target', 'rel']
+    });
+  }, [question]);
+
+  const sanitizedAnswer = useMemo(() => {
+    return DOMPurify.sanitize(answer, {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'blockquote', 'a'],
+      ALLOWED_ATTR: ['href', 'class', 'target', 'rel']
+    });
+  }, [answer]);
 
   const handleFlip = () => {
     setIsFlipped(!isFlipped);
@@ -137,9 +153,9 @@ export default function Flashcard({
   }, [zoomedImage]);
 
   return (
-    <div className="perspective-1000 w-full max-w-4xl mx-auto">
+    <div className="perspective-1000 w-full max-w-7xl mx-auto">
       <div
-        className={`relative w-full min-h-[500px] transition-transform duration-500 preserve-3d cursor-pointer ${
+        className={`relative w-full min-h-[500px] sm:min-h-[600px] transition-transform duration-500 preserve-3d cursor-pointer ${
           isFlipped ? "rotate-y-180" : ""
         }`}
         onClick={handleFlip}
@@ -156,19 +172,20 @@ export default function Flashcard({
             WebkitBackfaceVisibility: "hidden"
           }}
         >
-          <CardContent className="flex flex-col h-full p-8">
+          <CardContent className="flex flex-col h-full p-4 sm:p-6 md:p-8">
             <div className="flex-shrink-0 text-center">
-              <div className="text-sm font-semibold text-purple-400 mb-4">
+              <div className="text-xs sm:text-sm font-semibold text-purple-400 mb-3 sm:mb-4">
                 QUESTION
               </div>
             </div>
 
             {/* Scrollable content area */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden px-2" style={{ maxHeight: 'calc(500px - 120px)' }}>
+            <div className="flex-1 overflow-y-auto overflow-x-hidden px-2" style={{ maxHeight: 'calc(600px - 120px)' }}>
               <div className="flex flex-col items-center">
-                <p className="text-xl sm:text-2xl text-white text-center leading-relaxed mb-6 whitespace-pre-wrap">
-                  {question}
-                </p>
+                <div
+                  className="text-sm sm:text-base text-white text-left leading-relaxed mb-6 max-w-5xl prose prose-invert prose-sm sm:prose-base max-w-none"
+                  dangerouslySetInnerHTML={{ __html: sanitizedQuestion }}
+                />
 
                 {/* Question Images - Grid layout for multiple images */}
                 {questionImages.length > 0 && (
@@ -190,8 +207,9 @@ export default function Flashcard({
                           alt={img.altText || 'Question image'}
                           width={500}
                           height={300}
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 500px"
                           className="rounded-lg border border-slate-600 object-contain w-full h-auto max-h-64 transition-opacity group-hover:opacity-90"
-                          unoptimized
+                          loading="lazy"
                         />
                         <div className="absolute top-2 right-2 bg-slate-900/70 text-white p-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                           <ZoomIn className="w-4 h-4" />
@@ -203,7 +221,7 @@ export default function Flashcard({
               </div>
             </div>
 
-            <div className="flex-shrink-0 mt-4 text-center text-sm text-gray-400">
+            <div className="flex-shrink-0 mt-3 sm:mt-4 text-center text-xs sm:text-sm text-gray-400">
               Click to reveal answer
             </div>
           </CardContent>
@@ -218,10 +236,10 @@ export default function Flashcard({
             transform: "rotateY(180deg)"
           }}
         >
-          <CardContent className="flex flex-col h-full p-8">
-            <div className="flex-shrink-0 flex items-center justify-between mb-4">
+          <CardContent className="flex flex-col h-full p-4 sm:p-6 md:p-8">
+            <div className="flex-shrink-0 flex items-center justify-between mb-3 sm:mb-4">
               <div className="flex-1 text-center">
-                <div className="text-sm font-semibold text-purple-200">
+                <div className="text-xs sm:text-sm font-semibold text-purple-200">
                   ANSWER
                 </div>
               </div>
@@ -259,11 +277,12 @@ export default function Flashcard({
             </div>
 
             {/* Scrollable content area */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden px-2" style={{ maxHeight: 'calc(500px - 120px)' }}>
+            <div className="flex-1 overflow-y-auto overflow-x-hidden px-2" style={{ maxHeight: 'calc(600px - 120px)' }}>
               <div className="flex flex-col items-center">
-                <p className="text-xl sm:text-2xl text-white text-center leading-relaxed mb-6 whitespace-pre-wrap">
-                  {answer}
-                </p>
+                <div
+                  className="text-sm sm:text-base text-white text-left leading-relaxed mb-6 max-w-5xl prose prose-invert prose-sm sm:prose-base max-w-none"
+                  dangerouslySetInnerHTML={{ __html: sanitizedAnswer }}
+                />
 
                 {/* Answer Images - Grid layout for multiple images */}
                 {answerImages.length > 0 && (
@@ -285,8 +304,9 @@ export default function Flashcard({
                           alt={img.altText || 'Answer image'}
                           width={500}
                           height={300}
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 500px"
                           className="rounded-lg border border-purple-400 object-contain w-full h-auto max-h-64 transition-opacity group-hover:opacity-90"
-                          unoptimized
+                          loading="lazy"
                         />
                         <div className="absolute top-2 right-2 bg-purple-900/70 text-white p-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                           <ZoomIn className="w-4 h-4" />
@@ -298,7 +318,7 @@ export default function Flashcard({
               </div>
             </div>
 
-            <div className="flex-shrink-0 mt-4 text-center text-sm text-purple-200">
+            <div className="flex-shrink-0 mt-3 sm:mt-4 text-center text-xs sm:text-sm text-purple-200">
               Click to see question
             </div>
           </CardContent>
@@ -384,8 +404,9 @@ export default function Flashcard({
                 alt={zoomedImage.altText || 'Zoomed image'}
                 width={1920}
                 height={1080}
+                sizes="100vw"
                 className="object-contain max-w-full max-h-[90vh]"
-                unoptimized
+                priority
               />
             </div>
           </div>
@@ -401,7 +422,7 @@ export default function Flashcard({
         </div>
       )}
 
-      <style jsx>{`
+      <style jsx global>{`
         .perspective-1000 {
           perspective: 1000px;
         }
@@ -425,6 +446,107 @@ export default function Flashcard({
         }
         .animate-fade-in {
           animation: fade-in 0.2s ease-out;
+        }
+
+        /* Rich text content styling for flashcards */
+        .prose h2 {
+          font-size: 1.25rem;
+          font-weight: 600;
+          margin-top: 1rem;
+          margin-bottom: 0.5rem;
+          color: #e2e8f0;
+        }
+
+        .prose p {
+          margin-top: 0.5rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .prose ul,
+        .prose ol {
+          padding-left: 1.5rem;
+          margin-top: 0.5rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .prose li {
+          margin-top: 0.25rem;
+          margin-bottom: 0.25rem;
+        }
+
+        .prose strong {
+          font-weight: 600;
+          color: #f1f5f9;
+        }
+
+        .prose em {
+          font-style: italic;
+        }
+
+        .prose code {
+          background-color: #334155;
+          padding: 0.2rem 0.4rem;
+          border-radius: 0.25rem;
+          font-size: 0.9em;
+          font-family: monospace;
+          color: #e2e8f0;
+        }
+
+        .prose pre {
+          background-color: #1e293b;
+          padding: 1rem;
+          border-radius: 0.5rem;
+          overflow-x: auto;
+          margin: 0.75rem 0;
+        }
+
+        .prose pre code {
+          background: none;
+          padding: 0;
+        }
+
+        /* Table styling for flashcards */
+        .prose .tiptap-table {
+          border-collapse: collapse;
+          table-layout: auto;
+          width: 100%;
+          margin: 1rem 0;
+          overflow: hidden;
+          border-radius: 0.5rem;
+        }
+
+        .prose .tiptap-table td,
+        .prose .tiptap-table th {
+          min-width: 3em;
+          border: 2px solid #475569;
+          padding: 8px 12px;
+          vertical-align: top;
+          box-sizing: border-box;
+          position: relative;
+          background-color: rgba(30, 41, 59, 0.5);
+        }
+
+        .prose .tiptap-table th {
+          font-weight: 600;
+          text-align: left;
+          background-color: #334155;
+          color: #f1f5f9;
+        }
+
+        /* Responsive table wrapper */
+        .prose table {
+          display: block;
+          overflow-x: auto;
+          white-space: nowrap;
+        }
+
+        /* Make tables responsive on mobile */
+        @media (max-width: 640px) {
+          .prose .tiptap-table td,
+          .prose .tiptap-table th {
+            padding: 6px 8px;
+            font-size: 0.875rem;
+          }
         }
       `}</style>
     </div>

@@ -1,11 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
 import { decks } from '@/lib/db/schema';
 import { auth } from '@clerk/nextjs/server';
+import { withErrorHandling } from '@/lib/api/error-handler';
+import { withTracing } from '@/lib/middleware/with-tracing';
 
 // POST /api/admin/decks - Create a new deck
-export async function POST(request: Request) {
+async function createDeck(request: NextRequest) {
   try {
     await requireAdmin();
     const { userId } = await auth();
@@ -15,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { classId, name, description, order, isPremium, isPublished } = body;
+    const { classId, name, description, type, order, isPremium, isPublished } = body;
 
     if (!classId || !name) {
       return NextResponse.json(
@@ -30,6 +32,7 @@ export async function POST(request: Request) {
         classId,
         name,
         description: description || null,
+        type: type || 'flashcard',
         order: order || 0,
         isPremium: isPremium || false,
         isPublished: isPublished !== undefined ? isPublished : true,
@@ -43,16 +46,18 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Error creating deck:', error);
-    const message = error instanceof Error ? error.message : 'Failed to create deck';
-    return NextResponse.json(
-      { error: message },
-      { status: message?.includes('admin') ? 403 : 500 }
-    );
+    throw error;
   }
 }
 
+export const POST = withTracing(
+  withErrorHandling(createDeck, 'create admin deck'),
+  { logRequest: true, logResponse: false }
+);
+
 // GET /api/admin/decks - Get all decks
-export async function GET() {
+async function getDecks(_request: NextRequest) {
+  void _request;
   try {
     await requireAdmin();
 
@@ -65,10 +70,11 @@ export async function GET() {
     return NextResponse.json({ decks: allDecks });
   } catch (error) {
     console.error('Error fetching decks:', error);
-    const message = error instanceof Error ? error.message : 'Failed to fetch decks';
-    return NextResponse.json(
-      { error: message },
-      { status: message?.includes('admin') ? 403 : 500 }
-    );
+    throw error;
   }
 }
+
+export const GET = withTracing(
+  withErrorHandling(getDecks, 'get admin decks'),
+  { logRequest: true, logResponse: false }
+);

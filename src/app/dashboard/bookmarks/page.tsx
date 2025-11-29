@@ -160,7 +160,7 @@ export default function BookmarksPage() {
                   <Link href={`/dashboard/bookmarks/study?start=${bookmarks.findIndex(b => b.id === bookmark.id)}`} className="block">
                     <Button
                       variant="outline"
-                      className="w-full border-purple-500 text-purple-400 hover:bg-purple-500/10"
+                      className="w-full border-purple-400 text-purple-200 hover:bg-purple-500/10"
                     >
                       Study This Card
                     </Button>

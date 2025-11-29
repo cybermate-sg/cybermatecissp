@@ -25,7 +25,10 @@ export function withTracing<T extends RouteHandler>(
 ): T {
   const { logRequest = true, logResponse = true } = options || {};
 
-  return (async (request: NextRequest, ...args: unknown[]) => {
+  const tracedHandler = (async (
+    request: NextRequest,
+    ...args: Parameters<T> extends [NextRequest, ...infer R] ? R : never
+  ) => {
     // Extract or generate request ID
     const requestId = extractOrGenerateRequestId(request.headers);
 
@@ -108,6 +111,8 @@ export function withTracing<T extends RouteHandler>(
       throw error;
     }
   }) as T;
+
+  return tracedHandler;
 }
 
 /**

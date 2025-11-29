@@ -57,6 +57,16 @@ export const CacheKeys = {
     // Pattern to match all bookmarks for a user
     userAll: (userId: string) => `bookmarks:user:${userId}:*`,
   },
+
+  /**
+   * Deck quiz keys
+   */
+  deckQuiz: {
+    // Quiz questions for a deck
+    questions: (deckId: string) => `deck:${deckId}:quiz`,
+    // Check if deck has quiz
+    hasQuiz: (deckId: string) => `deck:${deckId}:has-quiz`,
+  },
 } as const;
 
 /**
@@ -83,4 +93,7 @@ export const CacheTTL = {
 
   // 5 minutes for bookmarks (balance between freshness and performance)
   BOOKMARKS: 5 * 60,
+
+  // 10 minutes for deck quiz (rarely changes, similar to flashcards)
+  DECK_QUIZ: 10 * 60,
 } as const;

@@ -227,7 +227,7 @@ export default function SessionSelector({ classes, userId }: SessionSelectorProp
                         {selectedDeckCount > 0 && ` • ${selectedDeckCount} selected`}
                       </p>
                       <div className="mt-2">
-                        <Progress value={cls.progress} className="h-2" />
+                        <Progress value={cls.progress} className="h-2" aria-label={`${cls.name} progress`} />
                       </div>
                     </div>
 

@@ -12,6 +12,7 @@ export const createDeckSchema = z.object({
   classId: commonValidators.uuid,
   name: commonValidators.name,
   description: commonValidators.description,
+  type: z.enum(['flashcard', 'quiz']).default('flashcard'),
   order: commonValidators.order,
   isPremium: commonValidators.boolean,
   isPublished: commonValidators.boolean,

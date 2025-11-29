@@ -1,24 +1,5 @@
 ---
     description: Configuration for AI behavior when interacting with Codacy's MCP Server
-    applyTo: '**'
----
----
-# Codacy Rules
-Configuration for AI behavior when interacting with Codacy's MCP Server
-
-## using any tool that accepts the arguments: `provider`, `organization`, or `repository`
-- ALWAYS use:
- - provider: gh
- - organization: aemadhavan
- - repository: cisspmastery
-- Avoid calling `git remote -v` unless really necessary
-
-## CRITICAL: After ANY successful `edit_file` or `reapply` operation
-- YOU MUST IMMEDIATELY run the `codacy_cli_analyze` tool from Codacy's MCP Server for each file that was edited, with:
- - `rootPath`: set to the workspace path
- - `file`: set to the path of the edited file
- - `tool`: leave empty or unset
-- If any issues are found in the new edits, propose and apply fixes for them.
 - > NOTE: Failure to follow this rule is considered a critical error.
 
 ## When you tried to run the `codacy_cli_analyze` tool and the Codacy CLI is not installed

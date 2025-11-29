@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { classes, decks, flashcards, userCardProgress } from '@/lib/db/schema';
@@ -6,10 +6,12 @@ import { eq, and, inArray, asc } from 'drizzle-orm';
 import { cache } from '@/lib/redis';
 import { CacheKeys, CacheTTL } from '@/lib/redis/cache-keys';
 import { createApiTimer, addTimingHeaders, formatTimingLog, timeAsync } from '@/lib/api-timing';
+import { withErrorHandling } from '@/lib/api/error-handler';
+import { withTracing } from '@/lib/middleware/with-tracing';
 
 // GET /api/classes/:id - Get a specific class with its decks (public for logged-in users)
-export async function GET(
-  request: Request,
+async function getClass(
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const timer = createApiTimer('/api/classes/[id]', request.method);
@@ -150,10 +152,11 @@ export async function GET(
     const metrics = timer.end(500);
     console.error(formatTimingLog(metrics));
     console.error('Error fetching class:', error);
-    const message = error instanceof Error ? error.message : 'Failed to fetch class';
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const GET = withTracing(
+  withErrorHandling(getClass as unknown as (req: NextRequest, ...args: unknown[]) => Promise<NextResponse>, 'get class overview'),
+  { logRequest: true, logResponse: false }
+);

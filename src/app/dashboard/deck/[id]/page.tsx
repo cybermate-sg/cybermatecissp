@@ -5,11 +5,12 @@ import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, TestTube } from "lucide-react";
 import Flashcard from "@/components/Flashcard";
 import ConfidenceRating from "@/components/ConfidenceRating";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { QuizModal } from "@/components/QuizModal";
+import { DeckQuizModal } from "@/components/DeckQuizModal";
 import { toast } from "sonner";
 
 interface FlashcardMedia {
@@ -54,6 +55,10 @@ export default function DeckStudyPage() {
   const [studiedCards, setStudiedCards] = useState<Set<number>>(new Set());
   const [showQuizModal, setShowQuizModal] = useState(false);
 
+  // Deck quiz state
+  const [showDeckQuizModal, setShowDeckQuizModal] = useState(false);
+  const [deckHasQuiz, setDeckHasQuiz] = useState(false);
+
   const currentCard = flashcards[currentIndex];
   const progress = flashcards.length > 0 ? (studiedCards.size / flashcards.length) * 100 : 0;
 
@@ -63,13 +68,28 @@ export default function DeckStudyPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deckId, mode]);
 
+  // Check if deck has quiz on mount
+  useEffect(() => {
+    const checkDeckQuiz = async () => {
+      if (!deckId) return;
+      try {
+        const res = await fetch(`/api/decks/${deckId}/has-quiz`);
+        const data = await res.json();
+        setDeckHasQuiz(data.hasQuiz);
+      } catch (error) {
+        console.error('Error checking deck quiz:', error);
+      }
+    };
+    checkDeckQuiz();
+  }, [deckId]);
+
   const loadFlashcards = async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/decks/${deckId}/flashcards`, {
-        // Enable browser caching with Next.js fetch cache
-        next: { revalidate: 60 }, // Revalidate every 60 seconds
-        cache: 'force-cache', // Use cached data when possible
+        // Use default caching to respect server Cache-Control headers
+        // This allows updates to be visible within 10 seconds
+        cache: 'default',
       });
       if (!res.ok) throw new Error("Failed to load flashcards");
 
@@ -147,6 +167,10 @@ export default function DeckStudyPage() {
     setShowQuizModal(true);
   };
 
+  const handleDeckTest = () => {
+    setShowDeckQuizModal(true);
+  };
+
   const handlePrevious = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
@@ -219,7 +243,7 @@ export default function DeckStudyPage() {
               <div className="h-2 w-full bg-slate-700 rounded" />
             </div>
             {/* Card skeleton */}
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-7xl mx-auto">
               <div className="h-96 bg-slate-800 border border-slate-700 rounded-2xl" />
             </div>
           </div>
@@ -229,20 +253,55 @@ export default function DeckStudyPage() {
   }
 
   if (flashcards.length === 0) {
+    const deckName = deck?.name || "Unknown Deck";
+    const className = deck?.className || "Unknown Class";
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Link href="/dashboard">
+          <Link href={deck?.classId ? `/dashboard/class/${deck.classId}` : "/dashboard"}>
             <Button variant="ghost" className="text-white mb-6">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
+              Back to {className}
             </Button>
           </Link>
-          <div className="text-center text-white">
-            <h1 className="text-2xl font-bold mb-4">No flashcards available</h1>
+
+          <div className="mb-8">
+            <p className="text-sm text-purple-400 mb-1">{className}</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+              {deckName}
+            </h1>
+
+            {/* Show Take Deck Test button if quiz available */}
+            {deckHasQuiz && (
+              <Button
+                onClick={handleDeckTest}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+              >
+                <TestTube className="w-4 h-4 mr-2" />
+                Take Deck Test
+              </Button>
+            )}
+          </div>
+
+          <div className="text-center text-white mt-12">
+            <h2 className="text-xl font-bold mb-4">No flashcards available</h2>
             <p className="text-gray-400">This deck doesn&apos;t have any flashcards yet.</p>
+            {deckHasQuiz && (
+              <p className="text-blue-400 mt-4">But you can still take the deck test above!</p>
+            )}
           </div>
         </div>
+
+        {/* Deck Quiz Modal */}
+        {deckHasQuiz && (
+          <DeckQuizModal
+            isOpen={showDeckQuizModal}
+            onClose={() => setShowDeckQuizModal(false)}
+            deckId={deckId}
+            deckName={deckName}
+          />
+        )}
       </div>
     );
   }
@@ -291,14 +350,26 @@ export default function DeckStudyPage() {
                 Card {currentIndex + 1} of {flashcards.length}
               </p>
             </div>
-            <Button
-              onClick={handleReset}
-              variant="outline"
-              className="border-purple-500 text-purple-400 hover:bg-purple-500/10"
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Reset Progress
-            </Button>
+            <div className="flex items-center gap-3">
+              {deckHasQuiz && (
+                <Button
+                  onClick={handleDeckTest}
+                  variant="outline"
+                  className="border-blue-400 text-blue-200 hover:bg-blue-500/10"
+                >
+                  <TestTube className="w-4 h-4 mr-2" />
+                  Take Deck Test
+                </Button>
+              )}
+              <Button
+                onClick={handleReset}
+                variant="outline"
+                className="border-purple-400 text-purple-200 hover:bg-purple-500/10"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Reset Progress
+              </Button>
+            </div>
           </div>
 
           {/* Progress Bar */}
@@ -307,7 +378,7 @@ export default function DeckStudyPage() {
               <span className="text-sm text-gray-400">Progress</span>
               <span className="text-sm text-gray-400">{Math.round(progress)}%</span>
             </div>
-            <Progress value={progress} className="h-2" />
+            <Progress value={progress} className="h-2" aria-label="Deck study progress" />
           </div>
         </div>
 
@@ -315,7 +386,7 @@ export default function DeckStudyPage() {
         {!allCardsStudied ? (
           <div className="space-y-8">
             {/* Navigation buttons and Flashcard */}
-            <div className="flex items-center gap-4 max-w-3xl mx-auto">
+            <div className="flex items-center gap-4 max-w-7xl mx-auto">
               {/* Previous Button */}
               <Button
                 onClick={handlePrevious}
@@ -392,7 +463,7 @@ export default function DeckStudyPage() {
                 Study Again
               </Button>
               <Link href={deck?.classId ? `/dashboard/class/${deck.classId}` : "/dashboard"}>
-                <Button variant="outline" className="border-purple-500 text-purple-400 hover:bg-purple-500/10 w-full sm:w-auto">
+                <Button variant="outline" className="border-purple-400 text-purple-200 hover:bg-purple-500/10 w-full sm:w-auto">
                   Back to {className}
                 </Button>
               </Link>
@@ -421,6 +492,16 @@ export default function DeckStudyPage() {
           onClose={() => setShowQuizModal(false)}
           flashcardId={currentCard.id}
           flashcardQuestion={currentCard.question}
+        />
+      )}
+
+      {/* Deck Quiz Modal */}
+      {deckHasQuiz && (
+        <DeckQuizModal
+          isOpen={showDeckQuizModal}
+          onClose={() => setShowDeckQuizModal(false)}
+          deckId={deckId}
+          deckName={deckName}
         />
       )}
 

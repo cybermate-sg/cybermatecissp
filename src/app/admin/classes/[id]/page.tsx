@@ -17,8 +17,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Plus, Edit2, Trash2, ArrowLeft, BookOpen } from "lucide-react";
+import { Loader2, Plus, Edit2, Trash2, ArrowLeft, BookOpen, Layers, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
+import { validateQuizFile, type QuizFile } from "@/lib/validations/quiz";
 
 interface ClassData {
   id: string;
@@ -33,6 +34,7 @@ interface Deck {
   id: string;
   name: string;
   description: string | null;
+  type: 'flashcard' | 'quiz';
   cardCount: number;
   order: number;
   isPremium: boolean;
@@ -42,6 +44,7 @@ interface Deck {
 interface DeckFormData {
   name: string;
   description: string;
+  type: 'flashcard' | 'quiz';
   order: number;
   isPremium: boolean;
   isPublished: boolean;
@@ -60,11 +63,16 @@ export default function AdminClassDetailPage({ params }: { params: Promise<{ id:
   const [formData, setFormData] = useState<DeckFormData>({
     name: "",
     description: "",
+    type: "flashcard",
     order: 0,
     isPremium: false,
     isPublished: true,
   });
   const [isSaving, setIsSaving] = useState(false);
+
+  // Deck quiz state
+  const [deckQuizData, setDeckQuizData] = useState<QuizFile | null>(null);
+  const [deckQuizFileName, setDeckQuizFileName] = useState<string>("");
 
   // Unwrap params
   useEffect(() => {
@@ -104,10 +112,13 @@ export default function AdminClassDetailPage({ params }: { params: Promise<{ id:
     setFormData({
       name: "",
       description: "",
+      type: "flashcard",
       order: decks.length,
       isPremium: false,
       isPublished: true,
     });
+    setDeckQuizData(null);
+    setDeckQuizFileName("");
     setIsDialogOpen(true);
   };
 
@@ -116,6 +127,7 @@ export default function AdminClassDetailPage({ params }: { params: Promise<{ id:
     setFormData({
       name: deck.name,
       description: deck.description || "",
+      type: deck.type || "flashcard",
       order: deck.order,
       isPremium: deck.isPremium,
       isPublished: deck.isPublished,
@@ -126,6 +138,41 @@ export default function AdminClassDetailPage({ params }: { params: Promise<{ id:
   const openDeleteDialog = (deck: Deck) => {
     setDeletingDeck(deck);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeckQuizFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setDeckQuizData(null);
+      setDeckQuizFileName("");
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      const result = validateQuizFile(json);
+
+      if (!result.success) {
+        toast.error(`Invalid quiz file: ${result.error}`);
+        setDeckQuizData(null);
+        setDeckQuizFileName("");
+        return;
+      }
+
+      setDeckQuizData(result.data);
+      setDeckQuizFileName(file.name);
+      toast.success(`${result.data.questions.length} question(s) loaded`);
+    } catch {
+      toast.error('Failed to parse JSON file');
+      setDeckQuizData(null);
+      setDeckQuizFileName("");
+    }
+  };
+
+  const handleRemoveDeckQuiz = () => {
+    setDeckQuizData(null);
+    setDeckQuizFileName("");
   };
 
   const handleSaveDeck = async () => {
@@ -157,8 +204,37 @@ export default function AdminClassDetailPage({ params }: { params: Promise<{ id:
         throw new Error(error.error || "Failed to save deck");
       }
 
+      const result = await res.json();
+      const savedDeckId = editingDeck ? editingDeck.id : result.deck.id;
+
+      // Upload deck quiz if present
+      if (deckQuizData && savedDeckId) {
+        try {
+          const quizRes = await fetch(`/api/admin/decks/${savedDeckId}/quiz`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              quizData: deckQuizData,
+              classId: classId,
+            }),
+          });
+
+          if (!quizRes.ok) {
+            throw new Error('Failed to upload deck quiz');
+          }
+
+          const quizResult = await quizRes.json();
+          toast.success(quizResult.message);
+        } catch (quizError) {
+          console.error("Error uploading quiz:", quizError);
+          toast.error('Deck saved but quiz upload failed');
+        }
+      }
+
       toast.success(editingDeck ? "Deck updated successfully" : "Deck created successfully");
       setIsDialogOpen(false);
+      setDeckQuizData(null);
+      setDeckQuizFileName("");
       loadClassData();
     } catch (error) {
       console.error("Error saving deck:", error);
@@ -205,7 +281,21 @@ export default function AdminClassDetailPage({ params }: { params: Promise<{ id:
   }
 
   if (!classData) {
-    return null;
+    return (
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <p className="text-gray-400 mb-4">Class not found or failed to load</p>
+            <Link href="/admin/classes">
+              <Button variant="outline" className="border-slate-700 text-gray-300 hover:bg-slate-700">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Classes
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -313,31 +403,53 @@ export default function AdminClassDetailPage({ params }: { params: Promise<{ id:
                   className="p-4 rounded-lg border border-slate-700 bg-slate-900/50 hover:bg-slate-900/70 transition-all"
                 >
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-white text-lg">
-                          {deck.name}
-                        </h3>
-                        {!deck.isPublished && (
-                          <span className="text-xs px-2 py-1 rounded bg-gray-700 text-gray-300">
-                            Draft
-                          </span>
-                        )}
-                        {deck.isPremium && (
-                          <span className="text-xs px-2 py-1 rounded bg-amber-900/30 text-amber-400 border border-amber-500/30">
-                            Premium
-                          </span>
+                    <div className="flex items-start gap-3">
+                      {/* Deck Type Icon */}
+                      <div className="flex-shrink-0 mt-1">
+                        {deck.type === 'quiz' ? (
+                          <div className="w-10 h-10 rounded-lg bg-blue-500/20 border border-blue-500/50 flex items-center justify-center" title="Quiz Deck">
+                            <ClipboardList className="w-5 h-5 text-blue-400" />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-green-500/20 border border-green-500/50 flex items-center justify-center" title="Flashcard Deck">
+                            <Layers className="w-5 h-5 text-green-400" />
+                          </div>
                         )}
                       </div>
-                      {deck.description && (
-                        <p className="text-sm text-gray-300 mb-2">
-                          {deck.description}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-4 text-xs text-gray-400">
-                        <span>Order: {deck.order}</span>
-                        <span>•</span>
-                        <span>{deck.cardCount} card{deck.cardCount !== 1 ? 's' : ''}</span>
+
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-white text-lg">
+                            {deck.name}
+                          </h3>
+                          <span className={`text-xs px-2 py-1 rounded border ${
+                            deck.type === 'quiz'
+                              ? 'bg-blue-900/30 text-blue-400 border-blue-500/30'
+                              : 'bg-green-900/30 text-green-400 border-green-500/30'
+                          }`}>
+                            {deck.type === 'quiz' ? 'Quiz' : 'Flashcard'}
+                          </span>
+                          {!deck.isPublished && (
+                            <span className="text-xs px-2 py-1 rounded bg-gray-700 text-gray-300">
+                              Draft
+                            </span>
+                          )}
+                          {deck.isPremium && (
+                            <span className="text-xs px-2 py-1 rounded bg-amber-900/30 text-amber-400 border border-amber-500/30">
+                              Premium
+                            </span>
+                          )}
+                        </div>
+                        {deck.description && (
+                          <p className="text-sm text-gray-300 mb-2">
+                            {deck.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-4 text-xs text-gray-400">
+                          <span>Order: {deck.order}</span>
+                          <span>•</span>
+                          <span>{deck.cardCount} card{deck.cardCount !== 1 ? 's' : ''}</span>
+                        </div>
                       </div>
                     </div>
 
@@ -391,7 +503,7 @@ export default function AdminClassDetailPage({ params }: { params: Promise<{ id:
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
             <div className="space-y-2">
               <Label htmlFor="name">Deck Name *</Label>
               <Input
@@ -415,6 +527,32 @@ export default function AdminClassDetailPage({ params }: { params: Promise<{ id:
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="type">Deck Type *</Label>
+              <select
+                id="type"
+                value={formData.type}
+                onChange={(e) => {
+                  const newType = e.target.value as 'flashcard' | 'quiz';
+                  setFormData({ ...formData, type: newType });
+                  // Clear quiz data if switching to flashcard type
+                  if (newType === 'flashcard') {
+                    setDeckQuizData(null);
+                    setDeckQuizFileName("");
+                  }
+                }}
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="flashcard">Flashcard</option>
+                <option value="quiz">Quiz</option>
+              </select>
+              <p className="text-xs text-gray-400">
+                {formData.type === 'flashcard'
+                  ? 'Traditional flashcard deck with questions and answers'
+                  : 'Quiz deck with multiple-choice questions (requires JSON file upload)'}
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="order">Display Order</Label>
               <Input
                 id="order"
@@ -428,6 +566,65 @@ export default function AdminClassDetailPage({ params }: { params: Promise<{ id:
                 Lower numbers appear first in the list
               </p>
             </div>
+
+            {formData.type === 'quiz' && (
+              <div className="space-y-2">
+                <Label htmlFor="deckQuiz">
+                  Quiz Questions File {formData.type === 'quiz' && '*'}
+                </Label>
+                <p className="text-xs text-gray-400">
+                  Upload a JSON file with multiple-choice questions for this quiz deck
+                </p>
+
+                <Input
+                  id="deckQuiz"
+                  type="file"
+                  accept=".json"
+                  onChange={handleDeckQuizFileSelect}
+                  className="bg-slate-900 border-slate-700 text-white cursor-pointer"
+                />
+
+                {deckQuizData && (
+                  <div className="p-3 bg-blue-900/30 border border-blue-700 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-blue-300">
+                          ✓ {deckQuizData.questions.length} question{deckQuizData.questions.length !== 1 ? 's' : ''} loaded
+                        </p>
+                        <p className="text-xs text-blue-400 mt-1">{deckQuizFileName}</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveDeckQuiz}
+                        className="text-blue-300 hover:text-blue-100 hover:bg-blue-800"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-blue-700">
+                      <p className="text-xs text-blue-300 font-medium mb-1">Preview:</p>
+                      <div className="space-y-1">
+                        {deckQuizData.questions.slice(0, 2).map((q, idx) => (
+                          <div key={idx} className="text-xs text-blue-200">
+                            <p className="font-medium">Q{idx + 1}: {q.question}</p>
+                            <p className="text-blue-400 ml-2 mt-0.5">
+                              {q.options.length} options, {q.options.filter(o => o.isCorrect).length} correct
+                            </p>
+                          </div>
+                        ))}
+                        {deckQuizData.questions.length > 2 && (
+                          <p className="text-xs text-blue-400 italic">
+                            +{deckQuizData.questions.length - 2} more question(s)...
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex items-center justify-between py-2 px-3 bg-slate-900 rounded-lg">
               <div className="space-y-0.5">

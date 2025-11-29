@@ -77,6 +77,7 @@ export const decks = pgTable('decks', {
   classId: uuid('class_id').notNull().references(() => classes.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
+  type: varchar('type', { length: 50 }).notNull().default('flashcard'), // 'flashcard' or 'quiz'
   cardCount: integer('card_count').notNull().default(0), // Automatically updated
   order: integer('order').notNull().default(0),
   isPremium: boolean('is_premium').default(false), // true = requires Pro subscription
@@ -137,6 +138,10 @@ export const quizQuestions = pgTable('quiz_questions', {
   questionText: text('question_text').notNull(),
   options: json('options').notNull(), // Array of {text: string, isCorrect: boolean, order: number}
   explanation: text('explanation'), // Explanation for the correct answer
+  eliminationTactics: text('elimination_tactics'), // Stepwise logic for eliminating wrong answers and distractors
+  correctAnswerWithJustification: text('correct_answer_with_justification'), // Clear rationale for the correct option
+  compareRemainingOptionsWithJustification: text('compare_remaining_options_with_justification'), // Comparison of remaining options after elimination
+  correctOptionsJustification: text('correct_options_justification'), // Detailed justification for correct options
   order: integer('order').notNull().default(0),
   createdBy: varchar('created_by', { length: 255 }).notNull().references(() => users.clerkUserId),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -146,6 +151,31 @@ export const quizQuestions = pgTable('quiz_questions', {
   flashcardIdx: index('idx_quiz_questions_flashcard').on(table.flashcardId),
   // Index for ordering questions within a flashcard
   flashcardOrderIdx: index('idx_quiz_questions_flashcard_order').on(table.flashcardId, table.order),
+}));
+
+// Deck Quiz Questions table - Multiple choice questions for entire decks
+// ✅ ADMIN CREATES ONLY (via JSON upload)
+// Provides comprehensive assessment of all concepts in a deck
+export const deckQuizQuestions = pgTable('deck_quiz_questions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  deckId: uuid('deck_id').notNull().references(() => decks.id, { onDelete: 'cascade' }),
+  questionText: text('question_text').notNull(),
+  options: json('options').notNull(), // Array of {text: string, isCorrect: boolean}
+  explanation: text('explanation'), // Explanation for the correct answer
+  eliminationTactics: text('elimination_tactics'), // Stepwise logic for eliminating wrong answers and distractors
+  correctAnswerWithJustification: text('correct_answer_with_justification'), // Clear rationale for the correct option
+  compareRemainingOptionsWithJustification: text('compare_remaining_options_with_justification'), // Comparison of remaining options after elimination
+  correctOptionsJustification: text('correct_options_justification'), // Detailed justification for correct options
+  order: integer('order').notNull().default(0),
+  difficulty: integer('difficulty'), // Optional: 1-5 difficulty level
+  createdBy: varchar('created_by', { length: 255 }).notNull().references(() => users.clerkUserId),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Index for fetching all questions for a deck
+  deckIdx: index('idx_deck_quiz_questions_deck').on(table.deckId),
+  // Index for ordering questions within a deck
+  deckOrderIdx: index('idx_deck_quiz_questions_deck_order').on(table.deckId, table.order),
 }));
 
 // ============================================
@@ -312,6 +342,7 @@ export const decksRelations = relations(decks, ({ one, many }) => ({
   flashcards: many(flashcards),
   studySessions: many(studySessions),
   deckProgress: many(deckProgress),
+  quizQuestions: many(deckQuizQuestions),
 }));
 
 export const flashcardsRelations = relations(flashcards, ({ one, many }) => ({
@@ -344,6 +375,17 @@ export const quizQuestionsRelations = relations(quizQuestions, ({ one }) => ({
   }),
   createdBy: one(users, {
     fields: [quizQuestions.createdBy],
+    references: [users.clerkUserId],
+  }),
+}));
+
+export const deckQuizQuestionsRelations = relations(deckQuizQuestions, ({ one }) => ({
+  deck: one(decks, {
+    fields: [deckQuizQuestions.deckId],
+    references: [decks.id],
+  }),
+  createdBy: one(users, {
+    fields: [deckQuizQuestions.createdBy],
     references: [users.clerkUserId],
   }),
 }));

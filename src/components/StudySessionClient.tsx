@@ -135,7 +135,7 @@ export default function StudySessionClient({
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <Progress value={progress} className="h-2" />
+              <Progress value={progress} className="h-2" aria-label="Study session progress" />
               <p className="text-sm text-gray-400 mt-2">
                 Card {currentIndex + 1} of {flashcards.length}
               </p>

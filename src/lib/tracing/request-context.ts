@@ -155,5 +155,22 @@ export function logWithContext(
     .filter(Boolean)
     .join(' ');
 
-  console[level](logMessage, ...args);
+  // Use explicit whitelist to prevent command injection
+  switch (level) {
+    case 'log':
+      console.log(logMessage, ...args);
+      break;
+    case 'info':
+      console.info(logMessage, ...args);
+      break;
+    case 'warn':
+      console.warn(logMessage, ...args);
+      break;
+    case 'error':
+      console.error(logMessage, ...args);
+      break;
+    default:
+      // Safe fallback for any unexpected values
+      console.log(logMessage, ...args);
+  }
 }

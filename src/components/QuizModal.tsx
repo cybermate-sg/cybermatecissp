@@ -16,6 +16,10 @@ interface QuizQuestion {
   questionText: string;
   options: QuizOption[];
   explanation: string | null;
+  eliminationTactics?: Record<string, string> | null;
+  correctAnswerWithJustification?: Record<string, string> | null;
+  compareRemainingOptionsWithJustification?: Record<string, string> | null;
+  correctOptionsJustification?: Record<string, string> | null;
   order: number;
 }
 
@@ -34,6 +38,11 @@ export function QuizModal({ isOpen, onClose, flashcardId, flashcardQuestion }: Q
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [loading, setLoading] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
+
+  // Strip HTML tags from question text for display
+  const stripHtml = (html: string) => {
+    return html.replace(/<[^>]*>/g, '').trim();
+  };
 
   const fetchQuizQuestions = useCallback(async () => {
     setLoading(true);
@@ -119,6 +128,7 @@ export function QuizModal({ isOpen, onClose, flashcardId, flashcardQuestion }: Q
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-w-2xl bg-white">
+          <DialogTitle className="sr-only">Loading quiz questions</DialogTitle>
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
           </div>
@@ -139,7 +149,7 @@ export function QuizModal({ isOpen, onClose, flashcardId, flashcardQuestion }: Q
       <DialogContent className="max-w-3xl bg-white max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-slate-800">
-            Quiz: {flashcardQuestion}
+            Quiz: {stripHtml(flashcardQuestion)}
           </DialogTitle>
           <div className="flex items-center justify-between text-sm text-slate-600 mt-2">
             <span>
@@ -216,10 +226,53 @@ export function QuizModal({ isOpen, onClose, flashcardId, flashcardQuestion }: Q
             </div>
 
             {/* Explanation */}
-            {showExplanation && currentQuestion.explanation && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm font-semibold text-blue-900 mb-2">Explanation:</p>
-                <p className="text-sm text-blue-800">{currentQuestion.explanation}</p>
+            {showExplanation && (
+              <div className="bg-blue-50 rounded-lg p-6 space-y-6">
+                {currentQuestion.explanation && (
+                  <div>
+                    <h3 className="text-base font-semibold text-blue-900 mb-3">Explanation</h3>
+                    <p className="text-sm text-blue-800 leading-relaxed">{currentQuestion.explanation}</p>
+                  </div>
+                )}
+
+                {currentQuestion.eliminationTactics && typeof currentQuestion.eliminationTactics === 'object' && Object.keys(currentQuestion.eliminationTactics).length > 0 && (
+                  <div>
+                    <h3 className="text-base font-semibold text-blue-900 mb-3">Elimination Tactics</h3>
+                    <div className="space-y-3">
+                      {Object.entries(currentQuestion.eliminationTactics).map(([option, reason]) => (
+                        <div key={option} className="text-sm text-blue-800 leading-relaxed">
+                          <span className="font-semibold text-blue-900">{option}:</span> {reason}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {currentQuestion.compareRemainingOptionsWithJustification && typeof currentQuestion.compareRemainingOptionsWithJustification === 'object' && Object.keys(currentQuestion.compareRemainingOptionsWithJustification).length > 0 && (
+                  <div>
+                    <h3 className="text-base font-semibold text-blue-900 mb-3">Compare Remaining Options</h3>
+                    <div className="space-y-3">
+                      {Object.entries(currentQuestion.compareRemainingOptionsWithJustification).map(([option, comparison]) => (
+                        <div key={option} className="text-sm text-blue-800 leading-relaxed">
+                          <span className="font-semibold text-blue-900">{option}:</span> {comparison}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {currentQuestion.correctOptionsJustification && typeof currentQuestion.correctOptionsJustification === 'object' && Object.keys(currentQuestion.correctOptionsJustification).length > 0 && (
+                  <div>
+                    <h3 className="text-base font-semibold text-blue-900 mb-3">Correct Option Justification</h3>
+                    <div className="space-y-3">
+                      {Object.entries(currentQuestion.correctOptionsJustification).map(([option, justification]) => (
+                        <div key={option} className="text-sm text-blue-800 leading-relaxed">
+                          <p className="text-sm text-blue-800 leading-relaxed">{justification}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

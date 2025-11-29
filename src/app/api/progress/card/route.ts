@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { userCardProgress, flashcards, sessionCards, users, subscriptions, userStats } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { CacheInvalidation, safeInvalidate } from '@/lib/redis/invalidation';
+import { withErrorHandling } from '@/lib/api/error-handler';
+import { withTracing } from '@/lib/middleware/with-tracing';
 
 /**
  * Ensure user exists in database, create if not
@@ -61,7 +63,7 @@ async function ensureUserExists(userId: string) {
  * POST /api/progress/card
  * Save or update user's progress on a specific flashcard
  */
-export async function POST(request: NextRequest) {
+async function saveCardProgress(request: NextRequest) {
   try {
     const { userId } = await auth();
 
@@ -176,18 +178,20 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error saving card progress:', error);
-    return NextResponse.json(
-      { error: 'Failed to save progress' },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const POST = withTracing(
+  withErrorHandling(saveCardProgress, 'save card progress'),
+  { logRequest: true, logResponse: false }
+);
 
 /**
  * GET /api/progress/card?flashcardId=xxx
  * Get user's progress for a specific flashcard
  */
-export async function GET(request: NextRequest) {
+async function getCardProgress(request: NextRequest) {
   try {
     const { userId } = await auth();
 
@@ -216,9 +220,11 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error fetching card progress:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch progress' },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const GET = withTracing(
+  withErrorHandling(getCardProgress, 'get card progress'),
+  { logRequest: true, logResponse: false }
+);

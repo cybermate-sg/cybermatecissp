@@ -4,8 +4,8 @@
  */
 
 import { Pool } from 'pg';
-import * as dotenv from 'dotenv';
 import format from 'pg-format';
+import * as dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.local' });
 
@@ -52,11 +52,11 @@ async function listAllTables() {
     ORDER BY table_name;
   `);
 
-  return result.rows.map(function(row: { table_name: string }) { return row.table_name; });
+  return result.rows.map(function (row: { table_name: string }) { return row.table_name; });
 }
 
 function isSystemTable(tableName: string): boolean {
-  return SYSTEM_TABLES_PATTERNS.some(function(pattern) {
+  return SYSTEM_TABLES_PATTERNS.some(function (pattern) {
     return tableName.toLowerCase().includes(pattern.toLowerCase());
   });
 }
@@ -68,34 +68,34 @@ async function main() {
     console.log(`Total tables found: ${allTables.length}\n`);
 
     // Filter out system tables
-    const userTables = allTables.filter(function(table) { return !isSystemTable(table); });
+    const userTables = allTables.filter(function (table) { return !isSystemTable(table); });
 
     console.log('📊 User Tables Analysis:\n');
     console.log('Expected tables (from schema.ts):');
-    EXPECTED_TABLES.forEach(function(table) {
+    EXPECTED_TABLES.forEach(function (table) {
       const exists = userTables.includes(table);
       console.log(`  ${exists ? '✅' : '❌'} ${table}`);
     });
 
     console.log('\n📦 All tables in database:');
-    userTables.forEach(function(table) {
+    userTables.forEach(function (table) {
       const isExpected = EXPECTED_TABLES.has(table);
       console.log(`  ${isExpected ? '✅' : '⚠️ '} ${table} ${!isExpected ? '(EXCESS - not in schema)' : ''}`);
     });
 
     // Identify excess tables
-    const excessTables = userTables.filter(function(table) { return !EXPECTED_TABLES.has(table); });
+    const excessTables = userTables.filter(function (table) { return !EXPECTED_TABLES.has(table); });
 
     if (excessTables.length > 0) {
       console.log('\n🗑️  Excess tables to DELETE:\n');
-      excessTables.forEach(function(table) {
+      excessTables.forEach(function (table) {
         console.log(`  ⚠️  ${table}`);
       });
 
       console.log('\n📝 To delete these tables, run the following SQL commands:');
       console.log('   (You can run these in Xata.io SQL console or uncomment the deletion code below)\n');
 
-      excessTables.forEach(function(table) {
+      excessTables.forEach(table => {
         console.log(format('DROP TABLE IF EXISTS %I CASCADE;', table));
       });
 
@@ -120,13 +120,13 @@ async function main() {
     }
 
     // Check for missing tables
-    const missingTables = Array.from(EXPECTED_TABLES).filter(function(table) {
+    const missingTables = Array.from(EXPECTED_TABLES).filter(function (table) {
       return !userTables.includes(table);
     });
 
     if (missingTables.length > 0) {
       console.log('\n⚠️  Missing tables (defined in schema.ts but not in database):\n');
-      missingTables.forEach(function(table) {
+      missingTables.forEach(function (table) {
         console.log(`  ❌ ${table}`);
       });
       console.log('\n💡 Run `npm run db:push` to create missing tables.');

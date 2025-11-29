@@ -81,7 +81,7 @@ const DeckCard = memo(({ deck, isSelected, onToggleSelection, classId, isAdmin }
 
         {/* Progress Bar */}
         <div className="mt-4">
-          <Progress value={deck.progress} className="h-2" />
+          <Progress value={deck.progress} className="h-2" aria-label={`${deck.name} progress`} />
         </div>
       </CardContent>
     </Card>

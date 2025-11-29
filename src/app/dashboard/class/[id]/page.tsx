@@ -7,7 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { getClassWithProgress } from "@/lib/api/class-server";
 import ClassDetailClient from "@/components/ClassDetailClient";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
-import { db } from "@/lib/db";
+import { db, withRetry } from "@/lib/db";
 import { subscriptions } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -66,10 +66,13 @@ export default async function ClassDetailPage({
 
   try {
     // First, check ALL subscriptions for this user (for debugging)
-    const allUserSubscriptions = await db.query.subscriptions.findMany({
-      where: eq(subscriptions.clerkUserId, userId),
-      orderBy: [desc(subscriptions.createdAt)]
-    });
+    const allUserSubscriptions = await withRetry(
+      () => db.query.subscriptions.findMany({
+        where: eq(subscriptions.clerkUserId, userId),
+        orderBy: [desc(subscriptions.createdAt)]
+      }),
+      { queryName: 'fetch-all-user-subscriptions' }
+    );
 
     console.log(`[Subscription Debug] User ID: ${userId}`);
     console.log(`[Subscription Debug] Total subscriptions found: ${allUserSubscriptions.length}`);
@@ -80,13 +83,16 @@ export default async function ClassDetailPage({
     }
 
     // Now get the active one
-    const subscription = await db.query.subscriptions.findFirst({
-      where: and(
-        eq(subscriptions.clerkUserId, userId),
-        eq(subscriptions.status, 'active')
-      ),
-      orderBy: [desc(subscriptions.createdAt)]
-    });
+    const subscription = await withRetry(
+      () => db.query.subscriptions.findFirst({
+        where: and(
+          eq(subscriptions.clerkUserId, userId),
+          eq(subscriptions.status, 'active')
+        ),
+        orderBy: [desc(subscriptions.createdAt)]
+      }),
+      { queryName: 'fetch-active-subscription' }
+    );
 
     // Calculate remaining days from subscription creation date (365 days total)
     if (subscription?.createdAt) {
@@ -110,15 +116,15 @@ export default async function ClassDetailPage({
   const userName = user?.firstName || user?.username || "there";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-white">
       {/* Performance Monitoring */}
       <PerformanceMonitor pageName="Class Detail Page (SSR)" showVisual={false} />
 
       {/* Header with Back Button */}
-      <div className="border-b border-slate-700">
+      <div className="border-b border-gray-200">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link href="/dashboard">
-            <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white hover:bg-slate-700">
+            <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800 hover:bg-blue-50">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>

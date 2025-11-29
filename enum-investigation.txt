@@ -1,0 +1,15 @@
+[dotenv@17.2.3] injecting env (23) from .env.local -- tip: ≡ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+Γ£ô Connected
+
+=== Detailed Enum Information ===
+Found 7 enum types:
+
+mastery_status (OID: 32353443)
+  Schema: public
+
+Γ¥î Error: row.values.join is not a function
+TypeError: row.values.join is not a function
+    at C:\Projects\cisspmastery\investigate-enums.js:34:62
+    at Array.forEach (<anonymous>)
+    at investigateEnums (C:\Projects\cisspmastery\investigate-enums.js:31:26)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)

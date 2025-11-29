@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
+import { sanitizeLogString } from '@/lib/logger';
 
 // Optional Sentry import - only used if package is installed
 let Sentry: typeof import('@sentry/nextjs') | null = null;
@@ -44,42 +45,61 @@ export interface ErrorContext {
 /**
  * Determine HTTP status code from error
  */
+/**
+ * Get status code for ZodError
+ */
+function getZodStatusCode(error: ZodError): number {
+  return 400;
+}
+
+/**
+ * Get status code for standard Error based on message content
+ */
+function getErrorStatusCode(error: Error): number {
+  const message = error.message.toLowerCase();
+
+  // Admin/Authorization errors
+  if (message.includes('admin') || message.includes('unauthorized')) {
+    return 403;
+  }
+
+  // Authentication errors
+  if (message.includes('unauthenticated') || message.includes('not authenticated')) {
+    return 401;
+  }
+
+  // Not found errors
+  if (message.includes('not found')) {
+    return 404;
+  }
+
+  // Validation errors
+  if (message.includes('invalid') || message.includes('required')) {
+    return 400;
+  }
+
+  // Rate limit errors
+  if (message.includes('rate limit') || message.includes('too many')) {
+    return 429;
+  }
+
+  return 500;
+}
+
+/**
+ * Determine HTTP status code from error
+ */
 function getStatusCode(error: unknown): number {
   if (error instanceof ApiError) {
     return error.statusCode;
   }
 
   if (error instanceof ZodError) {
-    return 400;
+    return getZodStatusCode(error);
   }
 
   if (error instanceof Error) {
-    const message = error.message.toLowerCase();
-
-    // Admin/Authorization errors
-    if (message.includes('admin') || message.includes('unauthorized')) {
-      return 403;
-    }
-
-    // Authentication errors
-    if (message.includes('unauthenticated') || message.includes('not authenticated')) {
-      return 401;
-    }
-
-    // Not found errors
-    if (message.includes('not found')) {
-      return 404;
-    }
-
-    // Validation errors
-    if (message.includes('invalid') || message.includes('required')) {
-      return 400;
-    }
-
-    // Rate limit errors
-    if (message.includes('rate limit') || message.includes('too many')) {
-      return 429;
-    }
+    return getErrorStatusCode(error);
   }
 
   return 500;
@@ -160,10 +180,11 @@ export function handleApiError(
 
   // Log to console in development
   if (process.env.NODE_ENV === 'development') {
-    console.error(`[API Error] ${context || 'Unknown operation'}:`, {
-      message,
+    // Use separate arguments to prevent format string injection
+    console.error('[API Error]', sanitizeLogString(context || 'Unknown operation'), {
+      message: sanitizeLogString(message),
       statusCode,
-      error: error instanceof Error ? error.stack : error,
+      error: error instanceof Error ? sanitizeLogString(error.stack || error.message) : sanitizeLogString(String(error)),
       context: additionalContext,
       details: errorDetails,
     });
@@ -238,6 +259,35 @@ export function createApiError(
 }
 
 /**
+ * Derive error context from request arguments
+ */
+function deriveRequestErrorContext(args: unknown[]): ErrorContext | undefined {
+  try {
+    const maybeRequest = args[0] as unknown as {
+      method?: string;
+      url?: string;
+      headers?: Headers | { get(name: string): string | null };
+    };
+
+    if (maybeRequest && maybeRequest.url && maybeRequest.method) {
+      const url = new URL(maybeRequest.url);
+      const headers = maybeRequest.headers as Headers | undefined;
+
+      const requestId = headers?.get?.('x-request-id') ?? headers?.get?.('X-Request-ID') ?? undefined;
+
+      return {
+        endpoint: url.pathname,
+        method: maybeRequest.method,
+        requestId,
+      };
+    }
+  } catch {
+    // Swallow context derivation errors; they should never break error handling
+  }
+  return undefined;
+}
+
+/**
  * Wrap an async handler with error handling
  *
  * @example
@@ -256,7 +306,8 @@ export function withErrorHandling<T extends unknown[]>(
     try {
       return await handler(...args);
     } catch (error) {
-      return handleApiError(error, context);
+      const additionalContext = deriveRequestErrorContext(args);
+      return handleApiError(error, context, additionalContext);
     }
   };
 }

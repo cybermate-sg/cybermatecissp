@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { sessionCards } from '@/lib/db/schema';
+import { withErrorHandling } from '@/lib/api/error-handler';
+import { withTracing } from '@/lib/middleware/with-tracing';
 
-export async function POST(request: NextRequest) {
+async function saveSessionCard(request: NextRequest) {
   try {
     const { userId } = await auth();
 
@@ -35,9 +37,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error saving session card:', error);
-    return NextResponse.json(
-      { error: 'Failed to save session card' },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const POST = withTracing(
+  withErrorHandling(saveSessionCard, 'save session card'),
+  { logRequest: true, logResponse: false }
+);

@@ -3,13 +3,15 @@ import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { classes, decks, flashcards, userCardProgress } from '@/lib/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
+import { withErrorHandling } from '@/lib/api/error-handler';
+import { withTracing } from '@/lib/middleware/with-tracing';
 
 /**
  * GET /api/classes/[id]/study?mode=progressive|random|all&decks=deck1,deck2
  * Get flashcards for studying a class based on the selected mode
  * Optional: Filter by specific deck IDs (comma-separated)
  */
-export async function GET(
+async function getClassStudyCards(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -179,9 +181,11 @@ export async function GET(
 
   } catch (error) {
     console.error('Error fetching study cards:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch study cards' },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const GET = withTracing(
+  withErrorHandling(getClassStudyCards as unknown as (req: NextRequest, ...args: unknown[]) => Promise<NextResponse>, 'get class study cards'),
+  { logRequest: true, logResponse: false }
+);

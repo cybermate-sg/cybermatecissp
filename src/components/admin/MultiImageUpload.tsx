@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, DragEvent } from "react";
+import { useState, useRef, useEffect, DragEvent } from "react";
 import { Upload, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ImagePreview } from "./ImagePreview";
@@ -37,6 +37,11 @@ export function MultiImageUpload({
   const [images, setImages] = useState<MediaFile[]>(existingImages);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync internal state when existingImages prop changes
+  useEffect(() => {
+    setImages(existingImages);
+  }, [existingImages]);
 
   const handleImagesUpdate = (newImages: MediaFile[]) => {
     setImages(newImages);

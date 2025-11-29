@@ -1,0 +1,35 @@
+[dotenv@17.2.3] injecting env (23) from .env.local -- tip: ΓÜÖ∩╕Å  write to custom object with { processEnv: myObject }
+Γ£ô Connected to database
+
+=== STEP 1: Check for columns using orphaned enums ===
+  Γ£ô No columns using orphaned enums
+
+=== STEP 2: Check migration journal ===
+  ΓÜá∩╕Å  No migration journal table found
+
+=== STEP 3: Checking migration files ===
+  Found 6 migration files:
+    - 0000_zippy_piledriver.sql
+    - 0001_add_performance_indexes.sql
+    - 0001_cooing_namorita.sql
+    - 0002_add_quiz_questions.sql
+    - 0003_add_deck_quiz_questions.sql
+    - 0004_add_quiz_extended_fields.sql
+
+=== STEP 4: Force drop orphaned enums ===
+  Dropping test_status...
+  Γ£ô Dropped test_status
+  Dropping test_type...
+  Γ£ô Dropped test_type
+
+=== STEP 5: Final verification ===
+  Current enums:
+    Γ£ô mastery_status
+    Γ£ô payment_status
+    Γ£ô plan_type
+    Γ£ô subscription_status
+    Γ£ù test_status
+    Γ£ù test_type
+    Γ£ô user_role
+
+ΓÜá∩╕Å  Still have unexpected enums: test_status, test_type

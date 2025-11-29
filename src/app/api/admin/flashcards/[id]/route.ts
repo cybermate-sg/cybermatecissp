@@ -1,99 +1,107 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
-import { flashcards, decks, flashcardMedia, quizQuestions } from '@/lib/db/schema';
-import { eq, asc } from 'drizzle-orm';
-import { deleteMultipleImagesFromBlob } from '@/lib/blob';
-import { CacheInvalidation, safeInvalidate } from '@/lib/redis/invalidation';
+import { flashcards, flashcardMedia, quizQuestions } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { updateFlashcardSchema } from '@/lib/validations/flashcard';
 import { validateQuizFile } from '@/lib/validations/quiz';
+import { deleteMultipleImagesFromBlob } from '@/lib/blob';
+import { withErrorHandling } from '@/lib/api/error-handler';
+import { withTracing } from '@/lib/middleware/with-tracing';
 
 /**
  * PATCH /api/admin/flashcards/[id]
- * Update a flashcard (admin only)
+ * Update an existing flashcard with optional media and quiz questions
+ * Admin only
  */
-export async function PATCH(
+async function updateFlashcard(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const admin = await requireAdmin();
     const { id } = await params;
-
     const body = await request.json();
-    const { question, answer, explanation, order, isPublished, media, quizData } = body;
 
-    // Check if flashcard exists with media
-    const existingCard = await db.query.flashcards.findFirst({
+    // Check if flashcard exists
+    const existingFlashcard = await db.query.flashcards.findFirst({
       where: eq(flashcards.id, id),
-      with: {
-        media: {
-          orderBy: [asc(flashcardMedia.order)],
-        },
-      },
     });
 
-    if (!existingCard) {
-      return NextResponse.json({ error: 'Flashcard not found' }, { status: 404 });
+    if (!existingFlashcard) {
+      return NextResponse.json(
+        { error: 'Flashcard not found' },
+        { status: 404 }
+      );
     }
 
-    // Update flashcard
-    await db
-      .update(flashcards)
-      .set({
-        question: question !== undefined ? question : existingCard.question,
-        answer: answer !== undefined ? answer : existingCard.answer,
-        explanation: explanation !== undefined ? explanation : existingCard.explanation,
-        order: order !== undefined ? order : existingCard.order,
-        isPublished: isPublished !== undefined ? isPublished : existingCard.isPublished,
-        updatedAt: new Date(),
-      })
-      .where(eq(flashcards.id, id))
-      .returning();
+    // Extract quiz data and media if present
+    const { quizData, media, ...flashcardData } = body;
+
+    // Validate flashcard data
+    const validation = updateFlashcardSchema.safeParse({ ...flashcardData, media });
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.issues[0].message },
+        { status: 400 }
+      );
+    }
+
+    const validatedData = validation.data;
+
+    // Update the flashcard
+    const updateData: {
+      question?: string;
+      answer?: string;
+      explanation?: string | null;
+      order?: number;
+      isPublished?: boolean;
+      updatedAt: Date;
+    } = {
+      updatedAt: new Date(),
+    };
+
+    if (validatedData.question !== undefined) updateData.question = validatedData.question;
+    if (validatedData.answer !== undefined) updateData.answer = validatedData.answer;
+    if (validatedData.explanation !== undefined) updateData.explanation = validatedData.explanation || null;
+    if (validatedData.order !== undefined) updateData.order = validatedData.order;
+    if (validatedData.isPublished !== undefined) updateData.isPublished = validatedData.isPublished;
+
+    await db.update(flashcards)
+      .set(updateData)
+      .where(eq(flashcards.id, id));
 
     // Handle media updates if provided
-    if (media !== undefined && Array.isArray(media)) {
-      // Get existing media URLs for comparison
-      const existingMediaUrls = existingCard.media?.map((m) => m.fileUrl) || [];
-      const newMediaUrls = media.map((m: { url: string }) => m.url);
+    if (validatedData.media !== undefined) {
+      // Get existing media before deleting
+      const oldMedia = await db.query.flashcardMedia.findMany({
+        where: eq(flashcardMedia.flashcardId, id),
+      });
 
-      // Find media to delete (exist in DB but not in new list)
-      const mediaToDelete = existingCard.media?.filter(
-        (m) => !newMediaUrls.includes(m.fileUrl)
-      ) || [];
+      // Delete existing media from database
+      await db.delete(flashcardMedia).where(eq(flashcardMedia.flashcardId, id));
 
-      // Delete removed media from Blob storage
-      if (mediaToDelete.length > 0) {
-        const urlsToDelete = mediaToDelete.map((m) => m.fileUrl);
-        try {
-          await deleteMultipleImagesFromBlob(urlsToDelete);
-        } catch (error) {
-          console.error('Error deleting old media from blob:', error);
-        }
+      // Delete old images from blob storage that are no longer used
+      if (oldMedia.length > 0) {
+        const newMediaUrls = validatedData.media.map((m) => m.url);
+        const urlsToDelete = oldMedia
+          .map((m) => m.fileUrl)
+          .filter((url) => !newMediaUrls.includes(url));
 
-        // Delete media records from DB
-        for (const m of mediaToDelete) {
-          await db.delete(flashcardMedia).where(eq(flashcardMedia.id, m.id));
+        if (urlsToDelete.length > 0) {
+          try {
+            await deleteMultipleImagesFromBlob(urlsToDelete);
+          } catch (error) {
+            console.error('Error deleting old images from blob storage:', error);
+            // Continue even if blob deletion fails
+          }
         }
       }
 
-      // Find new media to insert (in new list but not in DB)
-      const newMedia = media.filter(
-        (m: { url: string }) => !existingMediaUrls.includes(m.url)
-      );
-
-      // Insert new media records
-      if (newMedia.length > 0) {
+      // Insert new media
+      if (validatedData.media.length > 0) {
         await db.insert(flashcardMedia).values(
-          newMedia.map((m: {
-            url: string;
-            key: string;
-            fileName: string;
-            fileSize: number;
-            mimeType: string;
-            placement: string;
-            order: number;
-            altText?: string;
-          }) => ({
+          validatedData.media.map((m) => ({
             flashcardId: id,
             fileUrl: m.url,
             fileKey: m.key,
@@ -106,46 +114,35 @@ export async function PATCH(
           }))
         );
       }
-
-      // Update order for existing media if needed
-      for (const m of media) {
-        const existingMedia = existingCard.media?.find((em) => em.fileUrl === m.url);
-        if (existingMedia && existingMedia.order !== m.order) {
-          await db
-            .update(flashcardMedia)
-            .set({ order: m.order })
-            .where(eq(flashcardMedia.id, existingMedia.id));
-        }
-      }
     }
 
     // Handle quiz questions if provided
     if (quizData !== undefined) {
-      if (quizData === null) {
-        // Delete all existing quiz questions for this flashcard
-        await db.delete(quizQuestions).where(eq(quizQuestions.flashcardId, id));
-      } else {
-        // Validate quiz data
-        const validationResult = validateQuizFile(quizData);
-        if (!validationResult.success) {
+      // Delete existing quiz questions
+      await db.delete(quizQuestions).where(eq(quizQuestions.flashcardId, id));
+
+      if (quizData) {
+        const quizValidation = validateQuizFile(quizData);
+        if (!quizValidation.success) {
           return NextResponse.json(
-            { error: `Invalid quiz data: ${validationResult.error}` },
+            { error: `Invalid quiz data: ${quizValidation.error}` },
             { status: 400 }
           );
         }
 
-        // Delete existing quiz questions
-        await db.delete(quizQuestions).where(eq(quizQuestions.flashcardId, id));
-
-        // Insert new quiz questions
-        if (validationResult.data.questions.length > 0) {
+        if (quizValidation.data.questions.length > 0) {
           await db.insert(quizQuestions).values(
-            validationResult.data.questions.map((q, index) => ({
+            quizValidation.data.questions.map((q, index) => ({
               flashcardId: id,
               questionText: q.question,
-              options: q.options, // Store as JSON
+              options: q.options,
               explanation: q.explanation || null,
+              eliminationTactics: q.elimination_tactics ? JSON.stringify(q.elimination_tactics) : null,
+              correctAnswerWithJustification: q.correct_answer_with_justification ? JSON.stringify(q.correct_answer_with_justification) : null,
+              compareRemainingOptionsWithJustification: q.compare_remaining_options_with_justification ? JSON.stringify(q.compare_remaining_options_with_justification) : null,
+              correctOptionsJustification: q.correct_options_justification ? JSON.stringify(q.correct_options_justification) : null,
               order: index,
+              difficulty: null,
               createdBy: admin.clerkUserId,
             }))
           );
@@ -153,48 +150,27 @@ export async function PATCH(
       }
     }
 
-    // Fetch complete flashcard with updated media
-    const completeFlashcard = await db.query.flashcards.findFirst({
-      where: eq(flashcards.id, id),
-      with: {
-        media: {
-          orderBy: [asc(flashcardMedia.order)],
-        },
-        deck: true,
-      },
-    });
-
-    // Invalidate related cache entries
-    if (completeFlashcard) {
-      await safeInvalidate(() =>
-        CacheInvalidation.flashcard(
-          id,
-          completeFlashcard.deckId,
-          completeFlashcard.deck.classId
-        )
-      );
-    }
-
     return NextResponse.json({
       success: true,
-      flashcard: completeFlashcard,
+      message: 'Flashcard updated successfully',
     });
-
   } catch (error) {
     console.error('Error updating flashcard:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to update flashcard';
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: errorMessage.includes('Unauthorized') ? 403 : 500 }
-    );
+    throw error;
   }
 }
 
+export const PATCH = withTracing(
+  withErrorHandling(updateFlashcard as (req: NextRequest, ...args: unknown[]) => Promise<NextResponse>, 'update admin flashcard'),
+  { logRequest: true, logResponse: false }
+) as typeof updateFlashcard;
+
 /**
  * DELETE /api/admin/flashcards/[id]
- * Delete a flashcard (admin only)
+ * Delete a flashcard and all associated media and quiz questions
+ * Admin only
  */
-export async function DELETE(
+async function deleteFlashcard(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -202,64 +178,47 @@ export async function DELETE(
     await requireAdmin();
     const { id } = await params;
 
-    // Check if flashcard exists and get media
-    const existingCard = await db.query.flashcards.findFirst({
+    // Check if flashcard exists and get its media
+    const existingFlashcard = await db.query.flashcards.findFirst({
       where: eq(flashcards.id, id),
       with: {
         media: true,
-        deck: true,
       },
     });
 
-    if (!existingCard) {
-      return NextResponse.json({ error: 'Flashcard not found' }, { status: 404 });
+    if (!existingFlashcard) {
+      return NextResponse.json(
+        { error: 'Flashcard not found' },
+        { status: 404 }
+      );
     }
 
-    // Delete all associated media from Blob storage
-    if (existingCard.media && existingCard.media.length > 0) {
-      const mediaUrls = existingCard.media.map((m) => m.fileUrl);
+    // Delete images from blob storage first
+    if (existingFlashcard.media && existingFlashcard.media.length > 0) {
+      const imageUrls = existingFlashcard.media.map((m) => m.fileUrl);
       try {
-        await deleteMultipleImagesFromBlob(mediaUrls);
+        await deleteMultipleImagesFromBlob(imageUrls);
       } catch (error) {
-        console.error('Error deleting media from blob storage:', error);
-        // Continue with flashcard deletion even if blob deletion fails
+        console.error('Error deleting images from blob storage:', error);
+        // Continue with database deletion even if blob deletion fails
+        // This prevents orphaned database records
       }
     }
 
-    // Delete flashcard (cascade will delete media records)
+    // Delete the flashcard (cascades to media and quiz questions in database)
     await db.delete(flashcards).where(eq(flashcards.id, id));
-
-    // Update deck card count
-    const deck = await db.query.decks.findFirst({
-      where: eq(decks.id, existingCard.deckId),
-    });
-
-    if (deck) {
-      await db
-        .update(decks)
-        .set({
-          cardCount: Math.max(0, deck.cardCount - 1),
-          updatedAt: new Date(),
-        })
-        .where(eq(decks.id, deck.id));
-    }
-
-    // Invalidate related cache entries
-    await safeInvalidate(() =>
-      CacheInvalidation.flashcard(id, existingCard.deckId, existingCard.deck.classId)
-    );
 
     return NextResponse.json({
       success: true,
       message: 'Flashcard deleted successfully',
     });
-
   } catch (error) {
     console.error('Error deleting flashcard:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to delete flashcard';
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: errorMessage.includes('Unauthorized') ? 403 : 500 }
-    );
+    throw error;
   }
 }
+
+export const DELETE = withTracing(
+  withErrorHandling(deleteFlashcard as (req: NextRequest, ...args: unknown[]) => Promise<NextResponse>, 'delete admin flashcard'),
+  { logRequest: true, logResponse: false }
+) as typeof deleteFlashcard;

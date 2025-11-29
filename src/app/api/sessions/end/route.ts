@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { studySessions, userStats, sessionCards } from '@/lib/db/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, avg } from 'drizzle-orm';
+import { withErrorHandling } from '@/lib/api/error-handler';
+import { withTracing } from '@/lib/middleware/with-tracing';
 
-export async function POST(request: NextRequest) {
+async function endSession(request: NextRequest) {
   try {
     const { userId } = await auth();
 
@@ -47,10 +49,10 @@ export async function POST(request: NextRequest) {
     const endedAt = new Date();
     const studyDuration = Math.floor((endedAt.getTime() - new Date(session.startedAt).getTime()) / 1000); // in seconds
 
-    // Get average confidence from session cards
+    // Get average confidence from session cards using safe aggregate function
     const sessionCardRecords = await db
       .select({
-        avgConfidence: sql<number>`AVG(${sessionCards.confidenceRating})::decimal`,
+        avgConfidence: avg(sessionCards.confidenceRating).as('avg_confidence'),
       })
       .from(sessionCards)
       .where(eq(sessionCards.sessionId, sessionId));
@@ -133,9 +135,11 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error ending session:', error);
-    return NextResponse.json(
-      { error: 'Failed to end session' },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const POST = withTracing(
+  withErrorHandling(endSession, 'end study session'),
+  { logRequest: true, logResponse: false }
+);

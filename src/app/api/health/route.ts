@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { cache } from '@/lib/redis';
 import { sql } from 'drizzle-orm';
+import { withErrorHandling } from '@/lib/api/error-handler';
+import { withTracing } from '@/lib/middleware/with-tracing';
 
 /**
  * Health Check Endpoint
@@ -16,7 +18,8 @@ import { sql } from 'drizzle-orm';
  * - 200: All services healthy
  * - 503: One or more services unhealthy
  */
-export async function GET() {
+async function getHealth(_request: NextRequest) {
+  void _request;
   const startTime = performance.now();
 
   const health = {
@@ -112,3 +115,8 @@ export async function GET() {
     },
   });
 }
+
+export const GET = withTracing(
+  withErrorHandling(getHealth, 'health check'),
+  { logRequest: false, logResponse: false }
+);

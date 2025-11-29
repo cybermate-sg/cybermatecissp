@@ -37,6 +37,9 @@ export const CacheInvalidation = {
       CacheKeys.deck.flashcards(deckId),
       // Invalidate the domain/class flashcards
       CacheKeys.domainFlashcards.all(classId),
+      // Invalidate deck quiz questions
+      CacheKeys.deckQuiz.questions(deckId),
+      CacheKeys.deckQuiz.hasQuiz(deckId),
     ];
 
     await cache.delMultiple(keysToDelete);
@@ -81,6 +84,24 @@ export const CacheInvalidation = {
     await cache.delPattern(CacheKeys.class.allUsers(classId));
 
     console.log(`Cache invalidated for user ${userId} progress on flashcard ${flashcardId}`);
+  },
+
+  /**
+   * Invalidate when deck quiz is created, updated, or deleted
+   */
+  async deckQuiz(deckId: string, classId: string): Promise<void> {
+    const keysToDelete = [
+      CacheKeys.deckQuiz.questions(deckId),
+      CacheKeys.deckQuiz.hasQuiz(deckId),
+      CacheKeys.deck.flashcards(deckId),
+    ];
+
+    await cache.delMultiple(keysToDelete);
+
+    // Invalidate class details (affects deck list)
+    await cache.delPattern(CacheKeys.class.allUsers(classId));
+
+    console.log(`Cache invalidated for deck quiz ${deckId}`);
   },
 
   /**

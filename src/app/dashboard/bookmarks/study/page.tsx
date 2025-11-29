@@ -211,7 +211,7 @@ function BookmarkStudyContent() {
               <span className="text-sm text-gray-400">Progress</span>
               <span className="text-sm text-gray-400">{Math.round(progress)}%</span>
             </div>
-            <Progress value={progress} className="h-2" />
+            <Progress value={progress} className="h-2" aria-label="Bookmark study progress" />
           </div>
         </div>
 
@@ -246,7 +246,7 @@ function BookmarkStudyContent() {
             <Button
               onClick={handlePrevious}
               variant="outline"
-              className="border-purple-500 text-purple-400 hover:bg-purple-500/10"
+              className="border-purple-400 text-purple-200 hover:bg-purple-500/10"
             >
               <ChevronLeft className="w-4 h-4 mr-2" />
               Previous
@@ -254,7 +254,7 @@ function BookmarkStudyContent() {
             <Button
               onClick={handleNext}
               variant="outline"
-              className="border-purple-500 text-purple-400 hover:bg-purple-500/10"
+              className="border-purple-400 text-purple-200 hover:bg-purple-500/10"
             >
               Next
               <ChevronRight className="w-4 h-4 ml-2" />

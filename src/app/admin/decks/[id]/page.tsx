@@ -8,7 +8,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +17,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Plus, Edit2, Trash2, ArrowLeft, Image as ImageIcon, ClipboardList } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import RichTextEditor from "@/components/admin/RichTextEditor";
+import { Loader2, Plus, Edit2, Trash2, ArrowLeft, Image as ImageIcon, ClipboardList, TestTube, Upload, X, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { validateQuizFile, type QuizFile } from "@/lib/validations/quiz";
 
@@ -26,6 +29,7 @@ interface DeckData {
   id: string;
   name: string;
   description: string | null;
+  type: string;
   classId: string;
   class: {
     id: string;
@@ -56,6 +60,9 @@ interface FlashcardMedia {
   id: string;
   fileUrl: string;
   fileName: string;
+  fileKey: string;
+  fileSize: number;
+  mimeType: string;
   placement: string;
   order: number;
 }
@@ -74,6 +81,17 @@ interface ImageUpload {
   placement: 'question' | 'answer';
   order: number;
   isExisting?: boolean; // true if loaded from database
+}
+
+interface MediaUpload {
+  url: string;
+  key: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  placement: string;
+  order: number;
+  altText: string | null;
 }
 
 export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -101,6 +119,13 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
   const [quizData, setQuizData] = useState<QuizFile | null>(null);
   const [quizFileName, setQuizFileName] = useState<string>("");
 
+  // Deck-level quiz state
+  const [deckQuizData, setDeckQuizData] = useState<QuizFile | null>(null);
+  const [deckQuizFileName, setDeckQuizFileName] = useState<string>("");
+  const [deckQuizLoading, setDeckQuizLoading] = useState(false);
+  const [deckHasQuiz, setDeckHasQuiz] = useState(false);
+  const [deckQuizCount, setDeckQuizCount] = useState(0);
+
   // Unwrap params
   useEffect(() => {
     params.then((p) => setDeckId(p.id));
@@ -122,6 +147,7 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
         id: data.id,
         name: data.name,
         description: data.description,
+        type: data.type || 'flashcard',
         classId: data.classId,
         class: data.class,
       });
@@ -139,6 +165,22 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
       loadDeckData();
     }
   }, [deckId, loadDeckData]);
+
+  // Check if deck has quiz on mount
+  useEffect(() => {
+    const checkDeckQuiz = async () => {
+      if (!deckId) return;
+      try {
+        const res = await fetch(`/api/decks/${deckId}/has-quiz`);
+        const data = await res.json();
+        setDeckHasQuiz(data.hasQuiz);
+        setDeckQuizCount(data.count);
+      } catch (error) {
+        console.error('Error checking deck quiz:', error);
+      }
+    };
+    checkDeckQuiz();
+  }, [deckId]);
 
   const openCreateDialog = () => {
     setEditingCard(null);
@@ -298,6 +340,92 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
     toast.success('Quiz removed');
   };
 
+  // Deck-level quiz handlers
+  const handleDeckQuizFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      const result = validateQuizFile(json);
+
+      if (!result.success) {
+        toast.error(`Invalid quiz file: ${result.error}`);
+        setDeckQuizData(null);
+        setDeckQuizFileName("");
+        return;
+      }
+
+      setDeckQuizData(result.data);
+      setDeckQuizFileName(file.name);
+      toast.success(`${result.data.questions.length} question(s) loaded`);
+    } catch {
+      toast.error('Failed to parse JSON file');
+      setDeckQuizData(null);
+      setDeckQuizFileName("");
+    }
+  };
+
+  const handleUploadDeckQuiz = async () => {
+    if (!deckQuizData) {
+      toast.error('Please select a quiz file first');
+      return;
+    }
+
+    setDeckQuizLoading(true);
+    try {
+      const res = await fetch(`/api/admin/decks/${deckId}/quiz`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quizData: deckQuizData,
+          classId: deckData?.classId,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to upload deck quiz');
+
+      const data = await res.json();
+      toast.success(data.message);
+      setDeckHasQuiz(true);
+      setDeckQuizCount(data.count || deckQuizData.questions.length);
+      setDeckQuizData(null);
+      setDeckQuizFileName("");
+    } catch (error) {
+      toast.error('Failed to upload deck quiz');
+      console.error(error);
+    } finally {
+      setDeckQuizLoading(false);
+    }
+  };
+
+  const handleDeleteDeckQuiz = async () => {
+    if (!confirm('Are you sure you want to delete all quiz questions for this deck?')) {
+      return;
+    }
+
+    setDeckQuizLoading(true);
+    try {
+      const res = await fetch(`/api/admin/decks/${deckId}/quiz`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) throw new Error('Failed to delete deck quiz');
+
+      toast.success('Deck quiz deleted successfully');
+      setDeckHasQuiz(false);
+      setDeckQuizCount(0);
+      setDeckQuizData(null);
+      setDeckQuizFileName("");
+    } catch (error) {
+      toast.error('Failed to delete deck quiz');
+      console.error(error);
+    } finally {
+      setDeckQuizLoading(false);
+    }
+  };
+
   const handleSaveCard = async () => {
     if (!formData.question.trim() || !formData.answer.trim()) {
       toast.error("Question and answer are required");
@@ -307,8 +435,74 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
     if (!deckId) return;
 
     setIsSaving(true);
+    setUploadingImages(true);
+
     try {
-      // First, create or update the flashcard
+      const allImages = [...questionImages, ...answerImages];
+      const flashcardId = editingCard?.id || 'temp';
+
+      // Upload new images first
+      const uploadedMedia: MediaUpload[] = [];
+
+      for (const image of allImages) {
+        // Skip already uploaded images (existing ones from DB)
+        if (image.isExisting && !image.file) {
+          // For existing images, we need to find the corresponding media data
+          const existingMedia = editingCard?.media?.find(m =>
+            m.fileUrl === image.preview && m.placement === image.placement
+          );
+          if (existingMedia) {
+            uploadedMedia.push({
+              url: existingMedia.fileUrl,
+              key: existingMedia.fileKey,
+              fileName: existingMedia.fileName,
+              fileSize: existingMedia.fileSize,
+              mimeType: existingMedia.mimeType,
+              placement: image.placement,
+              order: image.order,
+              altText: null,
+            });
+          }
+          continue;
+        }
+
+        // Upload new images
+        if (image.file) {
+          try {
+            const uploadFormData = new FormData();
+            uploadFormData.append('file', image.file);
+            uploadFormData.append('flashcardId', flashcardId);
+            uploadFormData.append('placement', image.placement);
+            uploadFormData.append('order', image.order.toString());
+
+            const uploadRes = await fetch('/api/admin/upload', {
+              method: 'POST',
+              body: uploadFormData,
+            });
+
+            if (!uploadRes.ok) {
+              console.error('Failed to upload image:', image.file.name);
+              continue;
+            }
+
+            const uploadData = await uploadRes.json();
+            uploadedMedia.push({
+              url: uploadData.url,
+              key: uploadData.key,
+              fileName: uploadData.fileName,
+              fileSize: uploadData.fileSize,
+              mimeType: uploadData.mimeType,
+              placement: image.placement,
+              order: image.order,
+              altText: null,
+            });
+          } catch (error) {
+            console.error('Error uploading image:', error);
+          }
+        }
+      }
+
+      // Now create or update the flashcard with media array
       const url = editingCard
         ? `/api/admin/flashcards/${editingCard.id}`
         : "/api/admin/flashcards";
@@ -321,38 +515,13 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
           ...formData,
           deckId: deckId,
           quizData: quizData,
+          media: uploadedMedia,
         }),
       });
 
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to save flashcard");
-      }
-
-      const savedCard = await res.json();
-      const flashcardId = savedCard.flashcard?.id || savedCard.id;
-
-      // Upload only new images (not existing ones)
-      const newImages = [...questionImages, ...answerImages].filter(img => !img.isExisting && img.file);
-      if (newImages.length > 0) {
-        setUploadingImages(true);
-        for (const image of newImages) {
-          const formData = new FormData();
-          formData.append('file', image.file!);
-          formData.append('flashcardId', flashcardId);
-          formData.append('placement', image.placement);
-          formData.append('order', image.order.toString());
-
-          const uploadRes = await fetch('/api/admin/upload', {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (!uploadRes.ok) {
-            console.error('Failed to upload image:', image.file!.name);
-          }
-        }
-        setUploadingImages(false);
       }
 
       toast.success(editingCard ? "Card updated successfully" : "Card created successfully");
@@ -485,6 +654,163 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
 
         {activeTab === "edit" && (
           <div className="max-w-6xl mx-auto">
+
+            {/* Deck-Level Test/Quiz Section - Only show for quiz-type decks */}
+            {deckData.type === 'quiz' && (
+            <Card className="mb-6 border-blue-200 bg-blue-50/30">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <TestTube className="w-5 h-5 text-blue-600" />
+                    <h2 className="text-lg font-semibold text-slate-800">
+                      Deck-Level Test/Quiz
+                    </h2>
+                    {deckHasQuiz && (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+                        {deckQuizCount} Question{deckQuizCount !== 1 ? 's' : ''}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <p className="text-sm text-slate-600 mb-4">
+                  Upload quiz questions for the entire deck. Users can take this test to assess their knowledge across all concepts.
+                  <strong className="block mt-1">Note: Uploading multiple files will ADD questions to the existing quiz.</strong>
+                </p>
+
+                {/* Current Quiz Status */}
+                {deckHasQuiz && (
+                  <Alert className="mb-4 bg-blue-50 border-blue-200">
+                    <TestTube className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-800">
+                      This deck has {deckQuizCount} quiz question{deckQuizCount !== 1 ? 's' : ''}.
+                      Upload a new file to add more questions, or delete all questions using the button below.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="space-y-4">
+                  {/* File Upload */}
+                  <div className="space-y-2">
+                    <Label htmlFor="deck-quiz-upload" className="text-slate-700">
+                      Upload Quiz JSON File
+                    </Label>
+                    <Input
+                      id="deck-quiz-upload"
+                      type="file"
+                      accept=".json"
+                      onChange={handleDeckQuizFileSelect}
+                      className="bg-white border-slate-300 cursor-pointer"
+                      disabled={deckQuizLoading}
+                    />
+                    <p className="text-xs text-slate-500">
+                      Expected format: Same as flashcard quiz JSON (see example below)
+                    </p>
+                  </div>
+
+                  {/* Preview of loaded quiz */}
+                  {deckQuizData && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="font-medium text-blue-900">
+                            ✓ {deckQuizData.questions.length} question(s) loaded
+                          </p>
+                          <p className="text-sm text-blue-700">{deckQuizFileName}</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setDeckQuizData(null);
+                            setDeckQuizFileName("");
+                          }}
+                          className="text-blue-700 hover:bg-blue-100"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+
+                      {/* Show first 2 questions preview */}
+                      <div className="mt-3 space-y-2">
+                        <p className="text-xs font-semibold text-blue-800">Preview:</p>
+                        {deckQuizData.questions.slice(0, 2).map((q, idx) => (
+                          <div key={idx} className="text-xs bg-white p-2 rounded border border-blue-200">
+                            <p className="font-medium text-slate-800">{idx + 1}. {q.question}</p>
+                            <p className="text-slate-600 mt-1">
+                              {q.options.length} options •
+                              {q.options.filter(o => o.isCorrect).length} correct answer(s)
+                            </p>
+                          </div>
+                        ))}
+                        {deckQuizData.questions.length > 2 && (
+                          <p className="text-xs text-blue-600">
+                            ... and {deckQuizData.questions.length - 2} more question(s)
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={handleUploadDeckQuiz}
+                      disabled={!deckQuizData || deckQuizLoading}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      {deckQuizLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-2" />
+                          {deckHasQuiz ? 'Add More Questions' : 'Upload Deck Quiz'}
+                        </>
+                      )}
+                    </Button>
+
+                    {deckHasQuiz && (
+                      <Button
+                        onClick={handleDeleteDeckQuiz}
+                        disabled={deckQuizLoading}
+                        variant="destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Deck Quiz
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* JSON Format Example */}
+                  <Collapsible>
+                    <CollapsibleTrigger className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800">
+                      <ChevronDown className="w-4 h-4" />
+                      View Expected JSON Format
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <pre className="text-xs bg-slate-100 p-3 rounded border overflow-x-auto">
+{`{
+  "questions": [
+    {
+      "question": "What does CIA stand for in information security?",
+      "options": [
+        { "text": "Confidentiality, Integrity, Availability", "isCorrect": true },
+        { "text": "Central Intelligence Agency", "isCorrect": false },
+        { "text": "Computer Information Access", "isCorrect": false }
+      ],
+      "explanation": "CIA Triad is fundamental to information security"
+    }
+  ]
+}`}
+                      </pre>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+              </CardContent>
+            </Card>
+            )}
 
             {/* Flashcards List */}
             {flashcards.length === 0 ? (
@@ -636,13 +962,11 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
 
           <div className="space-y-6 py-4">
             <div className="space-y-3">
-              <Label htmlFor="question" className="text-base font-semibold">Question *</Label>
-              <Textarea
-                id="question"
-                value={formData.question}
-                onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-                placeholder="Enter the question..."
-                className="bg-white border-slate-300 text-slate-900 min-h-[120px]"
+              <RichTextEditor
+                label="Question *"
+                content={formData.question}
+                onChange={(html) => setFormData({ ...formData, question: html })}
+                placeholder="Enter the question... You can use formatting, lists, and tables."
               />
               <div className="space-y-2">
                 <div className="flex gap-2">
@@ -689,13 +1013,11 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
             </div>
 
             <div className="space-y-3">
-              <Label htmlFor="answer" className="text-base font-semibold">Answer *</Label>
-              <Textarea
-                id="answer"
-                value={formData.answer}
-                onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
-                placeholder="Enter the answer..."
-                className="bg-white border-slate-300 text-slate-900 min-h-[120px]"
+              <RichTextEditor
+                label="Answer *"
+                content={formData.answer}
+                onChange={(html) => setFormData({ ...formData, answer: html })}
+                placeholder="Enter the answer... You can use formatting, lists, and tables."
               />
               <div className="space-y-2">
                 <div className="flex gap-2">

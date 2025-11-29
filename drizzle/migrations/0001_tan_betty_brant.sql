@@ -1,0 +1,1 @@
+ALTER TABLE "decks" ADD COLUMN "type" varchar(50) DEFAULT 'flashcard' NOT NULL;

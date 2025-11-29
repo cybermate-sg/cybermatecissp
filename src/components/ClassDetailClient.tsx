@@ -2,29 +2,17 @@
 
 import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Play, Check } from "lucide-react";
+import { Play, Check, Layers, ClipboardList, HelpCircle } from "lucide-react";
 import type { ClassData } from "@/lib/api/class-server";
-
-// Lazy load Dialog for better initial bundle size
-const Dialog = dynamic(() => import("@/components/ui/dialog").then(mod => ({ default: mod.Dialog })), {
-  ssr: false,
-});
-const DialogContent = dynamic(() => import("@/components/ui/dialog").then(mod => ({ default: mod.DialogContent })), {
-  ssr: false,
-});
-const DialogDescription = dynamic(() => import("@/components/ui/dialog").then(mod => ({ default: mod.DialogDescription })), {
-  ssr: false,
-});
-const DialogHeader = dynamic(() => import("@/components/ui/dialog").then(mod => ({ default: mod.DialogHeader })), {
-  ssr: false,
-});
-const DialogTitle = dynamic(() => import("@/components/ui/dialog").then(mod => ({ default: mod.DialogTitle })), {
-  ssr: false,
-});
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type StudyMode = "progressive" | "random";
 
@@ -63,65 +51,103 @@ export default function ClassDetailClient({ classData, userName, daysLeft }: Cla
     });
   }, []);
 
-  // Toggle select all decks - memoized with decks dependency
-  const toggleSelectAll = useCallback(() => {
-    if (selectedDecks.size === decks.length) {
-      setSelectedDecks(new Set());
-    } else {
-      setSelectedDecks(new Set(decks.map(d => d.id)));
-    }
-  }, [selectedDecks.size, decks]);
+  // Get flashcard decks only (quiz decks can't be studied in class mode)
+  const flashcardDecks = useMemo(() => decks.filter(d => d.type === 'flashcard'), [decks]);
 
-  const allSelected = selectedDecks.size === decks.length && decks.length > 0;
+  // Toggle select all flashcard decks - memoized with flashcardDecks dependency
+  const toggleSelectAll = useCallback(() => {
+    const flashcardDeckIds = flashcardDecks.map(d => d.id);
+    const allFlashcardsSelected = flashcardDeckIds.every(id => selectedDecks.has(id));
+
+    if (allFlashcardsSelected && flashcardDeckIds.length > 0) {
+      // Deselect all flashcard decks (keep any quiz decks selected)
+      setSelectedDecks(prev => {
+        const newSet = new Set(prev);
+        flashcardDeckIds.forEach(id => newSet.delete(id));
+        return newSet;
+      });
+    } else {
+      // Select all flashcard decks (keep any quiz decks selected)
+      setSelectedDecks(prev => {
+        const newSet = new Set(prev);
+        flashcardDeckIds.forEach(id => newSet.add(id));
+        return newSet;
+      });
+    }
+  }, [selectedDecks, flashcardDecks]);
+
+  const allFlashcardsSelected = useMemo(() => {
+    if (flashcardDecks.length === 0) return false;
+    return flashcardDecks.every(d => selectedDecks.has(d.id));
+  }, [selectedDecks, flashcardDecks]);
+
+  // Check deck types in selection
+  const decksToStudy = selectedDecks.size > 0
+    ? decks.filter(d => selectedDecks.has(d.id))
+    : decks;
+  const hasFlashcardDecks = decksToStudy.some(d => d.type === 'flashcard');
+  const hasQuizDecks = decksToStudy.some(d => d.type === 'quiz');
+  const onlyQuizDecks = !hasFlashcardDecks && hasQuizDecks;
+  const hasBothTypes = hasFlashcardDecks && hasQuizDecks;
+
+  // Get flashcard-only deck IDs for study route
+  const flashcardDeckIds = decksToStudy
+    .filter(d => d.type === 'flashcard')
+    .map(d => d.id);
+
+  // Get quiz deck names for info message
+  const quizDeckNames = decksToStudy
+    .filter(d => d.type === 'quiz')
+    .map(d => d.name);
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Class Header */}
       <div className="mb-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
-          {classData.name}
+        <h1 className="text-4xl font-bold text-gray-900 mb-3">
+          CISSP in 50 Days Program
         </h1>
         {daysLeft !== null && (
-          <p className="text-lg text-gray-300 mb-4">
-            Hi, <span className="text-purple-400 font-semibold">{userName}</span>, you have{' '}
-            <span className="text-blue-400 font-bold">{daysLeft}</span> days left
+          <p className="text-base text-gray-600 mb-6">
+            Hi, <span className="text-blue-600 font-medium">{userName}</span>, you have{' '}
+            <span className="text-gray-900 font-bold">{daysLeft}</span> days left
           </p>
         )}
 
         {/* Overall Progress Card */}
-        <Card className="bg-slate-800/50 border-slate-700 mb-6">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold text-gray-300">Overall Progress</h3>
-              <span className="text-2xl font-bold text-blue-400">{overallProgress}%</span>
+        <Card className="bg-white border-gray-200 mb-6 shadow-sm">
+          <CardContent className="pt-6 pb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-gray-900">Overall Progress</h2>
+              <span className="text-2xl font-bold text-blue-600">{overallProgress}%</span>
             </div>
-            <Progress value={overallProgress} className="h-3 mb-2" />
-            <p className="text-sm font-semibold text-white bg-blue-600 px-3 py-1.5 rounded-md inline-block">
+            <Progress value={overallProgress} className="h-2 mb-3" aria-label={`${classData.name} overall progress`} />
+            <p className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded inline-block">
               {totalStudied} of {totalCards} unique cards studied
             </p>
           </CardContent>
         </Card>
 
         {/* Study Mode Toggle & Study Button */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
           {/* Study Mode Selector */}
-          <div className="flex items-center gap-2 bg-slate-800/50 p-1 rounded-lg border border-slate-700">
+          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
             <button
               onClick={() => setStudyMode("progressive")}
-              className={`flex-1 px-4 py-2.5 rounded-md text-sm font-semibold transition-all ${
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                 studyMode === "progressive"
-                  ? "bg-slate-700 text-white"
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-gray-900 text-white"
+                  : "text-gray-600 hover:text-gray-900"
               }`}
             >
               PROGRESSIVE
             </button>
             <button
               onClick={() => setStudyMode("random")}
-              className={`flex-1 px-4 py-2.5 rounded-md text-sm font-semibold transition-all ${
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                 studyMode === "random"
-                  ? "bg-slate-700 text-white"
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-gray-900 text-white"
+                  : "text-gray-600 hover:text-gray-900"
               }`}
             >
               RANDOM
@@ -133,100 +159,148 @@ export default function ClassDetailClient({ classData, userName, daysLeft }: Cla
             variant="outline"
             size="sm"
             onClick={() => setShowModeInfo(true)}
-            className="border-slate-600 text-gray-300 hover:bg-slate-700 hover:text-white"
+            className="border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-gray-900 flex items-center gap-1.5"
           >
             What&apos;s this?
+            <HelpCircle className="w-4 h-4" />
           </Button>
 
           {/* Select All Button */}
           <button
             onClick={toggleSelectAll}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-slate-800/50 border border-slate-700 hover:bg-slate-700 transition-colors text-gray-300 hover:text-white"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors text-gray-600 hover:text-gray-900 ml-auto"
           >
-            <div className={`w-5 h-5 rounded flex items-center justify-center ${
-              allSelected ? 'bg-blue-500' : 'bg-slate-700 border border-slate-600'
+            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+              allFlashcardsSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-400'
             }`}>
-              {allSelected && <Check className="w-4 h-4 text-white" />}
+              {allFlashcardsSelected && <Check className="w-3 h-3 text-white" />}
             </div>
-            <span className="text-sm font-medium">
-              {allSelected ? 'Deselect All' : 'Select All'}
-            </span>
+            <span className="text-sm font-medium">Select All</span>
           </button>
         </div>
 
         {/* Study Button */}
-        <Link
-          href={
-            selectedDecks.size > 0
-              ? `/dashboard/class/${classData.id}/study?mode=${studyMode}&decks=${Array.from(selectedDecks).join(',')}`
-              : `/dashboard/class/${classData.id}/study?mode=${studyMode}`
-          }
-        >
-          <Button
-            size="lg"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg py-6"
-          >
-            <Play className="w-5 h-5 mr-2 fill-white" />
-            {selectedDecks.size > 0
-              ? `STUDY (${selectedDecks.size} ${selectedDecks.size === 1 ? 'Deck' : 'Decks'})`
-              : 'STUDY'
-            }
-          </Button>
-        </Link>
+        {onlyQuizDecks ? (
+          <div>
+            <Button
+              size="lg"
+              disabled
+              className="w-full bg-gray-400 text-white font-semibold text-base py-6 mb-2 cursor-not-allowed"
+            >
+              <Play className="w-5 h-5 mr-2 fill-white" />
+              STUDY
+            </Button>
+            <p className="text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded mb-6 border border-amber-200">
+              Quiz decks cannot be studied in class mode. Use the quick play button on each quiz deck to take the test.
+            </p>
+          </div>
+        ) : (
+          <div>
+            <Link
+              href={
+                selectedDecks.size > 0 && flashcardDeckIds.length > 0
+                  ? `/dashboard/class/${classData.id}/study?mode=${studyMode}&decks=${flashcardDeckIds.join(',')}`
+                  : `/dashboard/class/${classData.id}/study?mode=${studyMode}`
+              }
+            >
+              <Button
+                size="lg"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base py-6 mb-2"
+              >
+                <Play className="w-5 h-5 mr-2 fill-white" />
+                STUDY
+              </Button>
+            </Link>
+            {hasBothTypes && (
+              <p className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded mb-6 border border-blue-200 flex items-start gap-2">
+                <span className="text-blue-600 font-semibold flex-shrink-0">ℹ️</span>
+                <span>
+                  <strong>{flashcardDeckIds.length} flashcard deck{flashcardDeckIds.length !== 1 ? 's' : ''}</strong> will be studied.
+                  Quiz deck{quizDeckNames.length !== 1 ? 's' : ''} ({quizDeckNames.join(', ')}) should be accessed via {quizDeckNames.length !== 1 ? 'their' : 'its'} quick play button.
+                </span>
+              </p>
+            )}
+            {!hasBothTypes && <div className="mb-6" />}
+          </div>
+        )}
       </div>
 
       {/* Deck List */}
       <div>
         {decks.length === 0 ? (
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-white border-gray-200">
             <CardContent className="py-12">
-              <div className="text-center text-gray-400">
+              <div className="text-center text-gray-500">
                 No decks available in this class yet.
               </div>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {decks.map((deck) => {
               const isSelected = selectedDecks.has(deck.id);
               return (
                 <Card
                   key={deck.id}
-                  onClick={() => toggleDeckSelection(deck.id)}
-                  className={`cursor-pointer transition-all border-2 bg-slate-800/50 ${
+                  className={`transition-all bg-white border shadow-sm ${
                     isSelected
-                      ? 'border-blue-500 shadow-lg shadow-blue-500/20'
-                      : 'border-slate-700 hover:border-slate-600 hover:shadow-md'
+                      ? 'border-blue-500 shadow-md'
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
                   <CardContent className="p-4 sm:p-6">
                     <div className="flex items-center gap-3 sm:gap-4">
                       {/* Selection Checkbox */}
-                      <div className="flex-shrink-0">
-                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-colors ${
+                      <div
+                        className="flex-shrink-0 cursor-pointer"
+                        onClick={() => toggleDeckSelection(deck.id)}
+                      >
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
                           isSelected
-                            ? 'bg-blue-500'
-                            : 'bg-slate-700 border border-slate-600'
+                            ? 'bg-blue-500 border-blue-500'
+                            : 'border-gray-300'
                         }`}>
-                          {isSelected && <Check className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}
+                          {isSelected && <Check className="w-4 h-4 text-white" />}
                         </div>
                       </div>
 
-                      {/* Progress Indicator */}
+                      {/* Deck Type Icon */}
                       <div className="flex-shrink-0">
-                        <div className="text-xl sm:text-2xl font-bold text-white">
-                          {deck.progress}%
-                        </div>
+                        {deck.type === 'quiz' ? (
+                          <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center" title="Quiz Deck">
+                            <ClipboardList className="w-6 h-6 text-blue-600" />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center" title="Flashcard Deck">
+                            <Layers className="w-6 h-6 text-green-600" />
+                          </div>
+                        )}
                       </div>
 
                       {/* Deck Info */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-base sm:text-lg font-semibold text-white mb-1 truncate">
-                          {deck.name}
-                        </h3>
-                        <p className="text-xs sm:text-sm text-gray-400">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {deck.name}
+                          </h3>
+                          <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                            deck.type === 'quiz'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-green-100 text-green-700'
+                          }`}>
+                            {deck.type === 'quiz' ? 'Quiz' : 'Flashcard'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500">
                           {deck.studiedCount} of {deck.cardCount} unique cards studied
                         </p>
+                      </div>
+
+                      {/* Progress Percentage */}
+                      <div className="flex-shrink-0">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {deck.progress}%
+                        </div>
                       </div>
 
                       {/* Quick Play Button */}
@@ -234,17 +308,12 @@ export default function ClassDetailClient({ classData, userName, daysLeft }: Cla
                         <Link href={`/dashboard/deck/${deck.id}?mode=${studyMode}`}>
                           <Button
                             size="sm"
-                            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full h-10 w-10 p-0"
+                            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full h-12 w-12 p-0"
                           >
-                            <Play className="w-4 h-4 fill-white" />
+                            <Play className="w-5 h-5 fill-white" />
                           </Button>
                         </Link>
                       </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="mt-4">
-                      <Progress value={deck.progress} className="h-2" />
                     </div>
                   </CardContent>
                 </Card>
@@ -256,25 +325,25 @@ export default function ClassDetailClient({ classData, userName, daysLeft }: Cla
 
       {/* Study Mode Info Dialog */}
       <Dialog open={showModeInfo} onOpenChange={setShowModeInfo}>
-        <DialogContent className="bg-slate-800 border-slate-700 text-white">
+        <DialogContent className="bg-white border-gray-200">
           <DialogHeader>
-            <DialogTitle className="text-white">Study Modes</DialogTitle>
-            <DialogDescription className="space-y-4 pt-4 text-gray-300">
+            <DialogTitle className="text-gray-900">Study Modes</DialogTitle>
+            <div className="space-y-4 pt-4 text-gray-600">
               <div>
-                <h4 className="font-semibold text-white mb-1">Progressive Mode</h4>
+                <h4 className="font-semibold text-gray-900 mb-1">Progressive Mode</h4>
                 <p className="text-sm">
                   Focuses on cards that need the most attention. Shows cards with low confidence
                   ratings or those due for review based on spaced repetition.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-white mb-1">Random Mode</h4>
+                <h4 className="font-semibold text-gray-900 mb-1">Random Mode</h4>
                 <p className="text-sm">
                   Cards are shuffled randomly to test your knowledge in an unpredictable order.
                   Perfect for simulating exam conditions.
                 </p>
               </div>
-            </DialogDescription>
+            </div>
           </DialogHeader>
         </DialogContent>
       </Dialog>

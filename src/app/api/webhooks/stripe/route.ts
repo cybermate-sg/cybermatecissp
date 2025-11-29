@@ -1,7 +1,7 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { db } from '@/lib/db';
+import { db, withRetry } from '@/lib/db';
 import { subscriptions, payments } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -159,50 +159,62 @@ async function handleSubscriptionUpdate(
   const status = statusMap[subscription.status] || 'inactive';
 
   // Check if subscription already exists
-  const existingSubscription = await db.query.subscriptions.findFirst({
-    where: eq(subscriptions.stripeSubscriptionId, subscription.id),
-  });
+  const existingSubscription = await withRetry(
+    () => db.query.subscriptions.findFirst({
+      where: eq(subscriptions.stripeSubscriptionId, subscription.id),
+    }),
+    { queryName: 'webhook-find-subscription' }
+  );
 
   if (existingSubscription) {
     // Update existing subscription
-    await db
-      .update(subscriptions)
-      .set({
-        status,
-        planType,
-        currentPeriodStart: new Date((subscription as SubscriptionWithPeriod).current_period_start * 1000),
-        currentPeriodEnd: new Date((subscription as SubscriptionWithPeriod).current_period_end * 1000),
-        cancelAtPeriodEnd: subscription.cancel_at_period_end,
-        updatedAt: new Date(),
-      })
-      .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
+    await withRetry(
+      () => db
+        .update(subscriptions)
+        .set({
+          status,
+          planType,
+          currentPeriodStart: new Date((subscription as SubscriptionWithPeriod).current_period_start * 1000),
+          currentPeriodEnd: new Date((subscription as SubscriptionWithPeriod).current_period_end * 1000),
+          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+          updatedAt: new Date(),
+        })
+        .where(eq(subscriptions.stripeSubscriptionId, subscription.id)),
+      { queryName: 'webhook-update-subscription' }
+    );
 
     console.log('Updated subscription:', subscription.id);
   } else {
     // Create new subscription
-    await db.insert(subscriptions).values({
-      clerkUserId: userId,
-      stripeCustomerId: customer,
-      stripeSubscriptionId: subscription.id,
-      planType,
-      status,
-      currentPeriodStart: new Date((subscription as SubscriptionWithPeriod).current_period_start * 1000),
-      currentPeriodEnd: new Date((subscription as SubscriptionWithPeriod).current_period_end * 1000),
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
-    });
+    await withRetry(
+      () => db.insert(subscriptions).values({
+        clerkUserId: userId,
+        stripeCustomerId: customer,
+        stripeSubscriptionId: subscription.id,
+        planType,
+        status,
+        currentPeriodStart: new Date((subscription as SubscriptionWithPeriod).current_period_start * 1000),
+        currentPeriodEnd: new Date((subscription as SubscriptionWithPeriod).current_period_end * 1000),
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      }),
+      { queryName: 'webhook-insert-subscription' }
+    );
 
     console.log('Created new subscription:', subscription.id);
   }
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
-  await db
-    .update(subscriptions)
-    .set({
-      status: 'canceled',
-      updatedAt: new Date(),
-    })
-    .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
+  await withRetry(
+    () => db
+      .update(subscriptions)
+      .set({
+        status: 'canceled',
+        updatedAt: new Date(),
+      })
+      .where(eq(subscriptions.stripeSubscriptionId, subscription.id)),
+    { queryName: 'webhook-delete-subscription' }
+  );
 
   console.log('Subscription canceled:', subscription.id);
 }
@@ -219,14 +231,17 @@ async function handlePaymentSucceeded(
   }
 
   // Record the payment
-  await db.insert(payments).values({
-    clerkUserId: userId,
-    stripePaymentIntentId: paymentIntent.id,
-    amount: paymentIntent.amount,
-    currency: paymentIntent.currency,
-    status: 'succeeded',
-    paymentMethod: paymentIntent.payment_method_types[0] || 'unknown',
-  });
+  await withRetry(
+    () => db.insert(payments).values({
+      clerkUserId: userId,
+      stripePaymentIntentId: paymentIntent.id,
+      amount: paymentIntent.amount,
+      currency: paymentIntent.currency,
+      status: 'succeeded',
+      paymentMethod: paymentIntent.payment_method_types[0] || 'unknown',
+    }),
+    { queryName: 'webhook-insert-payment-succeeded' }
+  );
 
   console.log('Payment succeeded:', paymentIntent.id);
 }
@@ -240,14 +255,17 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
   }
 
   // Record the failed payment
-  await db.insert(payments).values({
-    clerkUserId: userId,
-    stripePaymentIntentId: paymentIntent.id,
-    amount: paymentIntent.amount,
-    currency: paymentIntent.currency,
-    status: 'failed',
-    paymentMethod: paymentIntent.payment_method_types[0] || 'unknown',
-  });
+  await withRetry(
+    () => db.insert(payments).values({
+      clerkUserId: userId,
+      stripePaymentIntentId: paymentIntent.id,
+      amount: paymentIntent.amount,
+      currency: paymentIntent.currency,
+      status: 'failed',
+      paymentMethod: paymentIntent.payment_method_types[0] || 'unknown',
+    }),
+    { queryName: 'webhook-insert-payment-failed' }
+  );
 
   console.log('Payment failed:', paymentIntent.id);
 }

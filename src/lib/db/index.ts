@@ -15,24 +15,64 @@ if (!effectiveConnectionString && !isNextBuild) {
   throw new Error('DATABASE_URL or POSTGRES_URL environment variable is required');
 }
 
-// Create postgres client with connection pooling for Xata
-// Optimized for Xata free tier memory constraints
-const client = postgres(effectiveConnectionString!, {
-  prepare: false,
-  max: 5, // Increased slightly from 2 to handle concurrent requests better
-  idle_timeout: 20, // Release idle connections after 20 seconds
-  max_lifetime: 60 * 5, // 5 minutes max lifetime
-  connect_timeout: 45, // Connection timeout increased to 45 seconds for cold starts and warmup
-  fetch_types: false, // Disable type fetching to reduce memory
-  onnotice: () => {}, // Suppress notices
-  connection: {
-    application_name: 'cisspmastery', // Add application name for better monitoring
-  },
-});
+// Singleton pattern for database client to prevent connection pool exhaustion in development
+// This is critical for Xata.io which has strict concurrent connection limits
+declare global {
+  var __db: ReturnType<typeof drizzle<typeof schema>> | undefined;
+  var __dbClient: ReturnType<typeof postgres> | undefined;
+}
+
+// Create postgres client with connection pooling optimized for Xata
+// IMPORTANT: Lower connection pool for Xata to avoid hitting concurrency limits
+let client: ReturnType<typeof postgres>;
+
+if (process.env.NODE_ENV === 'production') {
+  client = postgres(effectiveConnectionString!, {
+    prepare: false,
+    max: 10, // Production can handle more connections
+    idle_timeout: 30,
+    max_lifetime: 60 * 10,
+    connect_timeout: 30,
+    fetch_types: false,
+    onnotice: () => {},
+    connection: {
+      application_name: 'cisspmastery',
+    },
+  });
+} else {
+  // Development: Reuse existing client to prevent connection pool exhaustion
+  if (!global.__dbClient) {
+    global.__dbClient = postgres(effectiveConnectionString!, {
+      prepare: false,
+      max: 3, // REDUCED: Xata free tier has strict limits
+      idle_timeout: 20,
+      max_lifetime: 60 * 5,
+      connect_timeout: 10,
+      fetch_types: false,
+      onnotice: () => {},
+      connection: {
+        application_name: 'cisspmastery-dev',
+      },
+    });
+  }
+  client = global.__dbClient;
+}
 
 // Drizzle instance optimized for PostgreSQL
 // Works seamlessly with Xata.io, Vercel Postgres, Neon, or any PostgreSQL compatible service
-export const db = drizzle(client, { schema });
+let db: ReturnType<typeof drizzle<typeof schema>>;
+
+if (process.env.NODE_ENV === 'production') {
+  db = drizzle(client, { schema });
+} else {
+  // Development: Reuse existing drizzle instance
+  if (!global.__db) {
+    global.__db = drizzle(client, { schema });
+  }
+  db = global.__db;
+}
+
+export { db };
 
 /**
  * Retry wrapper for database queries to handle transient connection errors
@@ -78,6 +118,8 @@ export async function withRetry<T>(
         errorCode: err?.code,
         errorMessage: err?.message,
         errorType: err?.constructor?.name,
+        fullError: error, // Log the full error object
+        errorStack: err?.stack?.split('\n').slice(0, 3).join('\n'), // First 3 lines of stack
       });
 
       // Check if error is retryable (connection/timeout errors)
@@ -89,6 +131,8 @@ export async function withRetry<T>(
         err?.message?.includes('CONNECT_TIMEOUT') ||
         err?.message?.includes('Connection terminated') ||
         err?.message?.includes('Connection closed') ||
+        err?.message?.includes('unexpected EOF') ||
+        err?.message?.includes('receive message failed') ||
         err?.message?.includes('timeout');
 
       // Don't retry if it's not a connection error or if we've exhausted retries

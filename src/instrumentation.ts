@@ -19,11 +19,14 @@ export async function register() {
       // Organization: inner-sharp-consulting-pty-ltd
       // Project: cissp-mastery
 
-      // Adjust this value in production, or use tracesSampler for greater control
-      tracesSampleRate: 1.0,
+      // OPTIMIZATION: Reduce trace sampling to 10% in production to minimize overhead
+      tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
 
       // Setting this option to true will print useful information to the console while you're setting up Sentry.
       debug: false,
+
+      // OPTIMIZATION: Disable profiling in production to reduce CPU overhead
+      profilesSampleRate: 0,
 
       // Filter out sensitive data
       beforeSend(event) {
@@ -48,10 +51,15 @@ export async function register() {
         return event;
       },
 
-      // Ignore certain errors
+      // OPTIMIZATION: Ignore common, non-critical errors to reduce noise
       ignoreErrors: [
         'ECONNREFUSED',
         'ENOTFOUND',
+        'ETIMEDOUT',
+        'ECONNRESET',
+        // Database connection errors that are handled by retry logic
+        'Connection terminated unexpectedly',
+        'Connection terminated',
       ],
     });
 
@@ -73,11 +81,19 @@ export async function register() {
       // Organization: inner-sharp-consulting-pty-ltd
       // Project: cissp-mastery
 
-      // Adjust this value in production, or use tracesSampler for greater control
-      tracesSampleRate: 1.0,
+      // OPTIMIZATION: Reduce trace sampling to 10% in production to minimize overhead
+      tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
 
       // Setting this option to true will print useful information to the console while you're setting up Sentry.
       debug: false,
+
+      // OPTIMIZATION: Filter out development errors
+      beforeSend(event) {
+        if (process.env.NODE_ENV === 'development') {
+          return null;
+        }
+        return event;
+      },
     });
   }
 }
