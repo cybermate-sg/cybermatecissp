@@ -48,7 +48,7 @@ export interface ErrorContext {
 /**
  * Get status code for ZodError
  */
-function getZodStatusCode(error: ZodError): number {
+function getZodStatusCode(): number {
   return 400;
 }
 
@@ -95,7 +95,7 @@ function getStatusCode(error: unknown): number {
   }
 
   if (error instanceof ZodError) {
-    return getZodStatusCode(error);
+    return getZodStatusCode();
   }
 
   if (error instanceof Error) {

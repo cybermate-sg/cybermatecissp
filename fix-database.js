@@ -1,4 +1,5 @@
 const { Client } = require('pg');
+const format = require('pg-format');
 require('dotenv').config({ path: '.env.local' });
 
 async function fixDatabase() {
@@ -43,8 +44,8 @@ async function fixDatabase() {
         for (const enumName of orphanedEnums) {
             try {
                 console.log(`  Dropping ${enumName}...`);
-                const safeEnumName = safeIdentifier(enumName);
-                await client.query(`DROP TYPE IF EXISTS public.${safeEnumName} CASCADE;`);
+                // Security: pg-format with %I safely escapes PostgreSQL identifiers
+                await client.query(format('DROP TYPE IF EXISTS public.%I CASCADE', enumName));
                 console.log(`  ✓ Dropped ${enumName}`);
             } catch (err) {
                 console.log(`  ✗ Error dropping ${enumName}: ${err.message}`);

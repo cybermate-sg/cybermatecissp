@@ -100,6 +100,9 @@ async function deepCleanup() {
 
                 if (checkQuery.rows[0].exists) {
                     console.log(`  Dropping ${enumName}...`);
+                    // Security: pg-format with %I safely escapes PostgreSQL identifiers
+                    // This is the recommended PostgreSQL pattern to prevent SQL injection
+                    // nosemgrep: codacy.tools-configs.rules_lgpl_javascript_database_rule-node-sqli-injection
                     const sql = format('DROP TYPE IF EXISTS public.%I CASCADE;', enumName);
                     await client.query(sql);
                     console.log(`  ✓ Dropped ${enumName}`);

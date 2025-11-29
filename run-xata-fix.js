@@ -1,4 +1,5 @@
 const { Client } = require('pg');
+const format = require('pg-format');
 require('dotenv').config({ path: '.env.local' });
 
 async function runXataFix() {
@@ -25,8 +26,8 @@ async function runXataFix() {
         // Step 1: Drop orphaned enums
         const orphanedEnums = ['test_status', 'test_type'];
         for (const enumName of orphanedEnums) {
-            const safeEnumName = safeIdentifier(enumName);
-            await client.query(`DROP TYPE IF EXISTS public.${safeEnumName} CASCADE;`);
+            // Security: pg-format with %I safely escapes PostgreSQL identifiers
+            await client.query(format('DROP TYPE IF EXISTS public.%I CASCADE', enumName));
             console.log(`  ✓ Dropped ${enumName} (if it existed)`);
         }
 
