@@ -1,4 +1,4 @@
-# Performance Monitoring & Optimization Guide
+# Performance Monitoring & Optimization Guide 
 
 This document outlines the performance monitoring system and optimizations implemented in CISSP Mastery.
 
