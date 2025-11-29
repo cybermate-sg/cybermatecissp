@@ -34,23 +34,26 @@ function FlashcardContentArea({
   borderColor,
   hoverBgColor,
 }: FlashcardContentAreaProps) {
+  // Determine grid layout class based on image count
+  const getGridLayoutClass = () => {
+    if (images.length === 0) return '';
+    if (images.length === 1) return 'w-full max-w-xl';
+    return 'w-full grid grid-cols-2 gap-4';
+  };
+
   return (
     <div className="flex-1 overflow-y-auto overflow-x-hidden px-2" style={{ maxHeight: 'calc(600px - 120px)' }}>
       <div className="flex flex-col items-center">
         {/* nosemgrep: react-dangerouslysetinnerhtml - Content is sanitized with DOMPurify using strict allowlist */}
         <div
           className="text-sm sm:text-base text-white text-left leading-relaxed mb-6 max-w-5xl prose prose-invert prose-sm sm:prose-base max-w-none"
+          // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
         />
 
         {/* Images - Grid layout for multiple images */}
         {images.length > 0 && (
-          <div className={`w-full ${images.length === 1
-              ? 'max-w-xl'
-              : images.length === 2
-                ? 'grid grid-cols-2 gap-4'
-                : 'grid grid-cols-2 gap-4'
-            }`}>
+          <div className={getGridLayoutClass()}>
             {images.map((img) => (
               <div
                 key={img.id}
