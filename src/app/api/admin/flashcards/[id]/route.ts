@@ -33,7 +33,7 @@ interface ValidatedFlashcardData {
     mimeType: string;
     placement: string;
     order: number;
-    altText?: string;
+    altText?: string | null;
   }>;
 }
 
