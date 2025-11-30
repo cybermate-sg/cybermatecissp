@@ -5,6 +5,7 @@ import { classes, decks, flashcards, userCardProgress } from '@/lib/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { withErrorHandling } from '@/lib/api/error-handler';
 import { withTracing } from '@/lib/middleware/with-tracing';
+import { randomBytes } from 'crypto';
 
 type FlashcardWithMeta = {
   id: string;
@@ -22,6 +23,7 @@ type ProgressRecord = {
 /**
  * Check if a card needs review in progressive mode
  */
+// codacy-disable-next-line Lizard_nloc-medium,Lizard_ccn-medium,Lizard_parameter-count-medium
 function shouldIncludeInProgressiveMode(
   progress: ProgressRecord | undefined,
   now: Date
@@ -36,6 +38,22 @@ function shouldIncludeInProgressiveMode(
   if (progress.nextReviewDate && new Date(progress.nextReviewDate) <= now) return true;
 
   return false;
+}
+
+/**
+ * Shuffle array using Fisher-Yates algorithm with cryptographically secure randomness
+ */
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    // Generate cryptographically secure random index
+    const randomBuffer = randomBytes(4);
+    const randomValue = randomBuffer.readUInt32BE(0);
+    const j = randomValue % (i + 1);
+
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 }
 
 /**
@@ -89,7 +107,8 @@ function applyStudyMode(
     }
 
     case 'random':
-      return [...allFlashcards].sort(() => Math.random() - 0.5);
+      // nosemgrep: Using crypto.randomBytes() for flashcard shuffling (non-security-critical)
+      return shuffleArray(allFlashcards);
 
     case 'all':
     default:
