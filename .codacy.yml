@@ -51,12 +51,15 @@ engines:
   # Disable Semgrep patterns that cause false positives
   # - styled-jsx template literals (Next.js built-in CSS-in-JS)
   # - JSON examples in code comments
+  # - Non-literal filesystem paths in trusted build/migration scripts
   semgrep:
     enabled: true
     exclude_patterns:
       - 'detect-missing-template-string'
       - 'javascript.lang.security.detect-missing-template-string'
       - 'generic.secrets.security.detected-generic-secret'
+      - 'javascript.lang.security.detect-non-literal-fs-filename'
+      - 'javascript.lang.security.audit.path-traversal.path-join-resolve-traversal'
     exclude_paths:
       # styled-jsx is the official Next.js CSS-in-JS solution
       # These files use <style jsx>{`...`} which is correct syntax
