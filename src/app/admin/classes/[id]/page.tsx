@@ -381,13 +381,15 @@ export default function AdminClassDetailPage({ params }: { params: Promise<{ id:
       <DeckFormDialog
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        editingDeck={editingDeck}
+        deck={editingDeck}
         formData={formData}
         setFormData={setFormData}
-        deckQuizData={deckQuizData}
-        deckQuizFileName={deckQuizFileName}
-        onDeckQuizFileSelect={handleDeckQuizFileSelect}
-        onRemoveDeckQuiz={handleRemoveDeckQuiz}
+        quizFile={{
+          data: deckQuizData,
+          fileName: deckQuizFileName,
+          onFileSelect: handleDeckQuizFileSelect,
+          onRemove: handleRemoveDeckQuiz,
+        }}
         onSave={handleSaveDeck}
         isSaving={isSaving}
       />

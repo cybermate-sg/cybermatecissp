@@ -33,16 +33,20 @@ interface Deck {
   isPublished: boolean;
 }
 
+interface QuizFileProps {
+  data: QuizFile | null;
+  fileName: string;
+  onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemove: () => void;
+}
+
 interface DeckFormDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  editingDeck: Deck | null;
+  deck: Deck | null;
   formData: DeckFormData;
   setFormData: (data: DeckFormData) => void;
-  deckQuizData: QuizFile | null;
-  deckQuizFileName: string;
-  onDeckQuizFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onRemoveDeckQuiz: () => void;
+  quizFile: QuizFileProps;
   onSave: () => void;
   isSaving: boolean;
 }
@@ -50,13 +54,10 @@ interface DeckFormDialogProps {
 export function DeckFormDialog({
   isOpen,
   onOpenChange,
-  editingDeck,
+  deck,
   formData,
   setFormData,
-  deckQuizData,
-  deckQuizFileName,
-  onDeckQuizFileSelect,
-  onRemoveDeckQuiz,
+  quizFile,
   onSave,
   isSaving,
 }: DeckFormDialogProps) {
@@ -65,10 +66,10 @@ export function DeckFormDialog({
       <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            {editingDeck ? "Edit Deck" : "Create New Deck"}
+            {deck ? "Edit Deck" : "Create New Deck"}
           </DialogTitle>
           <DialogDescription className="text-gray-400">
-            {editingDeck
+            {deck
               ? "Update the deck details below"
               : "Add a new deck to this class"}
           </DialogDescription>
@@ -146,24 +147,24 @@ export function DeckFormDialog({
                 id="deckQuiz"
                 type="file"
                 accept=".json"
-                onChange={onDeckQuizFileSelect}
+                onChange={quizFile.onFileSelect}
                 className="bg-slate-900 border-slate-700 text-white cursor-pointer"
               />
 
-              {deckQuizData && (
+              {quizFile.data && (
                 <div className="p-3 bg-blue-900/30 border border-blue-700 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-blue-300">
-                        ✓ {deckQuizData.questions.length} question{deckQuizData.questions.length !== 1 ? 's' : ''} loaded
+                        ✓ {quizFile.data.questions.length} question{quizFile.data.questions.length !== 1 ? 's' : ''} loaded
                       </p>
-                      <p className="text-xs text-blue-400 mt-1">{deckQuizFileName}</p>
+                      <p className="text-xs text-blue-400 mt-1">{quizFile.fileName}</p>
                     </div>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={onRemoveDeckQuiz}
+                      onClick={quizFile.onRemove}
                       className="text-blue-300 hover:text-blue-100 hover:bg-blue-800"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -172,7 +173,7 @@ export function DeckFormDialog({
                   <div className="mt-2 pt-2 border-t border-blue-700">
                     <p className="text-xs text-blue-300 font-medium mb-1">Preview:</p>
                     <div className="space-y-1">
-                      {deckQuizData.questions.slice(0, 2).map((q, idx) => (
+                      {quizFile.data.questions.slice(0, 2).map((q, idx) => (
                         <div key={idx} className="text-xs text-blue-200">
                           <p className="font-medium">Q{idx + 1}: {q.question}</p>
                           <p className="text-blue-400 ml-2 mt-0.5">
@@ -180,9 +181,9 @@ export function DeckFormDialog({
                           </p>
                         </div>
                       ))}
-                      {deckQuizData.questions.length > 2 && (
+                      {quizFile.data.questions.length > 2 && (
                         <p className="text-xs text-blue-400 italic">
-                          +{deckQuizData.questions.length - 2} more question(s)...
+                          +{quizFile.data.questions.length - 2} more question(s)...
                         </p>
                       )}
                     </div>
@@ -241,7 +242,7 @@ export function DeckFormDialog({
                 Saving...
               </>
             ) : (
-              <>{editingDeck ? "Update" : "Create"} Deck</>
+              <>{deck ? "Update" : "Create"} Deck</>
             )}
           </Button>
         </DialogFooter>
