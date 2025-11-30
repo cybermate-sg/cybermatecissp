@@ -28,8 +28,9 @@ export class DatabaseCleanup {
         try {
           await this.page.request.delete(`/api/admin/classes/${cls.id}`);
         } catch (error) {
-          // nosemgrep: javascript.lang.security.audit.unsafe-formatstring.unsafe-formatstring
-          console.warn(`Failed to delete class ${cls.id}:`, error);
+          // nosemgrep: codacy.tools-configs.javascript.lang.security.audit.unsafe-formatstring.unsafe-formatstring
+          //console.warn(`Failed to delete class ${cls.id}:`, error);
+          console.warn('Failed to delete class', { classId: cls.id, error });
         }
       }
 
@@ -62,8 +63,9 @@ export class DatabaseCleanup {
 
       return false;
     } catch (error) {
-      // nosemgrep: javascript.lang.security.audit.unsafe-formatstring.unsafe-formatstring
-      console.warn(`Failed to delete class "${className}":`, error);
+      // nosemgrep: codacy.tools-configs.javascript.lang.security.audit.unsafe-formatstring.unsafe-formatstring
+      //console.warn(`Failed to delete class "${className}":`, error);
+      console.warn('Failed to delete class by name', { className, error });
       return false;
     }
   }
