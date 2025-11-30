@@ -105,7 +105,8 @@ engines:
       - 'pnpm-lock.yaml'
       - 'package-lock.json'
       - 'yarn.lock'
-      # Exclude legal/policy pages (content-heavy by nature)
+      # Exclude legal/policy pages from 50-line NLOC limit
+      # These should remain as single coherent documents for legal review
       - 'src/app/terms-and-conditions/**'
       - 'src/app/privacy-policy/**'
       # Exclude pricing page (content-heavy marketing page)

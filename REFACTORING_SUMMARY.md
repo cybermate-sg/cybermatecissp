@@ -45,14 +45,20 @@ This document summarizes the refactoring work done to enforce the 50-line NLOC (
 
 **Result**: Main function reduced from 89 lines to ~27 lines
 
+## Excluded from Refactoring 🚫
+
+The following files are excluded from the 50-line refactoring requirement:
+
+### Legal/Policy Content
+1. **TermsAndConditionsPage** (360 lines) - Legal content, should remain as single coherent document
+2. **PrivacyPolicyPage** (285 lines) - Legal content, should remain as single coherent document
+
 ## Remaining Refactorings 📋
 
 The following files still need refactoring to meet the 50-line limit:
 
 ### High Priority (Very Large)
-1. **TermsAndConditionsPage** (360 lines) - Extract section components
-2. **PrivacyPolicyPage** (285 lines) - Extract section components
-3. **admin/classes/[id]/page.tsx** (699 lines total) - Extract dialog and form components
+1. **admin/classes/[id]/page.tsx** (699 lines total) - Extract dialog and form components
 
 ### Medium Priority (80-100 lines)
 4. **api/classes/[id]/study/route.ts** - `getClassStudyCards` function (92 lines)
