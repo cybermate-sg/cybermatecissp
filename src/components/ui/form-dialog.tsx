@@ -10,36 +10,41 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { ReactNode } from "react";
 
+interface DialogHeader {
+  title: string;
+  description: string;
+}
+
+interface SaveAction {
+  onSave: () => void;
+  isSaving: boolean;
+  buttonText: string;
+}
+
 interface FormDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  title: string;
-  description: string;
+  header: DialogHeader;
+  saveAction: SaveAction;
   children: ReactNode;
-  onSave: () => void;
-  isSaving: boolean;
-  saveButtonText: string;
   maxHeight?: string;
 }
 
 export function FormDialog({
   isOpen,
   onOpenChange,
-  title,
-  description,
+  header,
+  saveAction,
   children,
-  onSave,
-  isSaving,
-  saveButtonText,
   maxHeight = "none",
 }: FormDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>{header.title}</DialogTitle>
           <DialogDescription className="text-gray-400">
-            {description}
+            {header.description}
           </DialogDescription>
         </DialogHeader>
 
@@ -58,23 +63,23 @@ export function FormDialog({
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={isSaving}
+            disabled={saveAction.isSaving}
             className="border-slate-700 text-gray-300 hover:bg-slate-700"
           >
             Cancel
           </Button>
           <Button
-            onClick={onSave}
-            disabled={isSaving}
+            onClick={saveAction.onSave}
+            disabled={saveAction.isSaving}
             className="bg-purple-600 hover:bg-purple-700 text-white"
           >
-            {isSaving ? (
+            {saveAction.isSaving ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Saving...
               </>
             ) : (
-              saveButtonText
+              saveAction.buttonText
             )}
           </Button>
         </DialogFooter>

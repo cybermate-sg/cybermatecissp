@@ -64,11 +64,15 @@ export function DeckFormDialog({
     <FormDialog
       isOpen={isOpen}
       onOpenChange={onOpenChange}
-      title={dialogTitle}
-      description={dialogDescription}
-      onSave={onSave}
-      isSaving={isSaving}
-      saveButtonText={`${saveButtonText} Deck`}
+      header={{
+        title: dialogTitle,
+        description: dialogDescription,
+      }}
+      saveAction={{
+        onSave,
+        isSaving,
+        buttonText: `${saveButtonText} Deck`,
+      }}
       maxHeight="60vh"
     >
       <div className="space-y-2">

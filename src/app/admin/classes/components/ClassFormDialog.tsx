@@ -87,11 +87,15 @@ export function ClassFormDialog({
     <FormDialog
       isOpen={isOpen}
       onOpenChange={onOpenChange}
-      title={dialogTitle}
-      description={dialogDescription}
-      onSave={onSave}
-      isSaving={isSaving}
-      saveButtonText={`${saveButtonText} Class`}
+      header={{
+        title: dialogTitle,
+        description: dialogDescription,
+      }}
+      saveAction={{
+        onSave,
+        isSaving,
+        buttonText: `${saveButtonText} Class`,
+      }}
     >
       <div className="space-y-2">
         <Label htmlFor="name">Class Name *</Label>
