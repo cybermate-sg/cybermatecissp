@@ -85,17 +85,20 @@ export function ClassFormDialog({
   onSave,
   isSaving,
 }: ClassFormDialogProps) {
+  const isEditMode = Boolean(editingClass);
+  const dialogTitle = isEditMode ? "Edit Class" : "Create New Class";
+  const dialogDescription = isEditMode
+    ? "Update the class details below"
+    : "Add a new class to your CISSP study platform";
+  const saveButtonText = isEditMode ? "Update" : "Create";
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-2xl">
         <DialogHeader>
-          <DialogTitle>
-            {editingClass ? "Edit Class" : "Create New Class"}
-          </DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription className="text-gray-400">
-            {editingClass
-              ? "Update the class details below"
-              : "Add a new class to your CISSP study platform"}
+            {dialogDescription}
           </DialogDescription>
         </DialogHeader>
 
@@ -220,7 +223,7 @@ export function ClassFormDialog({
                 Saving...
               </>
             ) : (
-              <>{editingClass ? "Update" : "Create"} Class</>
+              <>{saveButtonText} Class</>
             )}
           </Button>
         </DialogFooter>
