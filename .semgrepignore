@@ -1,0 +1,14 @@
+# Semgrep ignore file
+# Exclude files from Semgrep analysis
+
+# PostgreSQL migration scripts - legitimately query system catalogs (pg_type, pg_namespace)
+# These files need to query PostgreSQL system tables for enum type management
+# The RAC_* table pattern is meant for application data tables, not system catalogs
+xata-fix-enums.sql
+drop-orphaned-enums.sql
+
+# Migration scripts that execute DDL and query system tables
+scripts/fix-migrations.js
+scripts/deep-cleanup.js
+scripts/investigate-enums.js
+scripts/apply-migration.js
