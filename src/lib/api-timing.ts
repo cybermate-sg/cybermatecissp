@@ -78,15 +78,16 @@ class PerformanceTimer {
 /**
  * Format timing metrics for logging
  */
-export function formatTimingLog(metrics: TimingMetrics): string {
+export function formatTimingLog(metrics: TimingMetrics): string[] {
   const { requestId, method, endpoint, duration, dbQueryTime, cacheTime, statusCode } = metrics;
 
   const parts = [
-    `[API Timing]`,
-    requestId ? `[${requestId}]` : '',
-    `${method} ${endpoint}`,
-    `${duration?.toFixed(2)}ms`,
-    statusCode ? `[${statusCode}]` : '',
+    '[API Timing]',
+    requestId ? `[${requestId}]` : null,
+    method,
+    endpoint,
+    duration ? `${duration.toFixed(2)}ms` : null,
+    statusCode ? `[${statusCode}]` : null,
   ];
 
   if (dbQueryTime) {
@@ -97,7 +98,7 @@ export function formatTimingLog(metrics: TimingMetrics): string {
     parts.push(`Cache: ${cacheTime.toFixed(2)}ms`);
   }
 
-  return parts.filter(Boolean).join(' | ');
+  return parts.filter(Boolean) as string[];
 }
 
 /**
@@ -191,14 +192,13 @@ export function withTiming<T extends (...args: never[]) => Promise<Response>>(
       const metrics = timer.end(response.status);
 
       // Log metrics
-      console.log(formatTimingLog(metrics));
+      console.log(...formatTimingLog(metrics));
 
       // Add timing headers to response
       return addTimingHeaders(response, metrics);
     } catch (error) {
       const metrics = timer.end(500);
-      // nosemgrep: javascript.lang.security.audit.formatted-string.formatted-string
-      console.error(formatTimingLog(metrics), error);
+      console.error(...formatTimingLog(metrics), error);
       throw error;
     }
   }) as T;

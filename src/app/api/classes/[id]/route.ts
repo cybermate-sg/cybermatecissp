@@ -21,7 +21,7 @@ async function getClass(
 
     if (!userId) {
       const metrics = timer.end(401);
-      console.log(formatTimingLog(metrics));
+      console.log(...formatTimingLog(metrics));
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -45,7 +45,7 @@ async function getClass(
 
     if (cachedData) {
       const metrics = timer.end(200);
-      console.log(formatTimingLog(metrics));
+      console.log(...formatTimingLog(metrics));
       const response = NextResponse.json(cachedData);
       response.headers.set('X-Cache', 'HIT');
       response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
@@ -74,7 +74,7 @@ async function getClass(
 
     if (!classData) {
       const metrics = timer.end(404);
-      console.log(formatTimingLog(metrics));
+      console.log(...formatTimingLog(metrics));
       return NextResponse.json({ error: 'Class not found' }, { status: 404 });
     }
 
@@ -140,7 +140,7 @@ async function getClass(
     });
 
     const metrics = timer.end(200);
-    console.log(formatTimingLog(metrics));
+    console.log(...formatTimingLog(metrics));
 
     const response = NextResponse.json(responseData);
     response.headers.set('X-Cache', 'MISS');
@@ -150,7 +150,7 @@ async function getClass(
     return addTimingHeaders(response, metrics);
   } catch (error) {
     const metrics = timer.end(500);
-    console.error(formatTimingLog(metrics));
+    console.error(...formatTimingLog(metrics));
     console.error('Error fetching class:', error);
     throw error;
   }

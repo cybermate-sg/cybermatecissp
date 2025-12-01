@@ -146,32 +146,28 @@ export function logWithContext(
   const context = requestContextStore.get(requestId);
   const elapsed = context ? Date.now() - context.startTime : 0;
 
-  const logMessage = [
+  const logParts = [
     `[${requestId}]`,
-    context ? `[${context.method} ${context.path}]` : '',
+    context ? `[${context.method} ${context.path}]` : null,
     `[${elapsed}ms]`,
     message,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  ].filter(Boolean);
 
-  // Use explicit whitelist to prevent command injection
-  // nosemgrep: javascript.lang.security.audit.formatted-string.formatted-string
   switch (level) {
     case 'log':
-      console.log(logMessage, ...args);
+      console.log(...logParts, ...args);
       break;
     case 'info':
-      console.info(logMessage, ...args);
+      console.info(...logParts, ...args);
       break;
     case 'warn':
-      console.warn(logMessage, ...args);
+      console.warn(...logParts, ...args);
       break;
     case 'error':
-      console.error(logMessage, ...args);
+      console.error(...logParts, ...args);
       break;
     default:
       // Safe fallback for any unexpected values
-      console.log(logMessage, ...args);
+      console.log(...logParts, ...args);
   }
 }

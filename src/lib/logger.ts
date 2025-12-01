@@ -61,11 +61,11 @@ export function sanitizeLogString(input: string): string {
 /**
  * Format log message for console output
  */
-function formatLogMessage(logMessage: LogMessage): string {
+function formatLogMessage(logMessage: LogMessage): { prefix: string; message: string } {
   const { level, message, timestamp } = logMessage;
   const prefix = `[${level.toUpperCase()}] [${timestamp}]`;
   const sanitizedMessage = sanitizeLogString(message);
-  return `${prefix} ${sanitizedMessage}`;
+  return { prefix, message: sanitizedMessage };
 }
 
 /**
@@ -103,21 +103,20 @@ function logMessage(
 
   // Console logging
   if (shouldLogToConsole(level)) {
-    const formattedMessage = formatLogMessage(logData);
+    const formatted = formatLogMessage(logData);
 
-    // nosemgrep: javascript.lang.security.audit.formatted-string.formatted-string
     switch (level) {
       case 'debug':
-        console.debug(formattedMessage, context);
+        console.debug(formatted.prefix, formatted.message, context);
         break;
       case 'info':
-        console.info(formattedMessage, context);
+        console.info(formatted.prefix, formatted.message, context);
         break;
       case 'warn':
-        console.warn(formattedMessage, context);
+        console.warn(formatted.prefix, formatted.message, context);
         break;
       case 'error':
-        console.error(formattedMessage, error || '', context);
+        console.error(formatted.prefix, formatted.message, error || '', context);
         break;
     }
   }
@@ -217,9 +216,10 @@ export const log = {
     return {
       end: (message: string, context?: LogContext): void => {
         const duration = Date.now() - startTime;
-        log.info(`${message} (${duration}ms)`, {
+        log.info(message, {
           ...context,
           duration,
+          durationMs: `${duration}ms`,
         });
       },
     };

@@ -89,8 +89,7 @@ class RedisCache {
       this.metrics.connectionStatus = 'disconnected';
       this.metrics.lastError = error instanceof Error ? error.message : 'Unknown error';
       this.metrics.lastErrorTime = Date.now();
-      // nosemgrep: javascript.lang.security.audit.formatted-string.formatted-string
-      console.error(`Redis GET error for key "${key}":`, error);
+      console.error('Redis GET error for key:', key, error);
       return null;
     }
   }
@@ -120,8 +119,7 @@ class RedisCache {
       this.metrics.connectionStatus = 'disconnected';
       this.metrics.lastError = error instanceof Error ? error.message : 'Unknown error';
       this.metrics.lastErrorTime = Date.now();
-      // nosemgrep: javascript.lang.security.audit.formatted-string.formatted-string
-      console.error(`Redis SET error for key "${key}":`, error);
+      console.error('Redis SET error for key:', key, error);
       return false;
     }
   }
@@ -145,8 +143,7 @@ class RedisCache {
       this.metrics.connectionStatus = 'disconnected';
       this.metrics.lastError = error instanceof Error ? error.message : 'Unknown error';
       this.metrics.lastErrorTime = Date.now();
-      // nosemgrep: javascript.lang.security.audit.formatted-string.formatted-string
-      console.error(`Redis DEL error for key "${key}":`, error);
+      console.error('Redis DEL error for key:', key, error);
       return false;
     }
   }
@@ -161,7 +158,7 @@ class RedisCache {
       await kv.del(...keys);
       return true;
     } catch (error) {
-      console.error(`Redis DEL error for keys:`, error);
+      console.error('Redis DEL error for keys:', error);
       return false;
     }
   }
@@ -190,8 +187,7 @@ class RedisCache {
 
       return keys.length;
     } catch (error) {
-      // nosemgrep: javascript.lang.security.audit.formatted-string.formatted-string
-      console.error(`Redis DEL pattern error for pattern "${pattern}":`, error);
+      console.error('Redis DEL pattern error for pattern:', pattern, error);
       return 0;
     }
   }
@@ -222,8 +218,7 @@ class RedisCache {
 
     // Store in cache (fire and forget - don't block response)
     this.set(key, data, options).catch((error) => {
-      // nosemgrep: javascript.lang.security.audit.formatted-string.formatted-string
-      console.error(`Failed to cache key "${key}":`, error);
+      console.error('Failed to cache key:', key, error);
     });
 
     return data;

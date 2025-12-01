@@ -190,9 +190,13 @@ export async function monitoredQueryWithRetry<T>(
 
       // Exponential backoff
       const delay = delayMs * attempt;
-      // nosemgrep: javascript.lang.security.audit.formatted-string.formatted-string
       console.warn(
-        `[DB Monitor] Retry ${attempt}/${maxRetries} for "${queryName}" after ${delay}ms`,
+        '[DB Monitor] Retry',
+        `${attempt}/${maxRetries}`,
+        'for',
+        queryName,
+        'after',
+        `${delay}ms`,
         { error: err.message }
       );
       await new Promise(resolve => setTimeout(resolve, delay));
