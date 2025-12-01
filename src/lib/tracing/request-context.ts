@@ -135,6 +135,30 @@ export function createTraceHeaders(requestId: string): Record<string, string> {
 }
 
 /**
+ * Sanitize a value for safe logging (prevents log injection)
+ */
+function sanitizeForLog(value: unknown): string {
+  if (value === null || value === undefined) {
+    return String(value);
+  }
+
+  let str: string;
+  if (typeof value === 'object') {
+    try {
+      str = JSON.stringify(value);
+    } catch {
+      str = String(value);
+    }
+  } else {
+    str = String(value);
+  }
+
+  // Remove ANSI escape codes and control characters
+  // eslint-disable-next-line no-control-regex
+  return str.replace(/\x1b\[[0-9;]*m/g, '').replace(/[\x00-\x1f\x7f]/g, '');
+}
+
+/**
  * Log request with context
  */
 export function logWithContext(
@@ -146,28 +170,42 @@ export function logWithContext(
   const context = requestContextStore.get(requestId);
   const elapsed = context ? Date.now() - context.startTime : 0;
 
-  const logParts = [
-    `[${requestId}]`,
-    context ? `[${context.method} ${context.path}]` : null,
-    `[${elapsed}ms]`,
-    message,
-  ].filter(Boolean);
+  const sanitizedRequestId = sanitizeForLog(requestId);
+  const sanitizedMessage = sanitizeForLog(message);
+  const sanitizedArgs = args.map(sanitizeForLog);
+
+  // Build format string and arguments separately to avoid string concatenation
+  const formatParts: string[] = ['[%s]'];
+  const formatArgs: string[] = [sanitizedRequestId];
+
+  if (context) {
+    formatParts.push('[%s %s]');
+    formatArgs.push(sanitizeForLog(context.method), sanitizeForLog(context.path));
+  }
+
+  formatParts.push('[%sms]');
+  formatArgs.push(String(elapsed));
+
+  formatParts.push('%s');
+  formatArgs.push(sanitizedMessage);
+
+  const formatString = formatParts.join(' ');
 
   switch (level) {
     case 'log':
-      console.log(...logParts, ...args);
+      console.log(formatString, ...formatArgs, ...sanitizedArgs);
       break;
     case 'info':
-      console.info(...logParts, ...args);
+      console.info(formatString, ...formatArgs, ...sanitizedArgs);
       break;
     case 'warn':
-      console.warn(...logParts, ...args);
+      console.warn(formatString, ...formatArgs, ...sanitizedArgs);
       break;
     case 'error':
-      console.error(...logParts, ...args);
+      console.error(formatString, ...formatArgs, ...sanitizedArgs);
       break;
     default:
       // Safe fallback for any unexpected values
-      console.log(...logParts, ...args);
+      console.log(formatString, ...formatArgs, ...sanitizedArgs);
   }
 }

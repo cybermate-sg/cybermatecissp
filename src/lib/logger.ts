@@ -61,11 +61,10 @@ export function sanitizeLogString(input: string): string {
 /**
  * Format log message for console output
  */
-function formatLogMessage(logMessage: LogMessage): { prefix: string; message: string } {
+function formatLogMessage(logMessage: LogMessage): { level: string; timestamp: string; message: string } {
   const { level, message, timestamp } = logMessage;
-  const prefix = `[${level.toUpperCase()}] [${timestamp}]`;
   const sanitizedMessage = sanitizeLogString(message);
-  return { prefix, message: sanitizedMessage };
+  return { level: level.toUpperCase(), timestamp, message: sanitizedMessage };
 }
 
 /**
@@ -107,16 +106,16 @@ function logMessage(
 
     switch (level) {
       case 'debug':
-        console.debug(formatted.prefix, formatted.message, context);
+        console.debug('[%s] [%s]', formatted.level, formatted.timestamp, formatted.message, context);
         break;
       case 'info':
-        console.info(formatted.prefix, formatted.message, context);
+        console.info('[%s] [%s]', formatted.level, formatted.timestamp, formatted.message, context);
         break;
       case 'warn':
-        console.warn(formatted.prefix, formatted.message, context);
+        console.warn('[%s] [%s]', formatted.level, formatted.timestamp, formatted.message, context);
         break;
       case 'error':
-        console.error(formatted.prefix, formatted.message, error || '', context);
+        console.error('[%s] [%s]', formatted.level, formatted.timestamp, formatted.message, error || '', context);
         break;
     }
   }
@@ -219,7 +218,7 @@ export const log = {
         log.info(message, {
           ...context,
           duration,
-          durationMs: `${duration}ms`,
+          durationMs: String(duration) + 'ms',
         });
       },
     };
