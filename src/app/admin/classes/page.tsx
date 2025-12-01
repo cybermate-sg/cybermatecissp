@@ -92,8 +92,7 @@ export default function AdminClassesPage() {
               return { ...cls, deckCount: deckData.decks?.length || 0 };
             }
           } catch (err) {
-            // nosemgrep: javascript.lang.security.audit.formatted-string.formatted-string
-            console.error(`Failed to load deck count for class ${cls.id}:`, err);
+            console.error("Failed to load deck count for class:", cls.id, err);
           }
           return { ...cls, deckCount: 0 };
         })

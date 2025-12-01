@@ -6,15 +6,41 @@ import { isValidEmail } from "@/lib/middleware/request-validation";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+function validatePriceId(priceId: string | undefined): NextResponse | null {
+  if (!priceId) {
+    return NextResponse.json(
+      { error: "Price ID is required" },
+      { status: 400 }
+    );
+  }
+  return null;
+}
+
+function validateEmail(customerEmail: string | undefined, isGuest: boolean, email?: string): NextResponse | null {
+  if (!customerEmail) {
+    return NextResponse.json(
+      { error: "Email is required" },
+      { status: 400 }
+    );
+  }
+
+  if (isGuest && email && !isValidEmail(email)) {
+    return NextResponse.json(
+      { error: "Invalid email format" },
+      { status: 400 }
+    );
+  }
+
+  return null;
+}
+
 export async function POST(req: Request) {
   try {
     console.log("Checkout API called - route hit!");
 
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
     const { userId } = await auth();
     const user = await currentUser();
-
     const body = await req.json();
     const { priceId, email } = body;
 
@@ -22,32 +48,13 @@ export async function POST(req: Request) {
     console.log("User ID:", userId);
     console.log("Email:", email);
 
-    if (!priceId) {
-      return NextResponse.json(
-        { error: "Price ID is required" },
-        { status: 400 }
-      );
-    }
+    const priceValidationError = validatePriceId(priceId);
+    if (priceValidationError) return priceValidationError;
 
-    // For guest checkout, require email
     const customerEmail = user?.emailAddresses[0]?.emailAddress || email;
+    const emailValidationError = validateEmail(customerEmail, !user, email);
+    if (emailValidationError) return emailValidationError;
 
-    if (!customerEmail) {
-      return NextResponse.json(
-        { error: "Email is required" },
-        { status: 400 }
-      );
-    }
-
-    // Validate email format for guest checkout
-    if (!user && email && !isValidEmail(email)) {
-      return NextResponse.json(
-        { error: "Invalid email format" },
-        { status: 400 }
-      );
-    }
-
-    // Create Checkout Session
     const session = await stripe.checkout.sessions.create({
       customer_email: customerEmail,
       client_reference_id: userId || undefined,
