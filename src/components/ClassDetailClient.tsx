@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check } from "lucide-react";
 import type { ClassData } from "@/lib/api/class-server";
@@ -9,6 +9,7 @@ import { StudyModeSelector } from "./ClassDetail/StudyModeSelector";
 import { StudyButton } from "./ClassDetail/StudyButton";
 import { DeckListItem } from "./ClassDetail/DeckListItem";
 import { StudyModeInfoDialog } from "./ClassDetail/StudyModeInfoDialog";
+import { useDeckSelection } from "./ClassDetail/useDeckSelection";
 
 type StudyMode = "progressive" | "random";
 
@@ -21,11 +22,16 @@ interface ClassDetailClientProps {
 
 export default function ClassDetailClient({ classData, userName, daysLeft }: ClassDetailClientProps) {
   const [studyMode, setStudyMode] = useState<StudyMode>("progressive");
-  const [selectedDecks, setSelectedDecks] = useState<Set<string>>(new Set());
   const [showModeInfo, setShowModeInfo] = useState(false);
 
   const decks = classData.decks;
-  const flashcardDecks = useMemo(() => decks.filter(d => d.type === 'flashcard'), [decks]);
+  const {
+    selectedDecks,
+    toggleDeckSelection,
+    toggleSelectAll,
+    allFlashcardsSelected,
+    decksToStudy,
+  } = useDeckSelection(decks);
 
   const totalCards = useMemo(() => decks.reduce((sum, deck) => sum + deck.cardCount, 0), [decks]);
   const totalStudied = useMemo(() => decks.reduce((sum, deck) => sum + deck.studiedCount, 0), [decks]);
@@ -33,38 +39,6 @@ export default function ClassDetailClient({ classData, userName, daysLeft }: Cla
     () => totalCards > 0 ? Math.round((totalStudied / totalCards) * 100) : 0,
     [totalCards, totalStudied]
   );
-
-  const toggleDeckSelection = useCallback((deckId: string) => {
-    setSelectedDecks(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(deckId)) {
-        newSet.delete(deckId);
-      } else {
-        newSet.add(deckId);
-      }
-      return newSet;
-    });
-  }, []);
-
-  const toggleSelectAll = useCallback(() => {
-    const flashcardDeckIds = flashcardDecks.map(d => d.id);
-    const allSelected = flashcardDeckIds.every(id => selectedDecks.has(id));
-
-    setSelectedDecks(prev => {
-      const newSet = new Set(prev);
-      flashcardDeckIds.forEach(id => allSelected ? newSet.delete(id) : newSet.add(id));
-      return newSet;
-    });
-  }, [selectedDecks, flashcardDecks]);
-
-  const allFlashcardsSelected = useMemo(() => {
-    if (flashcardDecks.length === 0) return false;
-    return flashcardDecks.every(d => selectedDecks.has(d.id));
-  }, [selectedDecks, flashcardDecks]);
-
-  const decksToStudy = selectedDecks.size > 0
-    ? decks.filter(d => selectedDecks.has(d.id))
-    : decks;
 
   const hasFlashcardDecks = decksToStudy.some(d => d.type === 'flashcard');
   const hasQuizDecks = decksToStudy.some(d => d.type === 'quiz');

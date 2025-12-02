@@ -154,7 +154,6 @@ function sanitizeForLog(value: unknown): string {
   }
 
   // Remove ANSI escape codes and control characters
-  // eslint-disable-next-line no-control-regex
   return str.replace(/\x1b\[[0-9;]*m/g, '').replace(/[\x00-\x1f\x7f]/g, '');
 }
 

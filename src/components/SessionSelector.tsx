@@ -50,12 +50,32 @@ function areAllDecksSelected(
   return decks.every(deck => deckSet.has(deck.id) || deck.id === includingDeckId);
 }
 
-export default function SessionSelector({ classes, userId }: SessionSelectorProps) {
-  const router = useRouter();
+function calculateTotalCards(classes: ClassWithProgress[], selectedDecks: Set<string>): number {
+  return classes.reduce((sum, cls) => {
+    return sum + cls.decks
+      .filter(deck => selectedDecks.has(deck.id))
+      .reduce((deckSum, deck) => deckSum + deck.cardCount, 0);
+  }, 0);
+}
+
+async function createSession(userId: string, deckIds: string[]): Promise<string> {
+  const response = await fetch('/api/sessions/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, deckIds }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to create session');
+  }
+
+  const { sessionId } = await response.json();
+  return sessionId;
+}
+
+function useClassSelection(classes: ClassWithProgress[]) {
   const [selectedClasses, setSelectedClasses] = useState<Set<string>>(new Set());
   const [selectedDecks, setSelectedDecks] = useState<Set<string>>(new Set());
-  const [expandedClasses, setExpandedClasses] = useState<Set<string>>(new Set());
-  const [isStarting, setIsStarting] = useState(false);
 
   const toggleClass = (classId: string) => {
     setSelectedClasses(prev => {
@@ -68,7 +88,6 @@ export default function SessionSelector({ classes, userId }: SessionSelectorProp
       } else {
         newSet.delete(classId);
       }
-
       setSelectedDecks(prevDecks => toggleDecksInSet(prevDecks, classDecks, isAdding));
       return newSet;
     });
@@ -81,7 +100,6 @@ export default function SessionSelector({ classes, userId }: SessionSelectorProp
 
       if (newSet.has(deckId)) {
         newSet.delete(deckId);
-
         if (!hasAnyDeckSelected(newSet, classDecks)) {
           setSelectedClasses(prevClasses => {
             const newClasses = new Set(prevClasses);
@@ -91,7 +109,6 @@ export default function SessionSelector({ classes, userId }: SessionSelectorProp
         }
       } else {
         newSet.add(deckId);
-
         if (areAllDecksSelected(newSet, classDecks, deckId)) {
           setSelectedClasses(prevClasses => new Set(prevClasses).add(classId));
         }
@@ -100,6 +117,15 @@ export default function SessionSelector({ classes, userId }: SessionSelectorProp
       return newSet;
     });
   };
+
+  return { selectedClasses, selectedDecks, toggleClass, toggleDeck };
+}
+
+export default function SessionSelector({ classes, userId }: SessionSelectorProps) {
+  const router = useRouter();
+  const { selectedClasses, selectedDecks, toggleClass, toggleDeck } = useClassSelection(classes);
+  const [expandedClasses, setExpandedClasses] = useState<Set<string>>(new Set());
+  const [isStarting, setIsStarting] = useState(false);
 
   const toggleExpanded = (classId: string) => {
     setExpandedClasses(prev => {
@@ -114,32 +140,11 @@ export default function SessionSelector({ classes, userId }: SessionSelectorProp
   };
 
   const startSession = async () => {
-    if (selectedDecks.size === 0) {
-      return;
-    }
+    if (selectedDecks.size === 0) return;
 
     setIsStarting(true);
-
     try {
-      // Create a new session
-      const response = await fetch('/api/sessions/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          deckIds: Array.from(selectedDecks),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create session');
-      }
-
-      const { sessionId } = await response.json();
-
-      // Navigate to the study session
+      const sessionId = await createSession(userId, Array.from(selectedDecks));
       router.push(`/dashboard/session/${sessionId}/study?decks=${Array.from(selectedDecks).join(',')}`);
     } catch (error) {
       console.error('Error starting session:', error);
@@ -148,11 +153,7 @@ export default function SessionSelector({ classes, userId }: SessionSelectorProp
     }
   };
 
-  const totalSelectedCards = classes.reduce((sum, cls) => {
-    return sum + cls.decks
-      .filter(deck => selectedDecks.has(deck.id))
-      .reduce((deckSum, deck) => deckSum + deck.cardCount, 0);
-  }, 0);
+  const totalSelectedCards = calculateTotalCards(classes, selectedDecks);
 
   return (
     <div className="space-y-6">
