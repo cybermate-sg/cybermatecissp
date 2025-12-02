@@ -94,6 +94,33 @@ interface MediaUpload {
   altText: string | null;
 }
 
+const DECK_QUIZ_JSON_EXAMPLE = {
+  questions: [
+    {
+      question: "What does CIA stand for in information security?",
+      options: [
+        { text: "Confidentiality, Integrity, Availability", isCorrect: true },
+        { text: "Central Intelligence Agency", isCorrect: false },
+        { text: "Computer Information Access", isCorrect: false },
+      ],
+      explanation: "CIA Triad is fundamental to information security",
+    },
+  ],
+} as const;
+
+const FLASHCARD_QUIZ_JSON_EXAMPLE = {
+  questions: [
+    {
+      question: "What does IAM stand for?",
+      options: [
+        { text: "Identity Access Management", isCorrect: true },
+        { text: "Internet Access Module", isCorrect: false },
+      ],
+      explanation: "Optional explanation",
+    },
+  ],
+} as const;
+
 export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [deckId, setDeckId] = useState<string | null>(null);
@@ -791,19 +818,7 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
                     </CollapsibleTrigger>
                     <CollapsibleContent className="mt-2">
                       <pre className="text-xs bg-slate-100 p-3 rounded border overflow-x-auto">
-{`{
-  "questions": [
-    {
-      "question": "What does CIA stand for in information security?",
-      "options": [
-        { "text": "Confidentiality, Integrity, Availability", "isCorrect": true },
-        { "text": "Central Intelligence Agency", "isCorrect": false },
-        { "text": "Computer Information Access", "isCorrect": false }
-      ],
-      "explanation": "CIA Triad is fundamental to information security"
-    }
-  ]
-}`}
+                        {JSON.stringify(DECK_QUIZ_JSON_EXAMPLE, null, 2)}
                       </pre>
                     </CollapsibleContent>
                   </Collapsible>
@@ -1123,18 +1138,7 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
                   Expected JSON Format
                 </summary>
                 <pre className="mt-2 p-3 bg-slate-100 rounded border border-slate-200 overflow-x-auto">
-{`{
-  "questions": [
-    {
-      "question": "What does IAM stand for?",
-      "options": [
-        { "text": "Identity Access Management", "isCorrect": true },
-        { "text": "Internet Access Module", "isCorrect": false }
-      ],
-      "explanation": "Optional explanation"
-    }
-  ]
-}`}
+                  {JSON.stringify(FLASHCARD_QUIZ_JSON_EXAMPLE, null, 2)}
                 </pre>
               </details>
             </div>
