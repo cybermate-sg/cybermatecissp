@@ -9,8 +9,28 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
+// Some environments (like Codacy's ESLint engine) don't have `eslint-config-next`
+// installed, which makes `next/core-web-vitals` and `next/typescript` unavailable
+// and causes a hard failure: "Failed to load config \"next/core-web-vitals\"".
+//
+// To avoid breaking lint runs in those environments, we try to extend the Next.js
+// configs and gracefully fall back to a minimal config if they cannot be resolved.
+let baseConfigs = [];
+
+try {
+  baseConfigs = compat.extends("next/core-web-vitals", "next/typescript");
+} catch (error) {
+  // eslint-disable-next-line no-console -- This only runs during config load
+  console.warn(
+    "[eslint.config.mjs] Could not load 'next/core-web-vitals' or 'next/typescript'. " +
+      "Falling back to a minimal ESLint config. Original error:",
+    error?.message ?? error,
+  );
+  baseConfigs = [];
+}
+
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...baseConfigs,
   {
     languageOptions: {
       ecmaVersion: 2020,
