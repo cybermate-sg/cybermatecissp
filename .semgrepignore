@@ -11,3 +11,14 @@ drop-orphaned-enums.sql
 scripts/fix-migrations.js
 scripts/deep-cleanup.js
 scripts/apply-migration.js
+
+# styled-jsx template literals (Next.js built-in CSS-in-JS)
+# These files use <style jsx>{`...`} which is correct Next.js syntax
+# Semgrep incorrectly flags these as missing template string indicators
+src/app/dashboard/class/[id]/study/page.tsx
+src/app/dashboard/domain/[id]/page.tsx
+src/app/dashboard/deck/[id]/page.tsx
+src/components/study/CyberBackground.tsx
+src/components/study/FlashcardStyles.tsx
+src/components/Flashcard.tsx
+src/components/admin/RichTextEditor.tsx

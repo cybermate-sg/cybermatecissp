@@ -59,6 +59,7 @@ engines:
       - 'src/app/dashboard/deck/[id]/page.tsx'
       - 'src/components/study/CyberBackground.tsx'
       - 'src/components/study/FlashcardStyles.tsx'
+      - 'src/components/Flashcard.tsx'
 
   # Disable Lizard cyclomatic complexity warnings for false positives
   # Lizard over-counts operators (??, &&, ||) as complexity points
