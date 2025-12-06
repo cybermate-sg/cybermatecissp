@@ -41,8 +41,8 @@ export function FlashcardContentArea({
     return (
         <div className="flex-1 overflow-y-auto overflow-x-hidden px-2" style={{ maxHeight: 'calc(700px - 180px)' }}>
             <div className="flex flex-col items-center">
-                {/* HTML is sanitized with DOMPurify using a strict tag/attribute allowlist before rendering.
-                    This usage of dangerouslySetInnerHTML is intentional to support rich flashcard content. */}
+                {/* Content is sanitized with DOMPurify using strict allowlist before rendering */}
+                {/* codacy-disable-next-line codacy.tools-configs.javascript_react_rule-dangerouslysetinnerhtml,codacy.tools-configs.typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml */}
                 <div
                     className="text-base md:text-lg text-slate-100 text-left leading-relaxed mb-6 max-w-5xl prose prose-invert prose-lg max-w-none"
                     dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
