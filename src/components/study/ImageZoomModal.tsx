@@ -3,35 +3,42 @@ import Image from 'next/image';
 import { X, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { FlashcardMedia } from './types';
 
-interface ImageZoomModalProps {
-    zoomedImage: FlashcardMedia;
+interface ZoomState {
     zoomScale: number;
     position: { x: number; y: number };
     isDragging: boolean;
-    onClose: (e?: React.MouseEvent) => void;
+}
+
+interface ZoomControls {
     onZoomIn: () => void;
     onZoomOut: () => void;
     onResetZoom: () => void;
+}
+
+interface ZoomEvents {
+    onClose: (e?: React.MouseEvent) => void;
     onWheel: (e: React.WheelEvent) => void;
     onMouseDown: (e: React.MouseEvent) => void;
     onMouseMove: (e: React.MouseEvent) => void;
     onMouseUp: () => void;
 }
 
+interface ImageZoomModalProps {
+    zoomedImage: FlashcardMedia;
+    zoomState: ZoomState;
+    controls: ZoomControls;
+    events: ZoomEvents;
+}
+
 export function ImageZoomModal({
     zoomedImage,
-    zoomScale,
-    position,
-    isDragging,
-    onClose,
-    onZoomIn,
-    onZoomOut,
-    onResetZoom,
-    onWheel,
-    onMouseDown,
-    onMouseMove,
-    onMouseUp,
+    zoomState,
+    controls,
+    events,
 }: ImageZoomModalProps) {
+    const { zoomScale, position, isDragging } = zoomState;
+    const { onZoomIn, onZoomOut, onResetZoom } = controls;
+    const { onClose, onWheel, onMouseDown, onMouseMove, onMouseUp } = events;
     return (
         <div
             className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 animate-fade-in"

@@ -184,14 +184,18 @@ export default function ClassStudyPage() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <StudyPageHeader
-          backLink={`/dashboard/class/${classId}`}
-          backLabel={className}
-          subtitle={className}
-          title={`${getModeName()} Mode`}
-          currentIndex={currentIndex}
-          totalCards={flashcards.length}
+          navigation={{
+            backLink: `/dashboard/class/${classId}`,
+            backLabel: className,
+            subtitle: className,
+            title: `${getModeName()} Mode`,
+          }}
+          stats={{
+            currentIndex,
+            totalCards: flashcards.length,
+            progress,
+          }}
           onReset={handleReset}
-          progress={progress}
         />
 
         {/* Flashcard or Completion */}

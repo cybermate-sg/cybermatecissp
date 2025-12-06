@@ -19,6 +19,66 @@ interface EmptyDeckStateProps {
     onDeckTest: () => void;
 }
 
+function DeckBackLink({ deck, className }: { deck: DeckData | null; className: string }) {
+    const href = deck?.classId ? `/dashboard/class/${deck.classId}` : "/dashboard";
+
+    return (
+        <Link href={href}>
+            <Button variant="ghost" className="text-white mb-6">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to {className}
+            </Button>
+        </Link>
+    );
+}
+
+function DeckQuizActions({ deckHasQuiz, onDeckTest }: { deckHasQuiz: boolean; onDeckTest: () => void }) {
+    if (!deckHasQuiz) return null;
+
+    return (
+        <Button
+            onClick={onDeckTest}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+        >
+            <TestTube className="w-4 h-4 mr-2" />
+            Take Deck Test
+        </Button>
+    );
+}
+
+function DeckEmptyMessage({ deckHasQuiz }: { deckHasQuiz: boolean }) {
+    return (
+        <div className="text-center text-white mt-12">
+            <h2 className="text-xl font-bold mb-4">No flashcards available</h2>
+            <p className="text-gray-400">This deck doesn&apos;t have any flashcards yet.</p>
+            {deckHasQuiz && (
+                <p className="text-blue-400 mt-4">But you can still take the deck test above!</p>
+            )}
+        </div>
+    );
+}
+
+function DeckQuizModalWrapper(props: {
+    deckHasQuiz: boolean;
+    showDeckQuizModal: boolean;
+    setShowDeckQuizModal: (show: boolean) => void;
+    deckId: string;
+    deckName: string;
+}) {
+    const { deckHasQuiz, showDeckQuizModal, setShowDeckQuizModal, deckId, deckName } = props;
+
+    if (!deckHasQuiz) return null;
+
+    return (
+        <DeckQuizModal
+            isOpen={showDeckQuizModal}
+            onClose={() => setShowDeckQuizModal(false)}
+            deckId={deckId}
+            deckName={deckName}
+        />
+    );
+}
+
 export function EmptyDeckState({
     deck,
     deckHasQuiz,
@@ -33,12 +93,7 @@ export function EmptyDeckState({
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <Link href={deck?.classId ? `/dashboard/class/${deck.classId}` : "/dashboard"}>
-                    <Button variant="ghost" className="text-white mb-6">
-                        <ArrowLeft className="w-4 h-4 mr-2" />
-                        Back to {className}
-                    </Button>
-                </Link>
+                <DeckBackLink deck={deck} className={className} />
 
                 <div className="mb-8">
                     <p className="text-sm text-purple-400 mb-1">{className}</p>
@@ -46,36 +101,19 @@ export function EmptyDeckState({
                         {deckName}
                     </h1>
 
-                    {/* Show Take Deck Test button if quiz available */}
-                    {deckHasQuiz && (
-                        <Button
-                            onClick={onDeckTest}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-                        >
-                            <TestTube className="w-4 h-4 mr-2" />
-                            Take Deck Test
-                        </Button>
-                    )}
+                    <DeckQuizActions deckHasQuiz={deckHasQuiz} onDeckTest={onDeckTest} />
                 </div>
 
-                <div className="text-center text-white mt-12">
-                    <h2 className="text-xl font-bold mb-4">No flashcards available</h2>
-                    <p className="text-gray-400">This deck doesn&apos;t have any flashcards yet.</p>
-                    {deckHasQuiz && (
-                        <p className="text-blue-400 mt-4">But you can still take the deck test above!</p>
-                    )}
-                </div>
+                <DeckEmptyMessage deckHasQuiz={deckHasQuiz} />
             </div>
 
-            {/* Deck Quiz Modal */}
-            {deckHasQuiz && (
-                <DeckQuizModal
-                    isOpen={showDeckQuizModal}
-                    onClose={() => setShowDeckQuizModal(false)}
-                    deckId={deckId}
-                    deckName={deckName}
-                />
-            )}
+            <DeckQuizModalWrapper
+                deckHasQuiz={deckHasQuiz}
+                showDeckQuizModal={showDeckQuizModal}
+                setShowDeckQuizModal={setShowDeckQuizModal}
+                deckId={deckId}
+                deckName={deckName}
+            />
         </div>
     );
 }

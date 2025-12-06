@@ -3,31 +3,35 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, RotateCcw } from "lucide-react";
 
-interface StudyPageHeaderProps {
+interface StudyNavigationProps {
     backLink: string;
     backLabel: string;
     subtitle: string;
     title: string;
+}
+
+interface StudyStatsProps {
     currentIndex: number;
     totalCards: number;
-    onReset: () => void;
     progress: number;
     progressLabel?: string;
+}
+
+interface StudyPageHeaderProps {
+    navigation: StudyNavigationProps;
+    stats: StudyStatsProps;
+    onReset: () => void;
     extraActions?: React.ReactNode;
 }
 
 export function StudyPageHeader({
-    backLink,
-    backLabel,
-    subtitle,
-    title,
-    currentIndex,
-    totalCards,
+    navigation,
+    stats,
     onReset,
-    progress,
-    progressLabel = "Study session progress",
     extraActions,
 }: StudyPageHeaderProps) {
+    const { backLink, backLabel, subtitle, title } = navigation;
+    const { currentIndex, totalCards, progress, progressLabel = "Study session progress" } = stats;
     return (
         <div className="mb-8">
             <Link href={backLink}>

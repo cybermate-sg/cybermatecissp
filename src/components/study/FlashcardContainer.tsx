@@ -80,17 +80,23 @@ export function FlashcardContainer({
             {zoomedImage && (
                 <ImageZoomModal
                     zoomedImage={zoomedImage}
-                    zoomScale={zoomScale}
-                    position={position}
-                    isDragging={isDragging}
-                    onClose={closeZoom}
-                    onZoomIn={handleZoomIn}
-                    onZoomOut={handleZoomOut}
-                    onResetZoom={handleResetZoom}
-                    onWheel={handleWheel}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
+                    zoomState={{
+                        zoomScale,
+                        position,
+                        isDragging,
+                    }}
+                    controls={{
+                        onZoomIn: handleZoomIn,
+                        onZoomOut: handleZoomOut,
+                        onResetZoom: handleResetZoom,
+                    }}
+                    events={{
+                        onClose: closeZoom,
+                        onWheel: handleWheel,
+                        onMouseDown: handleMouseDown,
+                        onMouseMove: handleMouseMove,
+                        onMouseUp: handleMouseUp,
+                    }}
                 />
             )}
 

@@ -1,8 +1,9 @@
 import React from 'react';
 
-export function FlashcardStyles() {
-    return (
-        <style jsx global>{`
+function FlashcardAnimationStyles() {
+  return (
+    // nosemgrep: javascript.lang.correctness.missing-template-string-indicator
+    <style jsx global>{`
       .perspective-1000 {
         perspective: 1000px;
       }
@@ -30,7 +31,14 @@ export function FlashcardStyles() {
       .animate-bounce-horizontal {
         animation: bounce-horizontal 1s ease-in-out infinite;
       }
+    `}</style>
+  );
+}
 
+function FlashcardProseStyles() {
+  return (
+    // nosemgrep: javascript.lang.correctness.missing-template-string-indicator
+    <style jsx global>{`
       /* Enhanced prose styling for cyber theme */
       .prose h2 {
         font-size: 1.5rem;
@@ -90,5 +98,14 @@ export function FlashcardStyles() {
         border-radius: 0.5rem;
       }
     `}</style>
-    );
+  );
+}
+
+export function FlashcardStyles() {
+  return (
+    <>
+      <FlashcardAnimationStyles />
+      <FlashcardProseStyles />
+    </>
+  );
 }

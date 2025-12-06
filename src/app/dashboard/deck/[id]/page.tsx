@@ -240,9 +240,8 @@ export default function DeckStudyPage() {
   const modeName = getModeName();
   const displayTitle = modeName ? `${deckName} - ${modeName} Mode` : deckName;
 
-  // nosemgrep: javascript.lang.correctness.missing-template-string-indicator
   const globalStyles = (
-    <style jsx global>{`${""}
+    <style jsx global>{`
       @keyframes fade-in {
         from {
           opacity: 0;
@@ -268,15 +267,19 @@ export default function DeckStudyPage() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <StudyPageHeader
-          backLink={deck?.classId ? `/dashboard/class/${deck.classId}` : "/dashboard"}
-          backLabel={className}
-          subtitle={className}
-          title={displayTitle}
-          currentIndex={currentIndex}
-          totalCards={flashcards.length}
+          navigation={{
+            backLink: deck?.classId ? `/dashboard/class/${deck.classId}` : "/dashboard",
+            backLabel: className,
+            subtitle: className,
+            title: displayTitle,
+          }}
+          stats={{
+            currentIndex,
+            totalCards: flashcards.length,
+            progress,
+            progressLabel: "Deck study progress",
+          }}
           onReset={handleReset}
-          progress={progress}
-          progressLabel="Deck study progress"
           extraActions={
             deckHasQuiz && (
               <Button

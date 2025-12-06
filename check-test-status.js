@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
+/* eslint-disable @typescript-eslint/no-var-requires */
 const { Pool } = require('pg');
 require('dotenv').config({ path: '.env.local' });
 
