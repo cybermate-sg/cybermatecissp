@@ -8,8 +8,8 @@ import { getClassWithProgress } from "@/lib/api/class-server";
 import ClassDetailClient from "@/components/ClassDetailClient";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { db, withRetry } from "@/lib/db";
-import { subscriptions } from "@/lib/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { subscriptions, userStats, studySessions } from "@/lib/db/schema";
+import { eq, and, desc, gte } from "drizzle-orm";
 
 // Generate dynamic metadata for SEO
 export async function generateMetadata({
@@ -115,13 +115,77 @@ export default async function ClassDetailPage({
   // Get user's first name
   const userName = user?.firstName || user?.username || "there";
 
+  // Fetch user stats for the stats card
+  const getUserStats = async () => {
+    const defaultStats = {
+      streak: 0,
+      minutesToday: 0,
+      cardsToday: 0,
+      accuracy: 85,
+    };
+
+    try {
+      // Get user stats from database
+      const stats = await withRetry(
+        () => db.query.userStats.findFirst({
+          where: eq(userStats.clerkUserId, userId),
+        }),
+        { queryName: 'fetch-user-stats' }
+      );
+
+      if (!stats) {
+        return defaultStats;
+      }
+
+      const streak = stats.studyStreakDays || 0;
+      const cardsToday = stats.dailyCardsStudiedToday || 0;
+
+      // Calculate minutes studied today from study sessions
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const todaySessions = await withRetry(
+        () => db.query.studySessions.findMany({
+          where: and(
+            eq(studySessions.clerkUserId, userId),
+            gte(studySessions.startedAt, today)
+          ),
+        }),
+        { queryName: 'fetch-today-sessions' }
+      );
+
+      const totalSecondsToday = todaySessions.reduce((sum, session) => {
+        return sum + (session.studyDuration || 0);
+      }, 0);
+
+      const minutesToday = Math.round(totalSecondsToday / 60);
+
+      // Calculate accuracy from today's sessions
+      let accuracy = 85;
+      const sessionsWithConfidence = todaySessions.filter(s => s.averageConfidence);
+      if (sessionsWithConfidence.length > 0) {
+        const avgConfidence = sessionsWithConfidence.reduce((sum, s) => {
+          return sum + parseFloat(s.averageConfidence || '0');
+        }, 0) / sessionsWithConfidence.length;
+        accuracy = Math.round((avgConfidence / 5) * 100);
+      }
+
+      return { streak, minutesToday, cardsToday, accuracy };
+    } catch (error) {
+      console.error('[User Stats Error] Failed to fetch user stats:', error);
+      return defaultStats;
+    }
+  };
+
+  const userStatsData = await getUserStats();
+
   return (
     <div className="min-h-screen bg-white">
       {/* Performance Monitoring */}
       <PerformanceMonitor pageName="Class Detail Page (SSR)" showVisual={false} />
 
       {/* Header with Back Button */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 bg-white shadow-sm">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link href="/dashboard">
             <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800 hover:bg-blue-50">
@@ -138,6 +202,7 @@ export default async function ClassDetailPage({
         isAdmin={isAdmin}
         userName={userName}
         daysLeft={daysLeft}
+        userStats={userStatsData}
       />
     </div>
   );

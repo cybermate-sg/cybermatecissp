@@ -104,12 +104,32 @@ async function endSession(request: NextRequest) {
         }
       }
 
+      // Handle daily cards counter with reset logic
+      const lastResetDate = userStatsRecord.lastResetDate ? new Date(userStatsRecord.lastResetDate) : null;
+      const lastResetDateOnly = lastResetDate ? new Date(lastResetDate) : null;
+      if (lastResetDateOnly) {
+        lastResetDateOnly.setHours(0, 0, 0, 0);
+      }
+
+      let dailyCards = userStatsRecord.dailyCardsStudiedToday || 0;
+      let resetDate = userStatsRecord.lastResetDate;
+
+      // Reset daily counter if it's a new day
+      if (!lastResetDateOnly || lastResetDateOnly.getTime() < today.getTime()) {
+        dailyCards = cardsStudied || 0;
+        resetDate = today;
+      } else {
+        dailyCards += (cardsStudied || 0);
+      }
+
       await db
         .update(userStats)
         .set({
           totalCardsStudied: (userStatsRecord.totalCardsStudied || 0) + (cardsStudied || 0),
           totalStudyTime: (userStatsRecord.totalStudyTime || 0) + studyDuration,
           studyStreakDays: newStreakDays,
+          dailyCardsStudiedToday: dailyCards,
+          lastResetDate: resetDate,
           lastActiveDate: endedAt,
         })
         .where(eq(userStats.clerkUserId, userId));
@@ -120,6 +140,8 @@ async function endSession(request: NextRequest) {
         totalCardsStudied: cardsStudied || 0,
         totalStudyTime: studyDuration,
         studyStreakDays: 1,
+        dailyCardsStudiedToday: cardsStudied || 0,
+        lastResetDate: today,
         lastActiveDate: endedAt,
       });
     }

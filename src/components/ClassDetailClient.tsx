@@ -2,14 +2,21 @@
 
 import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check } from "lucide-react";
 import type { ClassData } from "@/lib/api/class-server";
-import { ProgressCard } from "./ClassDetail/ProgressCard";
+import { HeroSection } from "./ClassDetail/HeroSection";
+import { StatsCard } from "./ClassDetail/StatsCard";
+import { DomainMasteryBar } from "./ClassDetail/DomainMasteryBar";
+import { FilterBar, type DeckFilter } from "./ClassDetail/FilterBar";
+import { ModernDeckCard } from "./ClassDetail/ModernDeckCard";
+import { ResumeStudyButton } from "./ClassDetail/ResumeStudyButton";
 import { StudyModeSelector } from "./ClassDetail/StudyModeSelector";
 import { StudyButton } from "./ClassDetail/StudyButton";
-import { DeckListItem } from "./ClassDetail/DeckListItem";
 import { StudyModeInfoDialog } from "./ClassDetail/StudyModeInfoDialog";
+import { DeckSection } from "./ClassDetail/DeckSection";
 import { useDeckSelection } from "./ClassDetail/useDeckSelection";
+import { useDeckCategories } from "./ClassDetail/useDeckCategories";
+import { useDeckFiltering } from "./ClassDetail/useDeckFiltering";
+import { calculateDomainProgress } from "@/lib/utils/cissp-domains";
 
 type StudyMode = "progressive" | "random";
 
@@ -18,21 +25,31 @@ interface ClassDetailClientProps {
   isAdmin: boolean;
   userName: string;
   daysLeft: number | null;
+  userStats?: {
+    streak: number;
+    minutesToday: number;
+    cardsToday: number;
+    accuracy: number;
+  };
 }
 
-export default function ClassDetailClient({ classData, userName, daysLeft }: ClassDetailClientProps) {
+export default function ClassDetailClient({
+  classData,
+  userName,
+  daysLeft,
+  userStats = { streak: 0, minutesToday: 0, cardsToday: 0, accuracy: 0 }
+}: ClassDetailClientProps) {
   const [studyMode, setStudyMode] = useState<StudyMode>("progressive");
   const [showModeInfo, setShowModeInfo] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<DeckFilter>("all");
+  const [structuredPlanExpanded, setStructuredPlanExpanded] = useState(true);
+  const [extraDecksExpanded, setExtraDecksExpanded] = useState(true);
+  const [practiceDecksExpanded, setPracticeDecksExpanded] = useState(true);
 
   const decks = classData.decks;
-  const {
-    selectedDecks,
-    toggleDeckSelection,
-    toggleSelectAll,
-    allFlashcardsSelected,
-    decksToStudy,
-  } = useDeckSelection(decks);
+  const { selectedDecks, toggleDeckSelection, decksToStudy } = useDeckSelection(decks);
 
+  // Calculate overall progress
   const totalCards = useMemo(() => decks.reduce((sum, deck) => sum + deck.cardCount, 0), [decks]);
   const totalStudied = useMemo(() => decks.reduce((sum, deck) => sum + deck.studiedCount, 0), [decks]);
   const overallProgress = useMemo(
@@ -40,88 +57,169 @@ export default function ClassDetailClient({ classData, userName, daysLeft }: Cla
     [totalCards, totalStudied]
   );
 
+  // Calculate domain mastery and categorize decks
+  const domainProgress = useMemo(() => calculateDomainProgress(decks), [decks]);
+  const {
+    recommendedDeck,
+    structuredPlanDecks,
+    extraDecks,
+    practiceDecks,
+    filterCounts,
+  } = useDeckCategories(decks);
+
+  // Apply filters (exclude recommended deck from regular lists to avoid duplication)
+  const filteredStructuredDecks = useDeckFiltering(structuredPlanDecks, activeFilter, recommendedDeck?.id);
+  const filteredExtraDecks = useDeckFiltering(extraDecks, activeFilter, recommendedDeck?.id);
+  const filteredPracticeDecks = useDeckFiltering(practiceDecks, activeFilter);
+
+  // Study session config
   const hasFlashcardDecks = decksToStudy.some(d => d.type === 'flashcard');
   const hasQuizDecks = decksToStudy.some(d => d.type === 'quiz');
   const onlyQuizDecks = !hasFlashcardDecks && hasQuizDecks;
   const hasBothTypes = hasFlashcardDecks && hasQuizDecks;
-
   const flashcardDeckIds = decksToStudy.filter(d => d.type === 'flashcard').map(d => d.id);
   const quizDeckNames = decksToStudy.filter(d => d.type === 'quiz').map(d => d.name);
 
+  // Resume study link
+  const resumeStudyLink = recommendedDeck
+    ? `/dashboard/deck/${recommendedDeck.id}?mode=${studyMode}`
+    : decks.length > 0
+      ? `/dashboard/deck/${decks[0].id}?mode=${studyMode}`
+      : '#';
+
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-3">
-          CISSP in 50 Days Program
-        </h1>
-        {daysLeft !== null && (
-          <p className="text-base text-gray-600 mb-6">
-            Hi, <span className="text-blue-600 font-medium">{userName}</span>, you have{' '}
-            <span className="text-gray-900 font-bold">{daysLeft}</span> days left
-          </p>
-        )}
-
-        <ProgressCard
-          className={classData.name}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Hero Section */}
+        <HeroSection
+          userName={userName}
+          daysLeft={daysLeft}
           overallProgress={overallProgress}
-          totalStudied={totalStudied}
-          totalCards={totalCards}
+          className={classData.name}
         />
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
-          <StudyModeSelector
-            mode={studyMode}
-            onModeChange={setStudyMode}
-            onShowInfo={() => setShowModeInfo(true)}
-          />
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Domain Mastery Bar */}
+            <DomainMasteryBar domainProgress={domainProgress} />
 
-          <button
-            onClick={toggleSelectAll}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors text-gray-600 hover:text-gray-900 ml-auto"
-          >
-            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-              allFlashcardsSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-400'
-            }`}>
-              {allFlashcardsSelected && <Check className="w-3 h-3 text-white" />}
-            </div>
-            <span className="text-sm font-medium">Select All</span>
-          </button>
-        </div>
-
-        <StudyButton
-          classId={classData.id}
-          studyMode={studyMode}
-          onlyQuizDecks={onlyQuizDecks}
-          hasBothTypes={hasBothTypes}
-          flashcardDeckIds={flashcardDeckIds}
-          quizDeckNames={quizDeckNames}
-        />
-      </div>
-
-      <div>
-        {decks.length === 0 ? (
-          <Card className="bg-white border-gray-200">
-            <CardContent className="py-12">
-              <div className="text-center text-gray-500">
-                No decks available in this class yet.
+            {/* Resume Study Button (Desktop) and Study Mode Selector */}
+            <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+              <div className="flex-1">
+                <StudyModeSelector
+                  mode={studyMode}
+                  onModeChange={setStudyMode}
+                  onShowInfo={() => setShowModeInfo(true)}
+                />
               </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {decks.map((deck) => (
-              <DeckListItem
-                key={deck.id}
-                deck={deck}
-                isSelected={selectedDecks.has(deck.id)}
-                studyMode={studyMode}
-                onToggle={() => toggleDeckSelection(deck.id)}
+              <ResumeStudyButton
+                href={resumeStudyLink}
+                deckName={recommendedDeck?.name}
               />
-            ))}
+            </div>
+
+            {/* Study Button */}
+            <StudyButton
+              classId={classData.id}
+              studyMode={studyMode}
+              onlyQuizDecks={onlyQuizDecks}
+              hasBothTypes={hasBothTypes}
+              flashcardDeckIds={flashcardDeckIds}
+              quizDeckNames={quizDeckNames}
+            />
+
+            {/* Filter Bar */}
+            <FilterBar
+              activeFilter={activeFilter}
+              onFilterChange={setActiveFilter}
+              counts={filterCounts}
+            />
+
+            {/* Recommended Deck (if exists and not filtered out) */}
+            {recommendedDeck && activeFilter === "all" && (
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="text-2xl">⭐</span> Recommended Next Deck
+                </h2>
+                <ModernDeckCard
+                  deck={{ ...recommendedDeck, isRecommended: true }}
+                  isSelected={selectedDecks.has(recommendedDeck.id)}
+                  onToggle={() => toggleDeckSelection(recommendedDeck.id)}
+                  studyMode={studyMode}
+                />
+              </div>
+            )}
+
+            {/* Structured Plan Section */}
+            {structuredPlanDecks.length > 0 && (
+              <DeckSection
+                title="Your 50-Day Structured Plan"
+                decks={filteredStructuredDecks}
+                isExpanded={structuredPlanExpanded}
+                onToggleExpand={() => setStructuredPlanExpanded(!structuredPlanExpanded)}
+                selectedDecks={selectedDecks}
+                onToggleDeck={toggleDeckSelection}
+                studyMode={studyMode}
+                recommendedDeckId={recommendedDeck?.id}
+                activeFilter={activeFilter}
+              />
+            )}
+
+            {/* Decks Section (Extra flashcard decks without day numbers) */}
+            {extraDecks.length > 0 && (
+              <DeckSection
+                title="Decks"
+                decks={filteredExtraDecks}
+                isExpanded={extraDecksExpanded}
+                onToggleExpand={() => setExtraDecksExpanded(!extraDecksExpanded)}
+                selectedDecks={selectedDecks}
+                onToggleDeck={toggleDeckSelection}
+                studyMode={studyMode}
+                recommendedDeckId={recommendedDeck?.id}
+                activeFilter={activeFilter}
+              />
+            )}
+
+            {/* Practice Section (Quiz decks) */}
+            {practiceDecks.length > 0 && (
+              <DeckSection
+                title="Practice"
+                decks={filteredPracticeDecks}
+                isExpanded={practiceDecksExpanded}
+                onToggleExpand={() => setPracticeDecksExpanded(!practiceDecksExpanded)}
+                selectedDecks={selectedDecks}
+                onToggleDeck={toggleDeckSelection}
+                studyMode={studyMode}
+                recommendedDeckId={recommendedDeck?.id}
+                activeFilter={activeFilter}
+              />
+            )}
+
+            {/* No decks message */}
+            {decks.length === 0 && (
+              <Card className="bg-white border-gray-200">
+                <CardContent className="py-12 text-center text-gray-500">
+                  No decks available in this class yet.
+                </CardContent>
+              </Card>
+            )}
           </div>
-        )}
+
+          {/* Right Column - Stats Sidebar (Desktop only) */}
+          <div className="hidden lg:block">
+            <StatsCard
+              streak={userStats.streak}
+              minutesToday={userStats.minutesToday}
+              cardsToday={userStats.cardsToday}
+              accuracy={userStats.accuracy}
+            />
+          </div>
+        </div>
       </div>
 
+      {/* Study Mode Info Dialog */}
       <StudyModeInfoDialog
         open={showModeInfo}
         onOpenChange={setShowModeInfo}
