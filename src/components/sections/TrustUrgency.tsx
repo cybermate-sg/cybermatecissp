@@ -24,7 +24,7 @@ export default function TrustUrgency() {
               </div>
 
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
-                Join 350+ Certified Professionals
+                Be One of the First to Pass with This System
               </h2>
 
               <div className="grid sm:grid-cols-3 gap-8 py-8">
@@ -36,9 +36,9 @@ export default function TrustUrgency() {
                 </div>
                 <div className="space-y-2">
                   <div className="text-5xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                    ∞
+                    12 Months
                   </div>
-                  <div className="text-gray-400">Lifetime access</div>
+                  <div className="text-gray-400">unlimited access</div>
                 </div>
                 <div className="space-y-2">
                   <div className="text-5xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
@@ -58,7 +58,7 @@ export default function TrustUrgency() {
               <div className="space-y-4 pt-4">
                 <div className="flex items-center justify-center gap-3 text-gray-300">
                   <Check className="w-5 h-5 text-green-400" />
-                  <span>30-Day Money-Back Guarantee</span>
+                  <span>Handwritten notes curated from CBK</span>
                 </div>
                 <div className="flex items-center justify-center gap-3 text-gray-300">
                   <Check className="w-5 h-5 text-green-400" />
@@ -66,7 +66,7 @@ export default function TrustUrgency() {
                 </div>
                 <div className="flex items-center justify-center gap-3 text-gray-300">
                   <Check className="w-5 h-5 text-green-400" />
-                  <span>Free Lifetime Updates</span>
+                  <span>1200+ exam-simulation questions</span>
                 </div>
               </div>
             </div>

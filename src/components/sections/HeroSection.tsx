@@ -64,17 +64,17 @@ export default function HeroSection() {
                             </div>
 
                             <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-[1.1] tracking-tight">
-                                Stop Cramming.
+                                Battle-Tested.
                                 <br />
                                 <span className="bg-gradient-to-r from-purple-400 via-purple-300 to-cyan-400 bg-clip-text text-transparent">
-                                    Master CISSP
+                                   Hand-Curated.
                                 </span>
                                 <br />
-                                in Half the Time.
+                                First-Attempt Proven.
                             </h1>
 
                             <p className="text-xl lg:text-2xl text-gray-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                                Join 350+ certified professionals who passed on their first attempt using our AI-powered adaptive learning system. No rote memorization. Just deep understanding.
+                                I turned my own handwritten notes + official CBK references into the exact system that helped students pass CISSP on the first attempt. Straight to the point. No fluff. Only what you need to succeed.
                             </p>
 
                             {/* Social proof counters */}
@@ -85,8 +85,8 @@ export default function HeroSection() {
                                 </div>
                                 <div className="w-px h-12 bg-gray-700 hidden sm:block" />
                                 <div className="text-center lg:text-left">
-                                    <div className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">350+</div>
-                                    <div className="text-sm text-gray-400 font-medium">Certified CISSPs</div>
+                                    <div className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">500+</div>
+                                    <div className="text-sm text-gray-400 font-medium">Flashcards</div>
                                 </div>
                                 <div className="w-px h-12 bg-gray-700 hidden sm:block" />
                                 <div className="text-center lg:text-left">
@@ -100,7 +100,7 @@ export default function HeroSection() {
                             </Suspense>
 
                             <p className="text-sm text-gray-400">
-                                One-time payment · Lifetime access · No subscription ever
+                                One-time payment · 12 months full access · All future updates included
                             </p>
                         </div>
 

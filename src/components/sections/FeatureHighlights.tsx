@@ -29,8 +29,8 @@ const features: Feature[] = [
   },
   {
     icon: Brain,
-    title: "AI Adaptive Learning",
-    description: "Real-time difficulty adjustment. The AI identifies weak areas and creates your personalized path.",
+    title: "Weakness Eliminator",
+    description: "Real-time tracking spots your blind spots and drills them with precision CBK questions — no guesswork.",
     colorScheme: "purple"
   },
   {
@@ -67,7 +67,8 @@ export default function FeatureHighlights() {
           <SectionHeader
             title="Everything You Need to"
             highlightedText="Pass First Try"
-            subtitle="Stop wasting time on outdated study methods. Our AI-powered platform gives you exactly what you need to master all 8 CISSP domains."
+            subtitle="Stop wasting time on bloated books and outdated dumps.
+My battle-tested handwritten notes + precise CBK breakdowns give you exactly what you need to master all 8 domains."
           />
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => (

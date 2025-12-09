@@ -24,7 +24,7 @@ const reasons: Reason[] = [
   {
     icon: Target,
     title: "Laser-Focused Practice",
-    description: "AI identifies your weak domains and doubles down. No time wasted on what you already know.",
+    description: "Skip what you know. Double down only on what you don’t — real-time tracking keeps you in the danger zones until they disappear.",
     colorScheme: "cyan"
   },
   {

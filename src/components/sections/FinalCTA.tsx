@@ -48,7 +48,7 @@ export default function FinalCTA() {
           <div className="pt-8 flex flex-wrap gap-6 justify-center items-center text-sm text-gray-400">
             <TrustBadge icon={Shield} text="Secure Payment" iconColor="text-green-400" />
             <div className="w-px h-4 bg-gray-700" />
-            <TrustBadge icon={Check} text="30-Day Guarantee" iconColor="text-green-400" />
+            <TrustBadge icon={Check} text="12 Months Full Access" iconColor="text-green-400" />
             <div className="w-px h-4 bg-gray-700" />
             <TrustBadge icon={Sparkles} text="Instant Access" iconColor="text-purple-400" />
           </div>
