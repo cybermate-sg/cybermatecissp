@@ -30,7 +30,7 @@ export default function TrustUrgency() {
               <div className="grid sm:grid-cols-3 gap-8 py-8">
                 <div className="space-y-2">
                   <div className="text-5xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                    $60
+                    $100
                   </div>
                   <div className="text-gray-400">One-time payment</div>
                 </div>
@@ -50,23 +50,48 @@ export default function TrustUrgency() {
 
               <div className="space-y-4">
                 <p className="text-2xl font-bold text-white">
-                  <span className="line-through text-gray-500">$120</span> → $60 USD (50% Off)
+                  <span className="text-gray-500">$100 USD</span> → A year of access for the price is the cherry on top.
                 </p>
                 <CountdownTimer />
               </div>
 
-              <div className="space-y-4 pt-4">
-                <div className="flex items-center justify-center gap-3 text-gray-300">
-                  <Check className="w-5 h-5 text-green-400" />
-                  <span>Handwritten notes curated from CBK</span>
-                </div>
-                <div className="flex items-center justify-center gap-3 text-gray-300">
-                  <Check className="w-5 h-5 text-green-400" />
-                  <span>Instant Access to All Content</span>
-                </div>
-                <div className="flex items-center justify-center gap-3 text-gray-300">
-                  <Check className="w-5 h-5 text-green-400" />
-                  <span>1200+ exam-simulation questions</span>
+              <div className="space-y-6 pt-4">
+                <h3 className="text-2xl font-bold text-white">
+                  What this learning kit contains:
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 text-gray-300 text-left">
+                    <Check className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span>50 Days Study Plan (Sample)</span>
+                  </div>
+                  <div className="flex items-start gap-3 text-gray-300 text-left">
+                    <Check className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span>Core Concepts Notes for all 8 Domains</span>
+                  </div>
+                  <div className="flex items-start gap-3 text-gray-300 text-left">
+                    <Check className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span>Curated Targeted Topics not to be missed</span>
+                  </div>
+                  <div className="flex items-start gap-3 text-gray-300 text-left">
+                    <Check className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span>Training you on how to eliminate wrong answers from the given options</span>
+                  </div>
+                  <div className="flex items-start gap-3 text-gray-300 text-left">
+                    <Check className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span>Domain based Quiz on Core Concepts (50 Questions for each Domain)</span>
+                  </div>
+                  <div className="flex items-start gap-3 text-gray-300 text-left">
+                    <Check className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span>Scenario based Questions on 8 Domains (50 Questions each)</span>
+                  </div>
+                  <div className="flex items-start gap-3 text-gray-300 text-left">
+                    <Check className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span>Cybersecurity Kick (800 Questions)</span>
+                  </div>
+                  <div className="flex items-start gap-3 text-gray-300 text-left">
+                    <Check className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span>Option to book additional paid coaching to address the learning gaps</span>
+                  </div>
                 </div>
               </div>
             </div>

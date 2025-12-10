@@ -35,8 +35,8 @@ const reasons: Reason[] = [
   },
   {
     icon: TrendingUp,
-    title: "Lifetime Updates",
-    description: "CISSP evolves. So does our content. You get every update, forever, at no extra cost.",
+    title: "Continuous Update",
+    description: "CISSP evolves. So does our content. You get every update, at no extra cost.",
     colorScheme: "cyan"
   }
 ];
@@ -62,7 +62,7 @@ export default function WhyStudentsPass() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <SectionHeader
-            title="Why Students Pass on"
+            title="How working professionals pass on"
             highlightedText="Their First Attempt"
           />
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">

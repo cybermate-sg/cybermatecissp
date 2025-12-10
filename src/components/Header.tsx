@@ -13,7 +13,7 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <Image
-              src="/images/cybermate-logo.jpeg"
+              src="/images/cybermate-logo-trans.png"
               alt="Cybermate Logo"
               width={40}
               height={40}
@@ -24,7 +24,7 @@ export default function Header() {
               fetchPriority="high"
             />
             <div className="text-2xl font-bold">
-              <span className="text-purple-400">Cybermate</span>
+              <span className="text-amber-400">Cybermate</span>
               <span className="text-white"> Professional Training</span>
             </div>
           </Link>
@@ -38,7 +38,7 @@ export default function Header() {
                 </Button>
               </Link>
               <Link href="/sign-up">
-                <Button className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white">
+                <Button className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white">
                   Sign up
                 </Button>
               </Link>

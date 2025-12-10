@@ -15,7 +15,7 @@ const testimonials: Testimonial[] = [
     initials: "MP",
     name: "Maria Patel",
     role: "InfoSec Manager, FinTech",
-    quote: "The AI adaptive system is a game-changer. It knew my weak spots before I did and forced me to address them. Passed with confidence on first attempt.",
+    quote: "The adaptive system is a game-changer. It knew my weak spots before I did and forced me to address them. Passed with confidence on first attempt.",
     gradientFrom: "cyan-500",
     gradientTo: "cyan-400",
     borderHover: "cyan-500/50"
@@ -24,7 +24,7 @@ const testimonials: Testimonial[] = [
     initials: "DK",
     name: "David Kim",
     role: "Cybersecurity Consultant",
-    quote: "Best $60 I ever spent on my career. No BS, just high-quality content that actually mirrors the exam. Lifetime access is the cherry on top.",
+    quote: "Best $100 I ever spent on my career. A year of access for the price is the cherry on top, just high-quality content that actually mirrors the exam. Lifetime access is the cherry on top.",
     gradientFrom: "purple-600",
     gradientTo: "purple-400",
     borderHover: "purple-500/50"
@@ -42,7 +42,7 @@ export default function Testimonials() {
           <SectionHeader
             title="Real Results from"
             highlightedText="Real Professionals"
-            subtitle="Join hundreds of cybersecurity professionals who transformed their careers with CISSP certification."
+            subtitle="Join the league of smart security professionals who transformed their careers through my CISSP training."
           />
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
