@@ -33,7 +33,7 @@ export default function TrustUrgency() {
 
               <div className="space-y-4">
                 <p className="text-2xl font-bold text-white">
-                  <span className="text-gray-500">$100 USD</span> → A year of access for the price is the cherry on top.
+                  <span className="text-gray-500">$100 USD</span> → Crack the CISSP smarter—$100 roadmap, zero fluff, full clarity. Pass confidently for under 50¢ a day.
                 </p>
                 <CountdownTimer />
               </div>

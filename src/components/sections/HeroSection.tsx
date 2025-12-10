@@ -100,7 +100,7 @@ export default function HeroSection() {
                             </Suspense>
 
                             <p className="text-sm text-gray-400">
-                                One-time payment · 12 months full access · All future updates included
+                                Pocket friendly payment · 12 months full access · All future updates included
                             </p>
                         </div>
 
