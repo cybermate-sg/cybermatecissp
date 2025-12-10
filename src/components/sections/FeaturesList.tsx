@@ -37,7 +37,7 @@ export default function FeaturesList() {
 
       <div className="pt-6 space-y-4">
         <p className="text-gray-300 text-left">
-          Still stuck on a tough domain? Book a 1-on-1 coaching session. I'll pinpoint your weak spots and turn confusion into unstoppable confidence.
+          Still stuck on a tough domain? Book a 1-on-1 coaching session. I&apos;ll pinpoint your weak spots and turn confusion into unstoppable confidence.
         </p>
         <a
           href="https://calendly.com/enmadhavan/30min"
