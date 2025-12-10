@@ -7,7 +7,7 @@ import LayoutWrapper from "@/components/LayoutWrapper";
 // If Google Fonts are needed, they can be loaded via CDN in production
 
 export const metadata: Metadata = {
-  title: "CISSP Mastery - Master CISSP with Confidence-Based Learning",
+  title: "Cybermate Professional Tranining - Master CISSP with Confidence-Based Learning",
   description: "Master CISSP certification with our confidence-based flashcard system. Adaptive spaced repetition, progress tracking, and 1000+ flashcards across 8 domains.",
 };
 
