@@ -298,7 +298,7 @@ export default function TermsAndConditionsPage() {
               </ul>
               <p className="text-gray-300 leading-relaxed">
                 In no event shall our total liability to you for all damages, losses, or causes of action exceed the amount
-                you have paid to us in the last twelve (12) months, or one hundred dollars ($100), whichever is greater.
+                you have paid to us in the last twelve (12) months, or one hundred dollars ($97), whichever is greater.
               </p>
             </section>
 

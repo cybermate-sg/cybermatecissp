@@ -18,7 +18,7 @@ function StatItem({ value, label, gradient }: StatItemProps) {
 export default function StatsGrid() {
   return (
     <div className="grid sm:grid-cols-3 gap-8 py-8">
-      <StatItem value="$100" label="One-time payment" gradient="from-purple-400 to-cyan-400" />
+      <StatItem value="$97" label="One-time payment" gradient="from-purple-400 to-cyan-400" />
       <StatItem value="12 Months" label="unlimited access" gradient="from-cyan-400 to-purple-400" />
       <StatItem value="$0" label="No subscription" gradient="from-purple-400 to-cyan-400" />
     </div>
