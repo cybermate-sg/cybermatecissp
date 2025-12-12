@@ -40,7 +40,7 @@ export default function FeaturesList() {
           Still stuck on a tough domain? Book a 1-on-1 coaching session. I&apos;ll pinpoint your weak spots and turn confusion into unstoppable confidence.
         </p>
         <a
-          href="https://calendly.com/enmadhavan/30min"
+          href="https://calendly.com/cisspin50days/30min"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"

@@ -44,7 +44,7 @@ const nextConfig: NextConfig = {
   },
   // Runtime performance optimizations
   ...(process.env.NODE_ENV === 'production' && {
-    productionBrowserSourceMaps: false, // Disable source maps in production for smaller bundles
+    productionBrowserSourceMaps: true, // Enable source maps for Sentry error tracking
   }),
   // Experimental features for better performance
   experimental: {
@@ -67,6 +67,12 @@ const nextConfig: NextConfig = {
   // Webpack configuration for fallbacks and optimization
   webpack: (config, { dev, isServer }) => {
     config.resolve.fallback = { async_hooks: false };
+
+    // Configure source maps for production
+    if (!dev) {
+      // Use hidden source maps for production - uploaded to Sentry but not exposed to users
+      config.devtool = isServer ? false : 'hidden-source-map';
+    }
 
     // Optimize for better TBT
     if (!dev && !isServer) {
@@ -207,12 +213,12 @@ export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-  // Upload source maps only in CI/production builds to speed up local development
-  widenClientFileUpload: !!process.env.CI,
+  // Upload source maps in production builds
+  widenClientFileUpload: true,
 
-  // Disable source maps functionality completely in local development for MUCH faster builds
+  // Enable source maps generation and upload
   sourcemaps: {
-    disable: !process.env.CI,
+    disable: process.env.NODE_ENV === 'development',
   },
 
   // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.

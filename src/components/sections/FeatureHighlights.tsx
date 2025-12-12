@@ -67,7 +67,7 @@ export default function FeatureHighlights() {
           <SectionHeader
             title="Everything You Need to"
             highlightedText="Pass First Try"
-            subtitle="Stop wasting time on bloated books and outdated dumps.
+            subtitle="Stop wasting time on bloated books and outdated question bank.
 My battle-tested handwritten notes + precise CBK breakdowns give you exactly what you need to master all 8 domains."
           />
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
