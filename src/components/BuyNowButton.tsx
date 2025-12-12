@@ -8,12 +8,14 @@ interface BuyNowButtonProps {
   priceId: string;
   className?: string;
   text?: string;
+  disabled?: boolean;
 }
 
 export default function BuyNowButton({
   priceId,
   className = "",
-  text = "BUY NOW"
+  text = "BUY NOW",
+  disabled = false
 }: BuyNowButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
@@ -78,7 +80,7 @@ export default function BuyNowButton({
     <>
       <button
         onClick={handleButtonClick}
-        disabled={isLoading}
+        disabled={isLoading || disabled}
         className={`group bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold px-8 py-4 rounded-full transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${className}`}
       >
         {isLoading ? (
