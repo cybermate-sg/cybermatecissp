@@ -295,6 +295,113 @@ export const userStats = pgTable('user_stats', {
 });
 
 // ============================================
+// AI QUIZ GENERATION TRACKING
+// ADMIN-ONLY FEATURE FOR GENERATING QUIZ QUESTIONS VIA AI
+// ============================================
+
+// AI Model Configurations table - Stores available AI models and their settings
+// ✅ ADMIN-CONFIGURABLE AI MODELS
+export const aiModelConfigurations = pgTable('ai_model_configurations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  modelId: varchar('model_id', { length: 255 }).notNull().unique(), // OpenRouter model ID (e.g., 'meta-llama/llama-3.2-3b-instruct:free')
+  name: varchar('name', { length: 255 }).notNull(), // Display name (e.g., 'Llama 3.2 3B')
+  provider: varchar('provider', { length: 100 }), // e.g., 'meta-llama', 'google', 'mistralai'
+  priority: integer('priority').notNull().default(100), // Lower = higher priority (tried first)
+  enabled: boolean('enabled').notNull().default(true), // Can be disabled without deletion
+  timeoutMs: integer('timeout_ms'), // Model-specific timeout in milliseconds
+  temperature: decimal('temperature', { precision: 3, scale: 2 }), // 0.00 to 1.00
+  maxTokens: integer('max_tokens'), // Maximum tokens for this model
+  costPer1kTokens: decimal('cost_per_1k_tokens', { precision: 10, scale: 6 }), // Cost tracking
+  isFree: boolean('is_free').notNull().default(true), // Whether this is a free tier model
+  description: text('description'), // Admin notes about this model
+  lastUsedAt: timestamp('last_used_at'), // Track model usage
+  successCount: integer('success_count').default(0), // Track successful generations
+  failureCount: integer('failure_count').default(0), // Track failed generations
+  avgResponseTimeMs: integer('avg_response_time_ms'), // Average response time
+  createdBy: varchar('created_by', { length: 255 }).notNull().references(() => users.clerkUserId),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Index for fetching enabled models by priority
+  enabledPriorityIdx: index('idx_ai_models_enabled_priority').on(table.enabled, table.priority),
+  // Index for filtering by provider
+  providerIdx: index('idx_ai_models_provider').on(table.provider),
+  // Index for sorting by success rate
+  successIdx: index('idx_ai_models_success').on(table.successCount),
+}));
+
+// AI Quiz Generation Log table - Tracks all AI quiz generation attempts
+// ✅ ADMIN AI USAGE TRACKING
+export const aiQuizGenerationLog = pgTable('ai_quiz_generation_log', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  adminId: varchar('admin_id', { length: 255 }).notNull().references(() => users.clerkUserId, { onDelete: 'cascade' }),
+  flashcardId: uuid('flashcard_id').references(() => flashcards.id, { onDelete: 'set null' }),
+  deckId: uuid('deck_id').references(() => decks.id, { onDelete: 'set null' }),
+  modelConfigId: uuid('model_config_id').references(() => aiModelConfigurations.id, { onDelete: 'set null' }), // Which model was used
+  topic: varchar('topic', { length: 500 }).notNull(), // User-entered topic for quiz generation
+  generationType: varchar('generation_type', { length: 20 }).notNull(), // 'flashcard' or 'deck'
+  numQuestionsGenerated: integer('num_questions_generated').notNull(), // How many questions were generated
+  promptUsed: text('prompt_used'), // The full prompt sent to the AI
+  status: varchar('status', { length: 20 }).notNull().default('pending'), // 'pending', 'success', 'failed', 'partial'
+  apiResponseStatus: integer('api_response_status'), // HTTP status code from OpenRouter API
+  errorMessage: text('error_message'), // Error details if generation failed
+  totalCostUsd: decimal('total_cost_usd', { precision: 10, scale: 6 }), // Cost in USD
+  tokensUsed: integer('tokens_used'), // Total tokens consumed
+  responseTimeMs: integer('response_time_ms'), // API response time in milliseconds
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Index for querying admin's generation history
+  adminCreatedIdx: index('idx_ai_log_admin_created').on(table.adminId, table.createdAt),
+  // Index for filtering by status
+  statusIdx: index('idx_ai_log_status').on(table.status),
+  // Index for filtering by flashcard
+  flashcardIdx: index('idx_ai_log_flashcard').on(table.flashcardId),
+  // Index for filtering by deck
+  deckIdx: index('idx_ai_log_deck').on(table.deckId),
+  // Index for filtering by model
+  modelIdx: index('idx_ai_log_model').on(table.modelConfigId),
+}));
+
+// Admin AI Quota Config table - Configurable quota limits per admin
+// ✅ ADMIN AI QUOTA CONFIGURATION
+export const adminAiQuotaConfig = pgTable('admin_ai_quota_config', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  adminId: varchar('admin_id', { length: 255 }).notNull().references(() => users.clerkUserId, { onDelete: 'cascade' }).unique(),
+  dailyQuotaLimit: integer('daily_quota_limit').notNull().default(50), // Max generations per day
+  flashcardQuestionsDefault: integer('flashcard_questions_default').notNull().default(5), // Default questions for flashcard
+  deckQuestionsDefault: integer('deck_questions_default').notNull().default(50), // Default questions for deck
+  quotaResetHour: integer('quota_reset_hour').notNull().default(0), // Hour (0-23) when quota resets (UTC)
+  isEnabled: boolean('is_enabled').notNull().default(true), // Can be disabled per admin
+  notes: text('notes'), // Admin notes or restrictions
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Index for finding admin config
+  adminIdx: index('idx_ai_quota_admin').on(table.adminId),
+  // Index for filtering enabled/disabled admins
+  enabledIdx: index('idx_ai_quota_enabled').on(table.isEnabled),
+}));
+
+// Admin AI Daily Usage table - Tracks daily generation usage per admin
+// ✅ ADMIN DAILY QUOTA TRACKING
+export const adminAiDailyUsage = pgTable('admin_ai_daily_usage', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  adminId: varchar('admin_id', { length: 255 }).notNull().references(() => users.clerkUserId, { onDelete: 'cascade' }),
+  usageDate: varchar('usage_date', { length: 10 }).notNull(), // YYYY-MM-DD format
+  generationsUsed: integer('generations_used').notNull().default(0), // Number of generations used today
+  quotaLimit: integer('quota_limit').notNull().default(50), // Snapshot of quota limit for this day
+  lastResetAt: timestamp('last_reset_at').defaultNow().notNull(), // When quota was last reset
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Index for finding today's usage for an admin
+  adminUsageDateIdx: index('idx_ai_usage_admin_date').on(table.adminId, table.usageDate),
+  // Index for date-based queries
+  usageDateIdx: index('idx_ai_usage_date').on(table.usageDate),
+}));
+
+// ============================================
 // RELATIONS
 // ============================================
 
@@ -312,6 +419,11 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   createdDecks: many(decks),
   createdFlashcards: many(flashcards),
   createdQuizQuestions: many(quizQuestions),
+  // AI quiz generation relations
+  aiQuizLogs: many(aiQuizGenerationLog),
+  aiQuotaConfig: one(adminAiQuotaConfig),
+  aiDailyUsage: many(adminAiDailyUsage),
+  aiModelConfigurations: many(aiModelConfigurations),
 }));
 
 export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
@@ -461,5 +573,46 @@ export const bookmarkedFlashcardsRelations = relations(bookmarkedFlashcards, ({ 
   flashcard: one(flashcards, {
     fields: [bookmarkedFlashcards.flashcardId],
     references: [flashcards.id],
+  }),
+}));
+
+export const aiModelConfigurationsRelations = relations(aiModelConfigurations, ({ one, many }) => ({
+  createdBy: one(users, {
+    fields: [aiModelConfigurations.createdBy],
+    references: [users.clerkUserId],
+  }),
+  generationLogs: many(aiQuizGenerationLog),
+}));
+
+export const aiQuizGenerationLogRelations = relations(aiQuizGenerationLog, ({ one }) => ({
+  admin: one(users, {
+    fields: [aiQuizGenerationLog.adminId],
+    references: [users.clerkUserId],
+  }),
+  flashcard: one(flashcards, {
+    fields: [aiQuizGenerationLog.flashcardId],
+    references: [flashcards.id],
+  }),
+  deck: one(decks, {
+    fields: [aiQuizGenerationLog.deckId],
+    references: [decks.id],
+  }),
+  modelConfig: one(aiModelConfigurations, {
+    fields: [aiQuizGenerationLog.modelConfigId],
+    references: [aiModelConfigurations.id],
+  }),
+}));
+
+export const adminAiQuotaConfigRelations = relations(adminAiQuotaConfig, ({ one }) => ({
+  admin: one(users, {
+    fields: [adminAiQuotaConfig.adminId],
+    references: [users.clerkUserId],
+  }),
+}));
+
+export const adminAiDailyUsageRelations = relations(adminAiDailyUsage, ({ one }) => ({
+  admin: one(users, {
+    fields: [adminAiDailyUsage.adminId],
+    references: [users.clerkUserId],
   }),
 }));

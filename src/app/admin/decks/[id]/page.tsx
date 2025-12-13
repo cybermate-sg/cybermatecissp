@@ -21,9 +21,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import RichTextEditor from "@/components/admin/RichTextEditor";
-import { Loader2, Plus, Edit2, Trash2, ArrowLeft, Image as ImageIcon, ClipboardList, TestTube, Upload, X, ChevronDown } from "lucide-react";
+import { Loader2, Plus, Edit2, Trash2, ArrowLeft, Image as ImageIcon, ClipboardList, TestTube, Upload, X, ChevronDown, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { validateQuizFile, type QuizFile } from "@/lib/validations/quiz";
+import { AiQuizGenerationModal } from "@/components/admin/AiQuizGenerationModal";
 
 interface DeckData {
   id: string;
@@ -145,6 +146,7 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
   const [uploadingImages, setUploadingImages] = useState(false);
   const [quizData, setQuizData] = useState<QuizFile | null>(null);
   const [quizFileName, setQuizFileName] = useState<string>("");
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   // Deck-level quiz state
   const [deckQuizData, setDeckQuizData] = useState<QuizFile | null>(null);
@@ -1079,11 +1081,23 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
             </div>
 
             <div className="space-y-3">
-              <Label className="text-base font-semibold">
-                Quiz/Test Questions (Optional)
-              </Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-base font-semibold">
+                  Quiz/Test Questions (Optional)
+                </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAiModalOpen(true)}
+                  className="h-7 px-2"
+                  title="Generate quiz questions using AI"
+                >
+                  <Sparkles className="w-4 h-4" />
+                </Button>
+              </div>
               <p className="text-sm text-slate-600">
-                Upload a JSON file with multiple-choice questions for this flashcard
+                Upload a JSON file with multiple-choice questions or use AI to generate them
               </p>
 
               <Input
@@ -1184,6 +1198,20 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* AI Quiz Generation Modal */}
+      <AiQuizGenerationModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        onGenerate={(topic, questions) => {
+          setQuizData(questions);
+          setQuizFileName(`AI: ${topic}`);
+          setIsAiModalOpen(false);
+          toast.success(`Loaded ${questions.questions.length} AI-generated questions`);
+        }}
+        generationType="flashcard"
+        targetFlashcardId={editingCard?.id}
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
