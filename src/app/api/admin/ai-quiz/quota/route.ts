@@ -10,7 +10,7 @@ import { desc, eq } from 'drizzle-orm';
  * GET /api/admin/ai-quiz/quota
  * Get current quota status and recent generation history
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Verify admin authentication
     const admin = await requireAdmin();

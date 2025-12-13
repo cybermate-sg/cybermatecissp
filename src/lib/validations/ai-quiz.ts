@@ -10,7 +10,7 @@ export const generateAiQuizSchema = z.object({
     .max(500, 'Topic must be less than 500 characters')
     .trim(),
   generationType: z.enum(['flashcard', 'deck'], {
-    errorMap: () => ({ message: 'Generation type must be either "flashcard" or "deck"' }),
+    message: 'Generation type must be either "flashcard" or "deck"',
   }),
   customQuestionCount: z.number()
     .int()

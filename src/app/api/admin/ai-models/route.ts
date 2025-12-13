@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { aiModelConfigurations } from '@/lib/db/schema';
-import { desc, eq } from 'drizzle-orm';
+import { desc } from 'drizzle-orm';
 
 /**
  * GET /api/admin/ai-models

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
-import { aiQuizGenerationLog, users } from '@/lib/db/schema';
-import { desc, eq, and, gte, lte, sql, count } from 'drizzle-orm';
+import { aiQuizGenerationLog } from '@/lib/db/schema';
+import { desc, eq, and, gte, lte, count } from 'drizzle-orm';
 
 /**
  * GET /api/admin/ai-quiz/logs

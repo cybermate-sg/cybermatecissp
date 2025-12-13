@@ -42,36 +42,36 @@ export function AiQuizGenerationModal({
 
   // Fetch quota information when modal opens
   useEffect(() => {
+    const fetchQuota = async () => {
+      try {
+        const response = await fetch('/api/admin/ai-quiz/quota');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setQuota({
+              dailyUsed: data.data.generationsUsedToday,
+              dailyLimit: data.data.dailyQuotaLimit,
+              remaining: data.data.remainingGenerations,
+              resetTime: data.data.resetTime,
+            });
+
+            // Update default question counts from config
+            if (generationType === 'flashcard') {
+              setQuestionCount(data.data.config.flashcardQuestionsDefault);
+            } else {
+              setQuestionCount(data.data.config.deckQuestionsDefault);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch quota:', error);
+      }
+    };
+
     if (isOpen) {
       fetchQuota();
     }
-  }, [isOpen]);
-
-  const fetchQuota = async () => {
-    try {
-      const response = await fetch('/api/admin/ai-quiz/quota');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setQuota({
-            dailyUsed: data.data.generationsUsedToday,
-            dailyLimit: data.data.dailyQuotaLimit,
-            remaining: data.data.remainingGenerations,
-            resetTime: data.data.resetTime,
-          });
-
-          // Update default question counts from config
-          if (generationType === 'flashcard') {
-            setQuestionCount(data.data.config.flashcardQuestionsDefault);
-          } else {
-            setQuestionCount(data.data.config.deckQuestionsDefault);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch quota:', error);
-    }
-  };
+  }, [isOpen, generationType]);
 
   const handleGenerate = async () => {
     // Validate topic

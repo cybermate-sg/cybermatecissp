@@ -71,7 +71,9 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const body = await request.json();
+    const body = (await request.json()) as Partial<
+      typeof aiModelConfigurations.$inferInsert
+    >;
 
     // Check if model exists
     const existing = await db.query.aiModelConfigurations.findFirst({
@@ -83,7 +85,7 @@ export async function PATCH(
     }
 
     // Build update object
-    const updateData: any = {
+    const updateData: Partial<typeof aiModelConfigurations.$inferInsert> & { updatedAt: Date } = {
       updatedAt: new Date(),
     };
 
