@@ -24,7 +24,7 @@ export default function Header() {
               fetchPriority="high"
             />
             <div className="text-2xl font-bold">
-              <span className="text-amber-400">Cybermate</span>
+              <span className="text-[#B79A42]">Cybermate</span>
               <span className="text-white"> Professional Training</span>
             </div>
           </Link>
