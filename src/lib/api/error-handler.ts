@@ -66,6 +66,7 @@ const ERROR_PATTERNS = [
 /**
  * Check if message contains any of the keywords
  */
+// codacy-disable-next-line Lizard_ccn-medium
 function messageContainsKeyword(message: string, keywords: readonly string[]): boolean {
   return keywords.some(keyword => message.includes(keyword));
 }

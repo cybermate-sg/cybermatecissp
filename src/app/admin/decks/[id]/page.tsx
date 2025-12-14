@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -21,9 +21,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import RichTextEditor from "@/components/admin/RichTextEditor";
-import { Loader2, Plus, Edit2, Trash2, ArrowLeft, Image as ImageIcon, ClipboardList, TestTube, Upload, X, ChevronDown } from "lucide-react";
+import { Loader2, Plus, Edit2, Trash2, ArrowLeft, Image as ImageIcon, ClipboardList, TestTube, Upload, X, ChevronDown, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { validateQuizFile, type QuizFile } from "@/lib/validations/quiz";
+import { AiQuizGenerationModal } from "@/components/admin/AiQuizGenerationModal";
+import DOMPurify from "isomorphic-dompurify";
 
 interface DeckData {
   id: string;
@@ -121,6 +123,40 @@ const FLASHCARD_QUIZ_JSON_EXAMPLE = {
   ],
 } as const;
 
+/**
+ * Component to render formatted HTML content with proper sanitization
+ */
+interface FormattedContentProps {
+  html: string;
+  className?: string;
+}
+
+function FormattedContent({ html, className = "" }: FormattedContentProps) {
+  const sanitizedHtml = useMemo(() => {
+    if (typeof window === 'undefined') return html;
+
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: [
+        'p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'ul', 'ol', 'li', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
+        'blockquote', 'a'
+      ],
+      ALLOWED_ATTR: ['href', 'class', 'target', 'rel'],
+      ALLOW_DATA_ATTR: false,
+      ALLOW_UNKNOWN_PROTOCOLS: false,
+      SAFE_FOR_TEMPLATES: true,
+      RETURN_TRUSTED_TYPE: false
+    });
+  }, [html]);
+
+  return (
+    <div
+      className={`prose prose-sm max-w-none ${className}`}
+      dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+    />
+  );
+}
+
 export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [deckId, setDeckId] = useState<string | null>(null);
@@ -145,6 +181,7 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
   const [uploadingImages, setUploadingImages] = useState(false);
   const [quizData, setQuizData] = useState<QuizFile | null>(null);
   const [quizFileName, setQuizFileName] = useState<string>("");
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   // Deck-level quiz state
   const [deckQuizData, setDeckQuizData] = useState<QuizFile | null>(null);
@@ -870,7 +907,10 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
                           <div className="flex items-start gap-2 mb-3">
                             <span className="text-sm font-medium text-slate-500">Q</span>
                             <div className="flex-1">
-                              <p className="text-blue-600 font-medium">{card.question}</p>
+                              <FormattedContent
+                                html={card.question}
+                                className="text-blue-600 prose-strong:text-blue-700 prose-headings:text-blue-800"
+                              />
                               {card.media && card.media.filter(m => m.placement === 'question').length > 0 && (
                                 <div className="flex gap-2 mt-2">
                                   {card.media.filter(m => m.placement === 'question').map((media) => (
@@ -892,7 +932,10 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
                           <div className="flex items-start gap-2 mb-3">
                             <span className="text-sm font-medium text-slate-500">A</span>
                             <div className="flex-1">
-                              <p className="text-slate-700">{card.answer}</p>
+                              <FormattedContent
+                                html={card.answer}
+                                className="text-slate-700 prose-strong:text-slate-900 prose-headings:text-slate-800"
+                              />
                               {card.media && card.media.filter(m => m.placement === 'answer').length > 0 && (
                                 <div className="flex gap-2 mt-2">
                                   {card.media.filter(m => m.placement === 'answer').map((media) => (
@@ -1079,11 +1122,23 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
             </div>
 
             <div className="space-y-3">
-              <Label className="text-base font-semibold">
-                Quiz/Test Questions (Optional)
-              </Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-base font-semibold">
+                  Quiz/Test Questions (Optional)
+                </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAiModalOpen(true)}
+                  className="h-7 px-2"
+                  title="Generate quiz questions using AI"
+                >
+                  <Sparkles className="w-4 h-4" />
+                </Button>
+              </div>
               <p className="text-sm text-slate-600">
-                Upload a JSON file with multiple-choice questions for this flashcard
+                Upload a JSON file with multiple-choice questions or use AI to generate them
               </p>
 
               <Input
@@ -1185,6 +1240,20 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
         </DialogContent>
       </Dialog>
 
+      {/* AI Quiz Generation Modal */}
+      <AiQuizGenerationModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        onGenerate={(topic, questions) => {
+          setQuizData(questions);
+          setQuizFileName(`AI: ${topic}`);
+          setIsAiModalOpen(false);
+          toast.success(`Loaded ${questions.questions.length} AI-generated questions`);
+        }}
+        generationType="flashcard"
+        targetFlashcardId={editingCard?.id}
+      />
+
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="bg-white border-slate-200 text-slate-900">
@@ -1232,6 +1301,134 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Global Styles for Formatted Content */}
+      <style jsx global>{`
+        /* Rich text content styling for admin flashcard display */
+        .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+          font-weight: 600;
+          margin-top: 0.75rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .prose h1 {
+          font-size: 1.5rem;
+        }
+
+        .prose h2 {
+          font-size: 1.25rem;
+        }
+
+        .prose h3 {
+          font-size: 1.125rem;
+        }
+
+        .prose p {
+          margin-top: 0.5rem;
+          margin-bottom: 0.5rem;
+          line-height: 1.6;
+        }
+
+        .prose ul,
+        .prose ol {
+          padding-left: 1.5rem;
+          margin-top: 0.5rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .prose ul {
+          list-style-type: disc;
+        }
+
+        .prose ol {
+          list-style-type: decimal;
+        }
+
+        .prose li {
+          margin-top: 0.25rem;
+          margin-bottom: 0.25rem;
+        }
+
+        .prose strong {
+          font-weight: 600;
+        }
+
+        .prose em {
+          font-style: italic;
+        }
+
+        .prose code {
+          background-color: #e2e8f0;
+          padding: 0.2rem 0.4rem;
+          border-radius: 0.25rem;
+          font-size: 0.9em;
+          font-family: monospace;
+          color: #1e293b;
+        }
+
+        .prose pre {
+          background-color: #f1f5f9;
+          padding: 1rem;
+          border-radius: 0.5rem;
+          overflow-x: auto;
+          margin: 0.75rem 0;
+        }
+
+        .prose pre code {
+          background: none;
+          padding: 0;
+        }
+
+        /* Table styling for admin flashcards */
+        .prose table,
+        .prose .tiptap-table {
+          border-collapse: collapse;
+          table-layout: auto;
+          width: 100%;
+          margin: 1rem 0;
+          overflow: hidden;
+          border-radius: 0.5rem;
+          border: 1px solid #cbd5e1;
+        }
+
+        .prose table td,
+        .prose table th,
+        .prose .tiptap-table td,
+        .prose .tiptap-table th {
+          min-width: 3em;
+          border: 1px solid #cbd5e1;
+          padding: 8px 12px;
+          vertical-align: top;
+          box-sizing: border-box;
+          position: relative;
+          background-color: #ffffff;
+        }
+
+        .prose table th,
+        .prose .tiptap-table th {
+          font-weight: 600;
+          text-align: left;
+          background-color: #f1f5f9;
+          color: #1e293b;
+        }
+
+        .prose blockquote {
+          border-left: 4px solid #cbd5e1;
+          padding-left: 1rem;
+          margin: 1rem 0;
+          font-style: italic;
+          color: #64748b;
+        }
+
+        .prose a {
+          color: #3b82f6;
+          text-decoration: underline;
+        }
+
+        .prose a:hover {
+          color: #2563eb;
+        }
+      `}</style>
     </div>
   );
 }

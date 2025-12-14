@@ -1,0 +1,56 @@
+{
+  "$schema": "../src/lib/ai/model-config.ts",
+  "defaultTimeoutMs": 60000,
+  "defaultTemperature": 0.7,
+  "maxRetries": 1,
+  "models": [
+    {
+      "id": "meta-llama/llama-3.2-3b-instruct:free",
+      "name": "Llama 3.2 3B",
+      "priority": 1,
+      "enabled": true,
+      "timeoutMs": 45000,
+      "temperature": 0.7,
+      "costPer1kTokens": 0,
+      "comment": "Fast, lightweight model - good for simple questions"
+    },
+    {
+      "id": "mistralai/mistral-7b-instruct:free",
+      "name": "Mistral 7B",
+      "priority": 2,
+      "enabled": true,
+      "timeoutMs": 60000,
+      "temperature": 0.7,
+      "costPer1kTokens": 0,
+      "comment": "Balanced performance and quality"
+    },
+    {
+      "id": "google/gemini-2.0-flash-exp:free",
+      "name": "Gemini 2.0 Flash",
+      "priority": 3,
+      "enabled": true,
+      "timeoutMs": 45000,
+      "temperature": 0.7,
+      "costPer1kTokens": 0,
+      "comment": "Google's fast experimental model"
+    },
+    {
+      "id": "qwen/qwen-2-7b-instruct:free",
+      "name": "Qwen 2 7B",
+      "priority": 4,
+      "enabled": true,
+      "timeoutMs": 60000,
+      "temperature": 0.7,
+      "costPer1kTokens": 0,
+      "comment": "Alibaba's instruction-tuned model"
+    }
+  ],
+  "_instructions": {
+    "usage": "Copy this file to config/ai-models.json and customize",
+    "priority": "Lower numbers are tried first (1 = highest priority)",
+    "enabled": "Set to false to skip a model",
+    "timeoutMs": "How long to wait for this model (in milliseconds)",
+    "temperature": "Controls randomness (0 = deterministic, 1 = creative)",
+    "costPer1kTokens": "Cost tracking (0 for free models)"
+  }
+}
