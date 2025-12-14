@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
-import { decks } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { decks, flashcards, flashcardMedia, quizQuestions } from '@/lib/db/schema';
+import { eq, asc } from 'drizzle-orm';
 import { deleteMultipleImagesFromBlob } from '@/lib/blob';
 import { withErrorHandling } from '@/lib/api/error-handler';
 import { withTracing } from '@/lib/middleware/with-tracing';
@@ -21,9 +21,14 @@ async function getDeck(
       with: {
         class: true,
         flashcards: {
+          orderBy: [asc(flashcards.order)],
           with: {
-            media: true,
-            quizQuestions: true,
+            media: {
+              orderBy: [asc(flashcardMedia.order)],
+            },
+            quizQuestions: {
+              orderBy: [asc(quizQuestions.order)],
+            },
           },
         },
       },
