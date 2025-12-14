@@ -130,6 +130,16 @@ export default function DeckStudyPage() {
     }
   };
 
+  const handleGoToCard = (cardNumber: number) => {
+    // cardNumber is 1-indexed (user input), but currentIndex is 0-indexed
+    const targetIndex = cardNumber - 1;
+    if (targetIndex >= 0 && targetIndex < flashcards.length) {
+      setCurrentIndex(targetIndex);
+      setShowRating(false);
+      toast.success(`Jumped to card ${cardNumber}`);
+    }
+  };
+
   const handleBookmarkToggle = async (flashcardId: string, isBookmarked: boolean) => {
     try {
       // Validate flashcardId format (CUID/UUID pattern)
@@ -280,6 +290,7 @@ export default function DeckStudyPage() {
             progressLabel: "Deck study progress",
           }}
           onReset={handleReset}
+          onGoToCard={handleGoToCard}
           extraActions={
             deckHasQuiz && (
               <Button

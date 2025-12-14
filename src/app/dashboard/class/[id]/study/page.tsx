@@ -126,6 +126,16 @@ export default function ClassStudyPage() {
     console.log('Reset Progress clicked - After: currentIndex set to 0, studiedCards cleared');
   };
 
+  const handleGoToCard = (cardNumber: number) => {
+    // cardNumber is 1-indexed (user input), but currentIndex is 0-indexed
+    const targetIndex = cardNumber - 1;
+    if (targetIndex >= 0 && targetIndex < flashcards.length) {
+      setCurrentIndex(targetIndex);
+      setShowRating(false);
+      toast.success(`Jumped to card ${cardNumber}`);
+    }
+  };
+
   const getModeName = () => {
     switch (mode) {
       case 'progressive':
@@ -196,6 +206,7 @@ export default function ClassStudyPage() {
             progress,
           }}
           onReset={handleReset}
+          onGoToCard={handleGoToCard}
         />
 
         {/* Flashcard or Completion */}
