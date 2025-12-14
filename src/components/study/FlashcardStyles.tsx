@@ -37,6 +37,13 @@ function FlashcardAnimationStyles() {
 
 const FLASHCARD_PROSE_STYLES = `
   /* Enhanced prose styling for cyber theme */
+  .prose h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: #67e8f9;
+  }
   .prose h2 {
     font-size: 1.5rem;
     font-weight: 700;
@@ -44,23 +51,66 @@ const FLASHCARD_PROSE_STYLES = `
     margin-bottom: 0.75rem;
     color: #67e8f9;
   }
+  .prose h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-top: 1.25rem;
+    margin-bottom: 0.75rem;
+    color: #67e8f9;
+  }
+  .prose h4, .prose h5, .prose h6 {
+    font-weight: 700;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    color: #67e8f9;
+  }
   .prose p {
     margin-top: 0.75rem;
     margin-bottom: 0.75rem;
     line-height: 1.8;
   }
-  .prose ul, .prose ol {
-    padding-left: 1.75rem;
-    margin-top: 0.75rem;
-    margin-bottom: 0.75rem;
+  .prose ul, .prose ol,
+  .prose-invert ul, .prose-invert ol,
+  .prose-lg ul, .prose-lg ol,
+  .prose-base ul, .prose-base ol {
+    padding-left: 1.75rem !important;
+    margin-top: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+    list-style-position: outside !important;
+    margin-left: 0.5rem !important;
   }
-  .prose li {
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
+  .prose ul,
+  .prose-invert ul,
+  .prose-lg ul,
+  .prose-base ul {
+    list-style-type: disc !important;
+  }
+  .prose ol,
+  .prose-invert ol,
+  .prose-lg ol,
+  .prose-base ol {
+    list-style-type: decimal !important;
+  }
+  .prose li,
+  .prose-invert li,
+  .prose-lg li,
+  .prose-base li {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    display: list-item !important;
+    margin-left: 0 !important;
   }
   .prose strong {
     font-weight: 700;
     color: #f1f5f9;
+  }
+  .prose a {
+    color: #67e8f9;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+  }
+  .prose a:hover {
+    color: #a5f3fc;
   }
   .prose code {
     background-color: rgba(51, 65, 85, 0.8);

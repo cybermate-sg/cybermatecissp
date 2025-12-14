@@ -42,11 +42,11 @@ function FlashcardContentArea({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-hidden px-2" style={{ maxHeight: 'calc(600px - 120px)' }}>
-      <div className="flex flex-col items-center">
+    <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-2" style={{ maxHeight: 'calc(100vh - 350px)', minHeight: '400px' }}>
+      <div className="w-full">
         {/* nosemgrep: react-dangerouslysetinnerhtml - Content is sanitized with DOMPurify using strict allowlist */}
         <div
-          className="text-sm sm:text-base text-white text-left leading-relaxed mb-6 prose prose-invert prose-sm sm:prose-base max-w-none"
+          className="text-sm sm:text-base text-white text-left leading-relaxed mb-6 prose prose-invert prose-sm sm:prose-base max-w-none w-full"
           dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
         />
 
@@ -261,7 +261,7 @@ export default function Flashcard({
   return (
     <div className="perspective-1000 w-full max-w-7xl mx-auto">
       <div
-        className={`relative w-full min-h-[500px] sm:min-h-[600px] transition-transform duration-500 preserve-3d cursor-pointer ${isFlipped ? "rotate-y-180" : ""
+        className={`relative w-full min-h-[600px] sm:min-h-[700px] transition-transform duration-500 preserve-3d cursor-pointer ${isFlipped ? "rotate-y-180" : ""
           }`}
         onClick={handleFlip}
         style={{
@@ -487,7 +487,27 @@ export default function Flashcard({
           animation: fade-in 0.2s ease-out;
         }
 
+        /* Ensure list markers are visible in scrollable containers */
+        .overflow-y-auto ul,
+        .overflow-y-auto ol {
+          overflow: visible !important;
+        }
+
         /* Rich text content styling for flashcards */
+        .prose {
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          white-space: normal;
+        }
+
+        .prose h1 {
+          font-size: 1.5rem;
+          font-weight: 600;
+          margin-top: 0.75rem;
+          margin-bottom: 0.5rem;
+          color: #e2e8f0;
+        }
+
         .prose h2 {
           font-size: 1.25rem;
           font-weight: 600;
@@ -496,21 +516,68 @@ export default function Flashcard({
           color: #e2e8f0;
         }
 
+        .prose h3 {
+          font-size: 1.125rem;
+          font-weight: 600;
+          margin-top: 0.75rem;
+          margin-bottom: 0.5rem;
+          color: #e2e8f0;
+        }
+
+        .prose h4,
+        .prose h5,
+        .prose h6 {
+          font-weight: 600;
+          margin-top: 0.75rem;
+          margin-bottom: 0.5rem;
+          color: #e2e8f0;
+        }
+
         .prose p {
           margin-top: 0.5rem;
           margin-bottom: 0.5rem;
+          line-height: 1.6;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
         }
 
         .prose ul,
-        .prose ol {
-          padding-left: 1.5rem;
-          margin-top: 0.5rem;
-          margin-bottom: 0.5rem;
+        .prose ol,
+        .prose-invert ul,
+        .prose-invert ol,
+        .prose-sm ul,
+        .prose-sm ol,
+        .prose-base ul,
+        .prose-base ol {
+          padding-left: 1.5rem !important;
+          margin-top: 0.5rem !important;
+          margin-bottom: 0.5rem !important;
+          list-style-position: outside !important;
+          margin-left: 0.5rem !important;
         }
 
-        .prose li {
-          margin-top: 0.25rem;
-          margin-bottom: 0.25rem;
+        .prose ul,
+        .prose-invert ul,
+        .prose-sm ul,
+        .prose-base ul {
+          list-style-type: disc !important;
+        }
+
+        .prose ol,
+        .prose-invert ol,
+        .prose-sm ol,
+        .prose-base ol {
+          list-style-type: decimal !important;
+        }
+
+        .prose li,
+        .prose-invert li,
+        .prose-sm li,
+        .prose-base li {
+          margin-top: 0.25rem !important;
+          margin-bottom: 0.25rem !important;
+          display: list-item !important;
+          margin-left: 0 !important;
         }
 
         .prose strong {
@@ -520,6 +587,23 @@ export default function Flashcard({
 
         .prose em {
           font-style: italic;
+        }
+
+        .prose blockquote {
+          border-left: 4px solid #475569;
+          padding-left: 1rem;
+          margin: 1rem 0;
+          font-style: italic;
+          color: #cbd5e1;
+        }
+
+        .prose a {
+          color: #60a5fa;
+          text-decoration: underline;
+        }
+
+        .prose a:hover {
+          color: #93c5fd;
         }
 
         .prose code {
@@ -574,9 +658,17 @@ export default function Flashcard({
 
         /* Responsive table wrapper */
         .prose table {
-          display: block;
+          display: table;
+          table-layout: auto;
+          width: 100%;
           overflow-x: auto;
-          white-space: nowrap;
+        }
+
+        .prose table td,
+        .prose table th {
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          white-space: normal;
         }
 
         /* Make tables responsive on mobile */
