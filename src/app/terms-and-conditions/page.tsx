@@ -67,7 +67,7 @@ export default function TermsAndConditionsPage() {
               <p className="text-gray-300 leading-relaxed mb-4">
                 The Service and its original content, features, and functionality are and will remain the exclusive property
                 of CISSP Mastery and its licensors. The Service is protected by copyright, trademark, and other laws of both
-                the United States and foreign countries.
+                the Singapore and foreign countries.
               </p>
               <p className="text-gray-300 leading-relaxed mb-4">
                 Our trademarks and trade dress may not be used in connection with any product or service without the prior
@@ -82,7 +82,7 @@ export default function TermsAndConditionsPage() {
               </ul>
               <p className="text-gray-300 leading-relaxed">
                 All such content is owned by or licensed to CISSP Mastery and is subject to copyright and other intellectual
-                property rights under United States and foreign laws and international conventions.
+                property rights under Singapore and foreign laws and international conventions.
               </p>
             </section>
 
@@ -166,8 +166,8 @@ export default function TermsAndConditionsPage() {
               </p>
               <p className="text-gray-300 leading-relaxed">
                 To request a refund, please contact us at{" "}
-                <a href="mailto:support@cisspmastery.com" className="text-purple-400 hover:text-purple-300 underline">
-                  support@cisspmastery.com
+                <a href="mailto:support@cybermateconsulting.com" className="text-purple-400 hover:text-purple-300 underline">
+                  support@cybermateconsulting.com
                 </a>{" "}
                 with your order details and reason for the refund request.
               </p>
@@ -343,7 +343,7 @@ export default function TermsAndConditionsPage() {
                 15. Governing Law and Jurisdiction
               </h2>
               <p className="text-gray-300 leading-relaxed mb-4">
-                These Terms shall be governed and construed in accordance with the laws of the United States, without
+                These Terms shall be governed and construed in accordance with the laws of the Singapore, without
                 regard to its conflict of law provisions.
               </p>
               <p className="text-gray-300 leading-relaxed">
@@ -409,10 +409,10 @@ export default function TermsAndConditionsPage() {
                   <strong className="text-white">CISSP Mastery</strong>
                 </p>
                 <p className="text-gray-300 mb-2">
-                  Email: <a href="mailto:support@cisspmastery.com" className="text-purple-400 hover:text-purple-300 underline">support@cisspmastery.com</a>
+                  Email: <a href="mailto:support@cybermateconsulting.com" className="text-purple-400 hover:text-purple-300 underline">support@cybermateconsulting.com</a>
                 </p>
                 <p className="text-gray-300">
-                  Website: <Link href="/" className="text-purple-400 hover:text-purple-300 underline">cisspmastery.com</Link>
+                  Website: <Link href="/" className="text-purple-400 hover:text-purple-300 underline">cybermateconsulting.com</Link>
                 </p>
               </div>
             </section>
