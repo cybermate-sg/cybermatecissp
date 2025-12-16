@@ -1,5 +1,14 @@
 "use client";
 
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+} from "recharts";
+
 interface DomainProgress {
   domain: number;
   name: string;
@@ -11,33 +20,100 @@ interface DomainMasteryBarProps {
   domainProgress: DomainProgress[];
 }
 
+// Custom label to show only percentage
+const renderLabel = (entry: any) => {
+  return `${entry.progress}%`;
+};
+
+// Custom tooltip
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg">
+        <p className="font-semibold">Domain {data.domain}</p>
+        <p className="text-gray-300">{data.name}</p>
+        <p className="font-bold text-blue-400">{data.progress}% mastered</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export function DomainMasteryBar({ domainProgress }: DomainMasteryBarProps) {
+  // Transform data to have equal slice sizes while preserving progress for labels
+  const equalSizedData = domainProgress.map((domain) => ({
+    ...domain,
+    value: 1, // Equal size for all slices
+  }));
+
   return (
     <div className="mb-8">
-      <h3 className="text-lg font-semibold text-white mb-4">Domain Mastery Overview</h3>
+      <h3 className="text-lg font-semibold text-white mb-4">
+        Domain Mastery Overview
+      </h3>
       <div className="bg-white/95 rounded-xl border border-gray-200 p-6 shadow-sm">
-        {/* Progress bar */}
-        <div className="flex h-8 rounded-full overflow-hidden mb-4 shadow-inner">
-          {domainProgress.map((domain) => (
-            <div
-              key={domain.domain}
-              className="relative group transition-all hover:opacity-80"
-              style={{
-                width: `${100 / domainProgress.length}%`,
-                backgroundColor: domain.color,
-              }}
-            >
-              {/* Tooltip on hover */}
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
-                  <p className="font-semibold">Domain {domain.domain}</p>
-                  <p className="text-gray-300">{domain.name}</p>
-                  <p className="font-bold text-blue-400">{domain.progress}% mastered</p>
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                </div>
+        {/* Pie Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* First Pie Chart - CISSP */}
+          <div className="relative">
+            <ResponsiveContainer width="100%" height={350}>
+              <PieChart>
+                <Pie
+                  data={equalSizedData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={120}
+                  label={renderLabel}
+                  labelLine={false}
+                >
+                  {equalSizedData.map((domain, index) => (
+                    <Cell key={`cell-${index}`} fill={domain.color} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+            {/* Center text */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="bg-emerald-700 text-white font-bold text-xl px-3 py-1.5 rounded shadow-md">
+                CISSP
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* Second Pie Chart - CISSP Practice */}
+          <div className="relative">
+            <ResponsiveContainer width="100%" height={350}>
+              <PieChart>
+                <Pie
+                  data={equalSizedData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={120}
+                  label={renderLabel}
+                  labelLine={false}
+                >
+                  {equalSizedData.map((domain, index) => (
+                    <Cell key={`cell-${index}`} fill={domain.color} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+            {/* Center text */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="bg-emerald-700 text-white font-bold text-lg px-2.5 py-1.5 rounded shadow-md">
+                CISSP Practice
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Domain legend */}

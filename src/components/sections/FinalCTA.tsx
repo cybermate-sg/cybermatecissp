@@ -54,7 +54,7 @@ export default function FinalCTA() {
           </div>
 
           <p className="text-gray-500 text-sm max-w-2xl mx-auto pt-8">
-            By purchasing, you agree to our terms of service. We respect your privacy and will never share your information. Questions? Contact us anytime at support@cybermate.com
+            By purchasing, you agree to our terms of service. We respect your privacy and will never share your information. Questions? Contact us anytime at support@cybermateconsulting.com
           </p>
         </div>
       </div>
