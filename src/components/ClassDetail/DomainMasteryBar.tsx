@@ -6,7 +6,6 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
-  Legend,
 } from "recharts";
 
 interface DomainProgress {
@@ -21,12 +20,12 @@ interface DomainMasteryBarProps {
 }
 
 // Custom label to show only percentage
-const renderLabel = (entry: any) => {
+const renderLabel = (entry: DomainProgress & { value: number }) => {
   return `${entry.progress}%`;
 };
 
 // Custom tooltip
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: DomainProgress }> }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
