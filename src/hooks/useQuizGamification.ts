@@ -123,8 +123,7 @@ export function useQuizGamification(
       // Calculate final XP
       const finalTotalXP = calculateTotalXP(
         correctAnswers,
-        totalQuestions,
-        maxStreak
+        totalQuestions
       );
       setTotalXP(finalTotalXP);
 

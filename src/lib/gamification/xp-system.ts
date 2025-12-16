@@ -79,8 +79,7 @@ export function calculateXPForAnswer(
  */
 export function calculateTotalXP(
   correctAnswers: number,
-  totalQuestions: number,
-  maxStreak: number = 0
+  totalQuestions: number
 ): number {
   const correctXP = correctAnswers * XP_CONFIG.CORRECT_ANSWER;
   const wrongXP = (totalQuestions - correctAnswers) * XP_CONFIG.WRONG_ANSWER;
