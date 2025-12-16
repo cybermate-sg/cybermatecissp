@@ -63,14 +63,19 @@ export async function register() {
       ],
     });
 
-    // Import and start database warmup
-    const { startWarmup } = await import('./lib/db/warmup');
-    startWarmup();
-
-    console.log('[Instrumentation] Server initialized with:');
-    console.log('  ✅ Sentry monitoring enabled');
-    console.log('  ✅ Database connection warmup enabled');
-    console.log('  ✅ Performance monitoring active');
+    // Import and start database warmup (only in production)
+    if (process.env.NODE_ENV === 'production') {
+      const { startWarmup } = await import('./lib/db/warmup');
+      startWarmup();
+      console.log('[Instrumentation] Server initialized with:');
+      console.log('  ✅ Sentry monitoring enabled');
+      console.log('  ✅ Database connection warmup enabled');
+      console.log('  ✅ Performance monitoring active');
+    } else {
+      console.log('[Instrumentation] Server initialized (development mode)');
+      console.log('  ✅ Sentry monitoring disabled in development');
+      console.log('  ⏭️  Database warmup disabled in development');
+    }
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {
