@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Home, LayoutDashboard, BarChart3, BookOpen, Sparkles } from "lucide-react";
+import { Home, LayoutDashboard, BarChart3, BookOpen, Sparkles, MessageSquare } from "lucide-react";
 
 const navItems = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/classes", label: "Classes", icon: BookOpen },
   { href: "/admin/analytics", label: "User Analytics", icon: BarChart3 },
+  { href: "/admin/feedback", label: "User Feedback", icon: MessageSquare },
   { href: "/admin/ai-quiz", label: "AI Quiz", icon: Sparkles },
 ];
 

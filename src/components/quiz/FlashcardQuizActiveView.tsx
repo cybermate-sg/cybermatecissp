@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { QuizProgressHeader } from "./QuizProgressHeader";
@@ -8,6 +9,8 @@ import { QuizOptionCard } from "./QuizOptionCard";
 import { QuizFeedbackBanner } from "./QuizFeedbackBanner";
 import { QuizExplanationPanel } from "./QuizExplanationPanel";
 import { type Level } from "@/lib/gamification/xp-system";
+import FeedbackButton from "@/components/feedback/FeedbackButton";
+import FeedbackModal from "@/components/feedback/FeedbackModal";
 
 interface QuizOption {
   text: string;
@@ -72,6 +75,7 @@ export function FlashcardQuizActiveView({
   currentFeedback,
   handlers,
 }: FlashcardQuizActiveViewProps) {
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const { currentQuestionIndex, totalQuestions } = progress;
   const { selectedOption, showExplanation } = answerState;
   const { correctAnswers, currentStreak, maxStreak, totalXP, currentLevel, progressToNextLevel } = stats;
@@ -155,7 +159,14 @@ export function FlashcardQuizActiveView({
       </div>
 
       {/* Action Buttons */}
-      <DialogFooter>
+      <DialogFooter className="flex items-center justify-between">
+        <FeedbackButton
+          onClick={(e: React.MouseEvent) => setIsFeedbackModalOpen(true)}
+          variant="ghost"
+          size="sm"
+          showLabel
+          className="text-slate-400 hover:text-white hover:bg-slate-700"
+        />
         {!showExplanation ? (
           <Button
             onClick={onSubmitAnswer}
@@ -177,6 +188,13 @@ export function FlashcardQuizActiveView({
           </Button>
         )}
       </DialogFooter>
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
+        quizQuestionId={currentQuestion.id}
+      />
     </div>
   );
 }
