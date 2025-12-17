@@ -44,7 +44,7 @@ function FlashcardContentArea({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-2" style={{ maxHeight: 'calc(100vh - 350px)', minHeight: '400px' }}>
+    <div className="h-full overflow-y-auto overflow-x-hidden px-4 sm:px-6 py-4 sm:py-6">
       <div className="w-full">
         {/* nosemgrep: react-dangerouslysetinnerhtml - Content is sanitized with DOMPurify using strict allowlist */}
         <div
@@ -280,24 +280,30 @@ export default function Flashcard({
             WebkitBackfaceVisibility: "hidden"
           }}
         >
-          <CardContent className="flex flex-col h-full p-4 sm:p-6 md:p-8">
-            <div className="flex-shrink-0 text-center">
-              <div className="text-xs sm:text-sm font-semibold text-purple-400 mb-3 sm:mb-4">
+          <CardContent className="flex flex-col h-full p-0">
+            {/* Header */}
+            <div className="flex-shrink-0 border-b border-slate-700 bg-slate-900/50 px-4 sm:px-6 py-3 sm:py-4">
+              <div className="text-xs sm:text-sm font-semibold text-purple-400 text-center">
                 QUESTION
               </div>
             </div>
 
-            {/* Scrollable content area */}
-            <FlashcardContentArea
-              sanitizedHtml={sanitizedQuestion}
-              images={questionImages}
-              onImageClick={handleImageClick}
-              borderColor="border-slate-600"
-              hoverBgColor="bg-slate-900/70"
-            />
+            {/* Body - Scrollable content area */}
+            <div className="flex-1 min-h-0">
+              <FlashcardContentArea
+                sanitizedHtml={sanitizedQuestion}
+                images={questionImages}
+                onImageClick={handleImageClick}
+                borderColor="border-slate-600"
+                hoverBgColor="bg-slate-900/70"
+              />
+            </div>
 
-            <div className="flex-shrink-0 mt-3 sm:mt-4 text-center text-xs sm:text-sm text-gray-400">
-              Click to reveal answer
+            {/* Footer */}
+            <div className="flex-shrink-0 border-t border-slate-700 bg-slate-900/50 px-4 sm:px-6 py-3 sm:py-4">
+              <div className="text-center text-xs sm:text-sm text-gray-400">
+                Click to reveal answer
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -311,69 +317,77 @@ export default function Flashcard({
             transform: "rotateY(180deg)"
           }}
         >
-          <CardContent className="flex flex-col h-full p-4 sm:p-6 md:p-8">
-            <div className="flex-shrink-0 flex items-center justify-between mb-3 sm:mb-4">
-              <div className="flex-1 text-center">
-                <div className="text-xs sm:text-sm font-semibold text-blue-300">
-                  ANSWER
+          <CardContent className="flex flex-col h-full p-0">
+            {/* Header */}
+            <div className="flex-shrink-0 border-b border-blue-500/20 bg-slate-900/50 px-4 sm:px-6 py-3 sm:py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 text-center">
+                  <div className="text-xs sm:text-sm font-semibold text-blue-300">
+                    ANSWER
+                  </div>
                 </div>
-              </div>
-              {/* Action Buttons - Top Right Corner */}
-              <div className="flex items-center gap-2">
-                {/* Feedback Button */}
-                {flashcardId && (
-                  <FeedbackButton
-                    onClick={(e: React.MouseEvent) => {
-                      e.stopPropagation();
-                      setIsFeedbackModalOpen(true);
-                    }}
-                    variant="ghost"
-                    size="sm"
-                    className="text-blue-300 hover:text-white hover:bg-blue-800/50"
-                  />
-                )}
-                {/* Bookmark Button */}
-                {flashcardId && onBookmarkToggle && (
-                  <Button
-                    onClick={handleBookmarkClick}
-                    variant="ghost"
-                    size="sm"
-                    className="text-blue-300 hover:text-white hover:bg-blue-800/50 transition-colors"
-                    title={bookmarked ? "Remove bookmark" : "Add bookmark"}
-                  >
-                    {bookmarked ? (
-                      <BookmarkCheck className="w-4 h-4" />
-                    ) : (
-                      <Bookmark className="w-4 h-4" />
-                    )}
-                  </Button>
-                )}
-                {/* Test Button */}
-                {onTest && (
-                  <Button
-                    onClick={handleTestClick}
-                    variant="ghost"
-                    size="sm"
-                    className="text-blue-300 hover:text-white hover:bg-blue-800/50 transition-colors"
-                  >
-                    <TestTube className="w-4 h-4 mr-2" />
-                    Test
-                  </Button>
-                )}
+                {/* Action Buttons */}
+                <div className="flex items-center gap-2">
+                  {/* Feedback Button */}
+                  {flashcardId && (
+                    <FeedbackButton
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        setIsFeedbackModalOpen(true);
+                      }}
+                      variant="ghost"
+                      size="sm"
+                      className="text-blue-300 hover:text-white hover:bg-blue-800/50"
+                    />
+                  )}
+                  {/* Bookmark Button */}
+                  {flashcardId && onBookmarkToggle && (
+                    <Button
+                      onClick={handleBookmarkClick}
+                      variant="ghost"
+                      size="sm"
+                      className="text-blue-300 hover:text-white hover:bg-blue-800/50 transition-colors"
+                      title={bookmarked ? "Remove bookmark" : "Add bookmark"}
+                    >
+                      {bookmarked ? (
+                        <BookmarkCheck className="w-4 h-4" />
+                      ) : (
+                        <Bookmark className="w-4 h-4" />
+                      )}
+                    </Button>
+                  )}
+                  {/* Test Button */}
+                  {onTest && (
+                    <Button
+                      onClick={handleTestClick}
+                      variant="ghost"
+                      size="sm"
+                      className="text-blue-300 hover:text-white hover:bg-blue-800/50 transition-colors"
+                    >
+                      <TestTube className="w-4 h-4 mr-2" />
+                      Test
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Scrollable content area */}
-            <FlashcardContentArea
-              sanitizedHtml={sanitizedAnswer}
-              images={answerImages}
-              onImageClick={handleImageClick}
-              borderColor="border-blue-400"
-              hoverBgColor="bg-blue-900/70"
-            />
+            {/* Body - Scrollable content area */}
+            <div className="flex-1 min-h-0">
+              <FlashcardContentArea
+                sanitizedHtml={sanitizedAnswer}
+                images={answerImages}
+                onImageClick={handleImageClick}
+                borderColor="border-blue-400"
+                hoverBgColor="bg-blue-900/70"
+              />
+            </div>
 
-            <div className="flex-shrink-0 mt-3 sm:mt-4 text-center text-xs sm:text-sm text-blue-300">
-              Click to see question
+            {/* Footer */}
+            <div className="flex-shrink-0 border-t border-blue-500/20 bg-slate-900/50 px-4 sm:px-6 py-3 sm:py-4">
+              <div className="text-center text-xs sm:text-sm text-blue-300">
+                Click to see question
+              </div>
             </div>
           </CardContent>
         </Card>

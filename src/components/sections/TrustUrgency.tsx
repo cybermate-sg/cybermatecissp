@@ -33,7 +33,7 @@ export default function TrustUrgency() {
 
               <div className="space-y-4">
                 <p className="text-2xl font-bold text-white">
-                  <span className="text-gray-500">$97 USD</span> → Crack the CISSP smarter—$97 roadmap, zero fluff, full clarity. Pass confidently for under 50¢ a day.
+                  <span className="text-green-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.8)]">Invest $197 USD</span> → Ace CISSP in 60 days, earn $60 refund reward. Your fast-pass starts today – sign up!.
                 </p>
                 <CountdownTimer />
               </div>
