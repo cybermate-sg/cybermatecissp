@@ -24,7 +24,7 @@ const testimonials: Testimonial[] = [
     initials: "DK",
     name: "David Kim",
     role: "Cybersecurity Consultant",
-    quote: "Best $97 I ever spent on my career. A year of access for the price is the cherry on top, just high-quality content that actually mirrors the exam. Lifetime access is the cherry on top.",
+    quote: "Best $197 I ever spent on my career. A year of access for the price is the cherry on top, just high-quality content that actually mirrors the exam. Lifetime access is the cherry on top.",
     gradientFrom: "purple-600",
     gradientTo: "purple-400",
     borderHover: "purple-500/50"
