@@ -1,5 +1,5 @@
 import { auth } from '@clerk/nextjs/server';
-import { db } from '@/lib/db';
+import { db, withRetry } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { auditLogger, SecurityEventType } from '@/lib/security/audit-logger';
@@ -16,9 +16,16 @@ export async function checkIsAdmin() {
   }
 
   // Check if user exists in database and has admin role
-  const user = await db.query.users.findFirst({
-    where: eq(users.clerkUserId, userId),
-  });
+  const user = await withRetry(
+    () => db.query.users.findFirst({
+      where: eq(users.clerkUserId, userId),
+    }),
+    {
+      maxRetries: 3,
+      delayMs: 500,
+      queryName: 'check-is-admin',
+    }
+  );
 
   if (!user || user.role !== 'admin') {
     // Log failed admin access attempt

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import LayoutWrapper from "@/components/LayoutWrapper";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // Note: Using system fonts for better build compatibility
 // If Google Fonts are needed, they can be loaded via CDN in production
@@ -35,6 +36,7 @@ export default function RootLayout({
           suppressHydrationWarning
         >
           <LayoutWrapper>{children}</LayoutWrapper>
+          <SpeedInsights />
         </body>
       </html>
     </ClerkProvider>

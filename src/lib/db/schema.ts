@@ -8,6 +8,11 @@ export const subscriptionStatusEnum = pgEnum('subscription_status', ['active', '
 export const masteryStatusEnum = pgEnum('mastery_status', ['new', 'learning', 'mastered']);
 export const paymentStatusEnum = pgEnum('payment_status', ['succeeded', 'failed', 'pending']);
 
+// Feedback enums
+export const feedbackTypeEnum = pgEnum('feedback_type', ['content_error', 'typo', 'unclear_explanation', 'technical_issue', 'general_suggestion']);
+export const feedbackStatusEnum = pgEnum('feedback_status', ['pending', 'in_review', 'resolved', 'closed', 'rejected']);
+export const feedbackPriorityEnum = pgEnum('feedback_priority', ['low', 'medium', 'high', 'critical']);
+
 // ============================================
 // AUTHENTICATION & BILLING TABLES
 // ============================================
@@ -402,6 +407,97 @@ export const adminAiDailyUsage = pgTable('admin_ai_daily_usage', {
 }));
 
 // ============================================
+// USER FEEDBACK SYSTEM
+// USERS CAN REPORT ISSUES ON FLASHCARDS & QUIZZES
+// ============================================
+
+// User Feedback table - Captures user-reported issues and suggestions
+// ✅ USERS SUBMIT FEEDBACK, ADMINS MANAGE
+export const userFeedback = pgTable('user_feedback', {
+  id: uuid('id').defaultRandom().primaryKey(),
+
+  // User who submitted feedback
+  clerkUserId: varchar('clerk_user_id', { length: 255 })
+    .notNull()
+    .references(() => users.clerkUserId, { onDelete: 'cascade' }),
+
+  // What the feedback is about (nullable - can be for flashcard OR quiz question)
+  flashcardId: uuid('flashcard_id')
+    .references(() => flashcards.id, { onDelete: 'set null' }),
+
+  // Flashcard quiz question (linked via quizQuestions table)
+  quizQuestionId: uuid('quiz_question_id')
+    .references(() => quizQuestions.id, { onDelete: 'set null' }),
+
+  // Deck quiz question (linked via deckQuizQuestions table)
+  deckQuizQuestionId: uuid('deck_quiz_question_id')
+    .references(() => deckQuizQuestions.id, { onDelete: 'set null' }),
+
+  // Context fields for admin reference (denormalized for quick access)
+  deckId: uuid('deck_id')
+    .references(() => decks.id, { onDelete: 'set null' }),
+
+  classId: uuid('class_id')
+    .references(() => classes.id, { onDelete: 'set null' }),
+
+  // Feedback details
+  feedbackType: feedbackTypeEnum('feedback_type').notNull(),
+  feedbackText: text('feedback_text').notNull(), // 500 char max enforced in validation
+
+  // Screenshot upload (optional)
+  screenshotUrl: varchar('screenshot_url', { length: 500 }),
+  screenshotKey: varchar('screenshot_key', { length: 500 }), // For Vercel Blob deletion
+
+  // Metadata captured at submission time
+  userAgent: text('user_agent'), // Browser/device info
+  pageUrl: text('page_url'), // Where feedback was submitted from
+
+  // Status tracking
+  status: feedbackStatusEnum('status').notNull().default('pending'),
+  priority: feedbackPriorityEnum('priority').notNull().default('medium'),
+
+  // Admin response
+  adminResponse: text('admin_response'),
+  resolvedBy: varchar('resolved_by', { length: 255 })
+    .references(() => users.clerkUserId, { onDelete: 'set null' }),
+  resolvedAt: timestamp('resolved_at'),
+
+  // Timestamps
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Index for fetching feedback by user
+  userIdx: index('idx_feedback_user').on(table.clerkUserId),
+
+  // Index for filtering by status
+  statusIdx: index('idx_feedback_status').on(table.status),
+
+  // Index for filtering by priority
+  priorityIdx: index('idx_feedback_priority').on(table.priority),
+
+  // Index for filtering by type
+  typeIdx: index('idx_feedback_type').on(table.feedbackType),
+
+  // Index for flashcard feedback
+  flashcardIdx: index('idx_feedback_flashcard').on(table.flashcardId),
+
+  // Index for quiz question feedback
+  quizQuestionIdx: index('idx_feedback_quiz_question').on(table.quizQuestionId),
+
+  // Index for deck quiz question feedback
+  deckQuizQuestionIdx: index('idx_feedback_deck_quiz_question').on(table.deckQuizQuestionId),
+
+  // Composite index for admin dashboard queries (status + created_at for sorting)
+  statusCreatedIdx: index('idx_feedback_status_created').on(table.status, table.createdAt),
+
+  // Index for deck-based filtering
+  deckIdx: index('idx_feedback_deck').on(table.deckId),
+
+  // Index for class-based filtering
+  classIdx: index('idx_feedback_class').on(table.classId),
+}));
+
+// ============================================
 // RELATIONS
 // ============================================
 
@@ -424,6 +520,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   aiQuotaConfig: one(adminAiQuotaConfig),
   aiDailyUsage: many(adminAiDailyUsage),
   aiModelConfigurations: many(aiModelConfigurations),
+  // Feedback relations
+  submittedFeedback: many(userFeedback),
 }));
 
 export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
@@ -471,6 +569,7 @@ export const flashcardsRelations = relations(flashcards, ({ one, many }) => ({
   sessionCards: many(sessionCards),
   media: many(flashcardMedia),
   quizQuestions: many(quizQuestions),
+  feedback: many(userFeedback),
 }));
 
 export const flashcardMediaRelations = relations(flashcardMedia, ({ one }) => ({
@@ -480,7 +579,7 @@ export const flashcardMediaRelations = relations(flashcardMedia, ({ one }) => ({
   }),
 }));
 
-export const quizQuestionsRelations = relations(quizQuestions, ({ one }) => ({
+export const quizQuestionsRelations = relations(quizQuestions, ({ one, many }) => ({
   flashcard: one(flashcards, {
     fields: [quizQuestions.flashcardId],
     references: [flashcards.id],
@@ -489,9 +588,10 @@ export const quizQuestionsRelations = relations(quizQuestions, ({ one }) => ({
     fields: [quizQuestions.createdBy],
     references: [users.clerkUserId],
   }),
+  feedback: many(userFeedback),
 }));
 
-export const deckQuizQuestionsRelations = relations(deckQuizQuestions, ({ one }) => ({
+export const deckQuizQuestionsRelations = relations(deckQuizQuestions, ({ one, many }) => ({
   deck: one(decks, {
     fields: [deckQuizQuestions.deckId],
     references: [decks.id],
@@ -500,6 +600,7 @@ export const deckQuizQuestionsRelations = relations(deckQuizQuestions, ({ one })
     fields: [deckQuizQuestions.createdBy],
     references: [users.clerkUserId],
   }),
+  feedback: many(userFeedback),
 }));
 
 export const studySessionsRelations = relations(studySessions, ({ one, many }) => ({
@@ -613,6 +714,37 @@ export const adminAiQuotaConfigRelations = relations(adminAiQuotaConfig, ({ one 
 export const adminAiDailyUsageRelations = relations(adminAiDailyUsage, ({ one }) => ({
   admin: one(users, {
     fields: [adminAiDailyUsage.adminId],
+    references: [users.clerkUserId],
+  }),
+}));
+
+export const userFeedbackRelations = relations(userFeedback, ({ one }) => ({
+  user: one(users, {
+    fields: [userFeedback.clerkUserId],
+    references: [users.clerkUserId],
+  }),
+  flashcard: one(flashcards, {
+    fields: [userFeedback.flashcardId],
+    references: [flashcards.id],
+  }),
+  quizQuestion: one(quizQuestions, {
+    fields: [userFeedback.quizQuestionId],
+    references: [quizQuestions.id],
+  }),
+  deckQuizQuestion: one(deckQuizQuestions, {
+    fields: [userFeedback.deckQuizQuestionId],
+    references: [deckQuizQuestions.id],
+  }),
+  deck: one(decks, {
+    fields: [userFeedback.deckId],
+    references: [decks.id],
+  }),
+  class: one(classes, {
+    fields: [userFeedback.classId],
+    references: [classes.id],
+  }),
+  resolvedByUser: one(users, {
+    fields: [userFeedback.resolvedBy],
     references: [users.clerkUserId],
   }),
 }));

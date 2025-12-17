@@ -6,6 +6,8 @@ import Image from "next/image";
 import { X, ZoomIn, ZoomOut, Maximize2, TestTube, Bookmark, BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DOMPurify from "isomorphic-dompurify";
+import FeedbackButton from "@/components/feedback/FeedbackButton";
+import FeedbackModal from "@/components/feedback/FeedbackModal";
 
 interface FlashcardMedia {
   id: string;
@@ -110,6 +112,7 @@ export default function Flashcard({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
 
   /**
    * XSS PREVENTION: Sanitize HTML content using DOMPurify
@@ -317,6 +320,18 @@ export default function Flashcard({
               </div>
               {/* Action Buttons - Top Right Corner */}
               <div className="flex items-center gap-2">
+                {/* Feedback Button */}
+                {flashcardId && (
+                  <FeedbackButton
+                    onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      setIsFeedbackModalOpen(true);
+                    }}
+                    variant="ghost"
+                    size="sm"
+                    className="text-blue-300 hover:text-white hover:bg-blue-800/50"
+                  />
+                )}
                 {/* Bookmark Button */}
                 {flashcardId && onBookmarkToggle && (
                   <Button
@@ -459,6 +474,15 @@ export default function Flashcard({
             </p>
           </div>
         </div>
+      )}
+
+      {/* Feedback Modal */}
+      {flashcardId && (
+        <FeedbackModal
+          isOpen={isFeedbackModalOpen}
+          onClose={() => setIsFeedbackModalOpen(false)}
+          flashcardId={flashcardId}
+        />
       )}
 
       <style jsx global>{`

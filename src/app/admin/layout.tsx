@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
+import { db, withRetry } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { AdminSidebar } from "./_components/AdminSidebar";
@@ -17,11 +17,18 @@ export default async function AdminLayout({
   }
 
   // Check if user is admin
-  const userResult = await db
-    .select()
-    .from(users)
-    .where(eq(users.clerkUserId, userId))
-    .limit(1);
+  const userResult = await withRetry(
+    () => db
+      .select()
+      .from(users)
+      .where(eq(users.clerkUserId, userId))
+      .limit(1),
+    {
+      maxRetries: 3,
+      delayMs: 500,
+      queryName: 'admin-layout-user-check',
+    }
+  );
 
   const user = userResult[0];
 
