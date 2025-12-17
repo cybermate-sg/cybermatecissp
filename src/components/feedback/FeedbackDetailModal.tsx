@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { X, Loader2, CheckCircle2, AlertCircle, Mail, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -287,10 +288,13 @@ export default function FeedbackDetailModal({
               {feedback.screenshotUrl && (
                 <div>
                   <span className="text-sm text-slate-400 block mb-2">Screenshot:</span>
-                  <img
+                  <Image
                     src={feedback.screenshotUrl}
                     alt="Feedback screenshot"
-                    className="max-w-full max-h-96 rounded border border-slate-700"
+                    width={800}
+                    height={600}
+                    className="max-w-full max-h-96 rounded border border-slate-700 object-contain"
+                    unoptimized
                   />
                 </div>
               )}

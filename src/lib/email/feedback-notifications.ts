@@ -1,6 +1,6 @@
 import { resend, EmailConfig } from './client';
 import { db } from '@/lib/db';
-import { users, userFeedback, flashcards, quizQuestions, deckQuizQuestions } from '@/lib/db/schema';
+import { users, userFeedback } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { log } from '@/lib/logger';
 import {

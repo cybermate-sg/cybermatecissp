@@ -161,7 +161,7 @@ export function FlashcardQuizActiveView({
       {/* Action Buttons */}
       <DialogFooter className="flex items-center justify-between">
         <FeedbackButton
-          onClick={(e: React.MouseEvent) => setIsFeedbackModalOpen(true)}
+          onClick={() => setIsFeedbackModalOpen(true)}
           variant="ghost"
           size="sm"
           showLabel

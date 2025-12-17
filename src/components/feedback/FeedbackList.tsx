@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { AlertCircle, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -27,9 +28,15 @@ interface FeedbackItem {
   status: "pending" | "in_review" | "resolved" | "closed" | "rejected";
   priority: "low" | "medium" | "high" | "critical";
   screenshotUrl: string | null;
+  screenshotKey: string | null;
+  userAgent: string | null;
+  pageUrl: string | null;
+  adminResponse: string | null;
+  resolvedAt: string | null;
   createdAt: string;
   updatedAt: string;
   user: FeedbackUser;
+  resolver: FeedbackUser | null;
   flashcard?: FeedbackContent | null;
   quizQuestion?: FeedbackContent | null;
   deckQuizQuestion?: FeedbackContent | null;
@@ -39,7 +46,7 @@ interface FeedbackItem {
 
 interface FeedbackListProps {
   initialFeedback: FeedbackItem[];
-  onSelectFeedback: (feedback: FeedbackItem) => void;
+  onSelectFeedback: (feedback: FeedbackItem) => void | Promise<void>;
   onFilterChange?: (filters: FeedbackFilters) => void;
 }
 
@@ -314,10 +321,13 @@ export default function FeedbackList({
                         {feedback.screenshotUrl && (
                           <div className="mt-3">
                             <p className="text-sm text-slate-400 mb-2">Screenshot:</p>
-                            <img
+                            <Image
                               src={feedback.screenshotUrl}
                               alt="Feedback screenshot"
-                              className="max-w-full max-h-64 rounded border border-slate-700"
+                              width={600}
+                              height={400}
+                              className="max-w-full max-h-64 rounded border border-slate-700 object-contain"
+                              unoptimized
                             />
                           </div>
                         )}

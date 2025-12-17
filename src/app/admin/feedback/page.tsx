@@ -78,6 +78,7 @@ export default function AdminFeedbackPage() {
 
   useEffect(() => {
     loadFeedback();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
   const loadFeedback = async () => {
