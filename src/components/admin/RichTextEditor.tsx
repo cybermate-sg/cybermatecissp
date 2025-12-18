@@ -17,13 +17,15 @@ interface RichTextEditorProps {
   onChange: (html: string) => void;
   placeholder?: string;
   label?: string;
+  maxHeight?: string;
 }
 
 export default function RichTextEditor({
   content,
   onChange,
   placeholder = 'Start typing...',
-  label
+  label,
+  maxHeight
 }: RichTextEditorProps) {
   const editor = useEditor({
     immediatelyRender: false,
@@ -264,7 +266,13 @@ export default function RichTextEditor({
         </div>
 
         {/* Editor Content */}
-        <div className="editor-wrapper">
+        <div
+          className="editor-wrapper"
+          style={{
+            maxHeight: maxHeight,
+            overflowY: maxHeight ? 'auto' : undefined,
+          }}
+        >
           <EditorContent editor={editor} />
         </div>
       </div>

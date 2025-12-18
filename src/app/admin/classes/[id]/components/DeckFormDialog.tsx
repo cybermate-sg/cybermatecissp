@@ -83,7 +83,6 @@ export function DeckFormDialog({
         isSaving: saveAction.isSaving,
         buttonText: `${saveButtonText} Deck`,
       }}
-      maxHeight="60vh"
     >
       <div className="space-y-2">
         <Label htmlFor="name">Deck Name *</Label>
@@ -102,6 +101,7 @@ export function DeckFormDialog({
           content={formData.description}
           onChange={(html) => setFormData({ ...formData, description: html })}
           placeholder="Brief description of this deck... You can use formatting, lists, and tables."
+          maxHeight="300px"
         />
       </div>
 
