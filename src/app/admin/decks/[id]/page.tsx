@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -25,7 +25,7 @@ import { Loader2, Plus, Edit2, Trash2, ArrowLeft, Image as ImageIcon, ClipboardL
 import { toast } from "sonner";
 import { validateQuizFile, type QuizFile } from "@/lib/validations/quiz";
 import { AiQuizGenerationModal } from "@/components/admin/AiQuizGenerationModal";
-import DOMPurify from "isomorphic-dompurify";
+import { FormattedContent } from "@/components/admin/FormattedContent";
 
 interface DeckData {
   id: string;
@@ -122,40 +122,6 @@ const FLASHCARD_QUIZ_JSON_EXAMPLE = {
     },
   ],
 } as const;
-
-/**
- * Component to render formatted HTML content with proper sanitization
- */
-interface FormattedContentProps {
-  html: string;
-  className?: string;
-}
-
-function FormattedContent({ html, className = "" }: FormattedContentProps) {
-  const sanitizedHtml = useMemo(() => {
-    if (typeof window === 'undefined') return html;
-
-    return DOMPurify.sanitize(html, {
-      ALLOWED_TAGS: [
-        'p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        'ul', 'ol', 'li', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
-        'blockquote', 'a'
-      ],
-      ALLOWED_ATTR: ['href', 'class', 'target', 'rel'],
-      ALLOW_DATA_ATTR: false,
-      ALLOW_UNKNOWN_PROTOCOLS: false,
-      SAFE_FOR_TEMPLATES: true,
-      RETURN_TRUSTED_TYPE: false
-    });
-  }, [html]);
-
-  return (
-    <div
-      className={`prose prose-sm max-w-none ${className}`}
-      dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-    />
-  );
-}
 
 export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -661,9 +627,16 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
               <h1 className="text-3xl font-bold text-slate-800 mb-1">
                 {deckData.name}
               </h1>
-              <p className="text-slate-600 text-sm">
-                {deckData.description || "Add a short description of the topics covered in this deck"}
-              </p>
+              {deckData.description ? (
+                <FormattedContent
+                  html={deckData.description}
+                  className="text-slate-600 text-sm prose-p:my-1"
+                />
+              ) : (
+                <p className="text-slate-600 text-sm">
+                  Add a short description of the topics covered in this deck
+                </p>
+              )}
             </div>
 
             <Button

@@ -1,10 +1,10 @@
 import { FormDialog } from "@/components/ui/form-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { type QuizFile } from "@/lib/validations/quiz";
 import { QuizFileUpload } from "./QuizFileUpload";
+import RichTextEditor from "@/components/admin/RichTextEditor";
 
 interface DeckFormData {
   name: string;
@@ -97,13 +97,11 @@ export function DeckFormDialog({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="Brief description of this deck..."
-          className="bg-slate-900 border-slate-700 text-white min-h-[100px]"
+        <RichTextEditor
+          label="Description"
+          content={formData.description}
+          onChange={(html) => setFormData({ ...formData, description: html })}
+          placeholder="Brief description of this deck... You can use formatting, lists, and tables."
         />
       </div>
 
