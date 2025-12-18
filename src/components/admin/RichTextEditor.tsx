@@ -55,7 +55,7 @@ export default function RichTextEditor({
 
   return (
     <div className="space-y-2">
-      {label && <label className="text-sm font-medium text-white">{label}</label>}
+      {label && <label className="text-base font-semibold text-slate-700">{label}</label>}
 
       <div className="border border-slate-700 rounded-lg bg-slate-900 overflow-hidden">
         {/* Toolbar */}

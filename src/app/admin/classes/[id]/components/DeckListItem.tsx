@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Layers, ClipboardList, Edit2, Trash2 } from "lucide-react";
+import { FormattedContent } from "@/components/admin/FormattedContent";
 
 interface Deck {
   id: string;
@@ -61,9 +62,12 @@ export function DeckListItem({ deck, onEdit, onDelete }: DeckListItemProps) {
               )}
             </div>
             {deck.description && (
-              <p className="text-sm text-gray-300 mb-2">
-                {deck.description}
-              </p>
+              <div className="text-sm text-gray-300 mb-2">
+                <FormattedContent
+                  html={deck.description}
+                  className="prose-p:my-0.5 prose-strong:text-gray-200 prose-headings:text-gray-200"
+                />
+              </div>
             )}
             <div className="flex items-center gap-4 text-xs text-gray-400">
               <span>Order: {deck.order}</span>
