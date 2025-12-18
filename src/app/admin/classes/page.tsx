@@ -15,6 +15,7 @@ import { Loader2, Plus, Edit2, Trash2, BookOpen, GripVertical, ChevronRight } fr
 import { toast } from "sonner";
 import Link from "next/link";
 import { ClassFormDialog } from "./components/ClassFormDialog";
+import { FormattedContent } from "@/components/admin/FormattedContent";
 
 interface Class {
   id: string;
@@ -310,9 +311,12 @@ export default function AdminClassesPage() {
                           )}
                         </div>
                         {cls.description && (
-                          <p className="text-sm text-gray-300 mb-2">
-                            {cls.description}
-                          </p>
+                          <div className="text-sm text-gray-300 mb-2">
+                            <FormattedContent
+                              html={cls.description}
+                              className="prose-p:my-0.5 prose-strong:text-gray-200 prose-headings:text-gray-200"
+                            />
+                          </div>
                         )}
                         <div className="flex items-center gap-4 text-xs text-gray-400">
                           <span>Order: {cls.order}</span>

@@ -979,7 +979,7 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-white border-slate-200 text-slate-900 max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-white border-slate-200 text-slate-900 max-w-3xl">
           <DialogHeader>
             <DialogTitle className="text-2xl">
               {editingCard ? "Edit Flashcard" : "Create New Flashcard"}
@@ -991,13 +991,14 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
+          <div className="space-y-6 py-4 max-h-[60vh] overflow-y-auto pr-2">
             <div className="space-y-3">
               <RichTextEditor
                 label="Question *"
                 content={formData.question}
                 onChange={(html) => setFormData({ ...formData, question: html })}
                 placeholder="Enter the question... You can use formatting, lists, and tables."
+                maxHeight="250px"
               />
               <div className="space-y-2">
                 <div className="flex gap-2">
@@ -1049,6 +1050,7 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
                 content={formData.answer}
                 onChange={(html) => setFormData({ ...formData, answer: html })}
                 placeholder="Enter the answer... You can use formatting, lists, and tables."
+                maxHeight="250px"
               />
               <div className="space-y-2">
                 <div className="flex gap-2">

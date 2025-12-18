@@ -12,6 +12,7 @@ import { ClassStatsCards } from "./components/ClassStatsCards";
 import { DeckListItem } from "./components/DeckListItem";
 import { DeckFormDialog } from "./components/DeckFormDialog";
 import { DeleteDeckDialog } from "./components/DeleteDeckDialog";
+import { FormattedContent } from "@/components/admin/FormattedContent";
 
 interface ClassData {
   id: string;
@@ -323,7 +324,12 @@ export default function AdminClassDetailPage({ params }: { params: Promise<{ id:
                 {classData.name}
               </h1>
               {classData.description && (
-                <p className="text-gray-300">{classData.description}</p>
+                <div className="text-gray-300 max-w-4xl">
+                  <FormattedContent
+                    html={classData.description}
+                    className="prose-p:my-1 prose-strong:text-gray-200 prose-headings:text-gray-100 prose-ul:text-gray-300 prose-li:text-gray-300"
+                  />
+                </div>
               )}
             </div>
           </div>
