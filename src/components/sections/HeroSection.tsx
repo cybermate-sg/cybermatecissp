@@ -75,7 +75,7 @@ export default function HeroSection() {
                             </h1>
 
                             <p className="text-xl lg:text-2xl text-gray-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                                I turned my own handwritten notes + official CBK references into the exact system that helped students pass CISSP on the first attempt. Straight to the point. No fluff. Only what you need to succeed.
+                                I turned my own handwritten notes + official CBK references into the exact system that helped students pass CISSP on their first attempt. No fluff. Only what you need to succeed.
                             </p>
 
                             {/* Social proof counters */}
