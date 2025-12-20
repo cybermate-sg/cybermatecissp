@@ -57,9 +57,17 @@ export class ClassTestHelpers {
     // Fill name
     await this.page.fill('input#name', data.name);
 
-    // Fill description if provided
+    // Fill description if provided (using RichTextEditor's contenteditable div)
     if (data.description !== undefined) {
-      await this.page.fill('textarea#description', data.description);
+      // Locate the ProseMirror editor (contenteditable div inside editor-wrapper)
+      const editor = this.page.locator('.editor-wrapper .ProseMirror');
+      await editor.waitFor({ state: 'visible', timeout: 5000 });
+
+      // Clear existing content and type new content
+      await editor.click();
+      await editor.press('Control+A');
+      await editor.press('Backspace');
+      await editor.type(data.description);
     }
 
     // Select icon if provided
