@@ -1,14 +1,36 @@
 import { auth } from '@clerk/nextjs/server';
+import { db, withRetry } from '@/lib/db';
+import { subscriptions } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 
 /**
  * Check if the current user has access to paid features
- * Uses Clerk's has() method to check subscription plan
+ * Checks the subscriptions table in the database for active Stripe subscription
  */
 export async function hasPaidAccess() {
-  const { has } = await auth();
+  const { userId } = await auth();
 
-  // Check if user has the 'paid' plan using Clerk Billing
-  return has ? has({ plan: 'paid' }) : false;
+  if (!userId) {
+    return false;
+  }
+
+  // Query the database for an active subscription
+  const subscription = await withRetry(
+    () => db.query.subscriptions.findFirst({
+      where: eq(subscriptions.clerkUserId, userId),
+    }),
+    { queryName: 'check-paid-access' }
+  );
+
+  // User has paid access if they have an active, trialing, or past_due subscription
+  // past_due is included to give users grace period if payment fails
+  if (!subscription) {
+    return false;
+  }
+
+  return subscription.status === 'active' ||
+         subscription.status === 'trialing' ||
+         subscription.planType === 'lifetime';
 }
 
 /**
@@ -21,19 +43,32 @@ export async function hasFreeAccess() {
 
 /**
  * Get the user's current plan
- * Returns 'paid' or 'free_user' based on Clerk Billing
+ * Returns plan type from the database or 'free' if no subscription
  */
 export async function getUserPlan() {
-  const { has } = await auth();
+  const { userId } = await auth();
 
-  if (!has) {
-    return 'free_user';
+  if (!userId) {
+    return 'free';
   }
 
-  // Check if user has the 'paid' plan
-  if (has({ plan: 'paid' })) {
-    return 'paid';
+  const subscription = await withRetry(
+    () => db.query.subscriptions.findFirst({
+      where: eq(subscriptions.clerkUserId, userId),
+    }),
+    { queryName: 'get-user-plan' }
+  );
+
+  if (!subscription) {
+    return 'free';
   }
 
-  return 'free_user';
+  // Return the plan type if subscription is active
+  if (subscription.status === 'active' ||
+      subscription.status === 'trialing' ||
+      subscription.planType === 'lifetime') {
+    return subscription.planType;
+  }
+
+  return 'free';
 }
