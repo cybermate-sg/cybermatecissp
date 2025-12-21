@@ -24,7 +24,17 @@ export default defineConfig({
       name: 'setup',
       testMatch: /.*\.setup\.ts/,
     },
-    // Main tests - depend on setup being complete
+    // Guest tests - no authentication required
+    {
+      name: 'guest',
+      use: {
+        ...devices['Desktop Chrome'],
+        // No storage state - fresh browser context
+      },
+      testMatch: /.*guest.*\.spec\.ts/,
+      // No dependencies - runs without authentication
+    },
+    // Authenticated tests - depend on setup being complete
     {
       name: 'chromium',
       use: {
@@ -32,6 +42,7 @@ export default defineConfig({
         // Use signed-in state from setup
         storageState: 'playwright/.auth/user.json',
       },
+      testIgnore: /.*guest.*\.spec\.ts/, // Don't run guest tests in authenticated mode
       dependencies: ['setup'],
     },
   ],

@@ -25,6 +25,10 @@ export default function BuyNowButton({
     try {
       setIsLoading(true);
 
+      // Debug logging
+      //console.log("BuyNowButton - priceId received:", priceId);
+      //console.log("BuyNowButton - sending to API:", { priceId, email: guestEmail || undefined });
+
       // Call our API to create checkout session
       const response = await fetch("/api/checkout", {
         method: "POST",

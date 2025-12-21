@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import DOMPurify from "isomorphic-dompurify";
 
 interface FormattedContentProps {
   html: string;
@@ -12,18 +13,14 @@ interface FormattedContentProps {
  */
 export function FormattedContent({ html, className = "" }: FormattedContentProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const [sanitizedHtml, setSanitizedHtml] = useState("");
 
   useEffect(() => {
     setIsMounted(true);
-  }, []);
 
-  const sanitizedHtml = useMemo(() => {
-    if (!isMounted) return html;
-
-    // Dynamic import to avoid SSR issues with jsdom
+    // Sanitize HTML on mount
     try {
-      const DOMPurify = require("isomorphic-dompurify");
-      return DOMPurify.sanitize(html, {
+      const cleaned = DOMPurify.sanitize(html, {
         ALLOWED_TAGS: [
           'p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
           'ul', 'ol', 'li', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
@@ -35,11 +32,12 @@ export function FormattedContent({ html, className = "" }: FormattedContentProps
         SAFE_FOR_TEMPLATES: true,
         RETURN_TRUSTED_TYPE: false
       });
+      setSanitizedHtml(cleaned);
     } catch (error) {
       console.error("Error sanitizing HTML:", error);
-      return html;
+      setSanitizedHtml(html);
     }
-  }, [html, isMounted]);
+  }, [html]);
 
   // Don't render during SSR to avoid jsdom issues
   if (!isMounted) {
@@ -49,7 +47,6 @@ export function FormattedContent({ html, className = "" }: FormattedContentProps
   return (
     <div
       className={`prose prose-sm max-w-none ${className}`}
-      // eslint-disable-next-line react/no-danger -- HTML is sanitized with DOMPurify before rendering
       dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
     />
   );

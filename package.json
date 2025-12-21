@@ -20,6 +20,11 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "test:e2e:classes": "playwright test admin-classes-crud",
+    "test:e2e:payment": "playwright test payment",
+    "test:e2e:payment:guest": "playwright test payment-guest-flow --project=guest",
+    "test:e2e:payment:auth": "playwright test payment-authenticated-flow --project=chromium",
+    "test:e2e:payment:failures": "playwright test payment-failure-scenarios",
+    "test:e2e:payment:webhooks": "playwright test payment-webhook-handling",
     "test:e2e:capture-auth": "tsx scripts/capture-auth-session.ts"
   },
   "dependencies": {
