@@ -92,7 +92,7 @@ export default function SMARTMethodology() {
 
             <div className="max-w-5xl mx-auto bg-gradient-to-br from-[#1a2235]/80 to-[#0f1729]/80 border border-cyan-500/30 rounded-2xl p-6 lg:p-8">
               <p className="text-gray-300 text-base lg:text-lg leading-relaxed">
-                At CyberMateConsulting.com, we specialize in helping cybersecurity professionals like you pass the prestigious CISSP (Certified Information Systems Security Professional) exam on your first attempt. Our platform features thousands of interactive quizzes, detailed explanations, and progress tracking tools – all designed to make your study journey efficient and effective. We believe in the power of SMART goals to turn ambitious dreams into achievable realities. That's why our entire preparation system is built around the SMART methodology.
+                At CyberMateConsulting.com, we specialize in helping cybersecurity professionals like you pass the prestigious CISSP (Certified Information Systems Security Professional) exam on your first attempt. Our platform features thousands of interactive quizzes, detailed explanations, and progress tracking tools – all designed to make your study journey efficient and effective. We believe in the power of SMART goals to turn ambitious dreams into achievable realities. That&apos;s why our entire preparation system is built around the SMART methodology.
               </p>
             </div>
           </div>
