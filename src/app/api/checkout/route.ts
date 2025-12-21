@@ -72,6 +72,12 @@ export async function POST(req: Request) {
         userId: userId || "guest",
         userEmail: customerEmail,
       },
+      payment_intent_data: {
+        metadata: {
+          clerkUserId: userId || "guest",
+          userEmail: customerEmail,
+        },
+      },
     });
 
     return NextResponse.json({ sessionId: session.id, url: session.url });

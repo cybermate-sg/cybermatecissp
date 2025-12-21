@@ -4,6 +4,7 @@ import Stripe from 'stripe';
 import { db, withRetry } from '@/lib/db';
 import { subscriptions, payments } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { sendPaymentSuccessEmail, sendPaymentFailureEmail } from '@/lib/email/payment-notifications';
 
 // Lazy initialization to avoid errors during build time
 let stripe: Stripe;
@@ -48,9 +49,12 @@ export async function POST(req: Request) {
   }
 
   try {
+    console.log('Processing webhook event:', event.type, 'ID:', event.id);
+
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
+        console.log('Checkout session completed:', session.id);
         await handleCheckoutCompleted(session);
         break;
       }
@@ -70,7 +74,9 @@ export async function POST(req: Request) {
 
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        await handlePaymentSucceeded(paymentIntent);
+        console.log('Payment intent succeeded:', paymentIntent.id);
+        // Don't send email here - it will be sent by checkout.session.completed
+        await handlePaymentSucceeded(paymentIntent, undefined, undefined, undefined, false);
         break;
       }
 
@@ -84,21 +90,30 @@ export async function POST(req: Request) {
         console.log(`Unhandled event type: ${event.type}`);
     }
 
+    console.log('✅ Successfully processed webhook:', event.type);
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('Error processing webhook:', error);
+    console.error('❌ Error processing webhook:', error);
+    console.error('Event type:', event.type);
+    console.error('Event ID:', event.id);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     return NextResponse.json(
-      { error: 'Webhook processing failed' },
+      { error: 'Webhook processing failed', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  const clerkUserId = session.metadata?.clerkUserId;
+  const clerkUserId = session.metadata?.userId || session.client_reference_id;
+  const customerEmail = session.customer_email || session.customer_details?.email;
+  const customerName = session.customer_details?.name || 'there';
 
-  if (!clerkUserId) {
-    console.error('No clerkUserId in session metadata');
+  if (!clerkUserId && !customerEmail) {
+    console.error('No clerkUserId or customer email in session metadata');
     return;
   }
 
@@ -111,7 +126,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     // Fetch full subscription details from Stripe
     const stripeSubscription = await getStripe().subscriptions.retrieve(subscriptionId);
 
-    await handleSubscriptionUpdate(stripeSubscription, clerkUserId, session.customer as string);
+    await handleSubscriptionUpdate(stripeSubscription, clerkUserId || undefined, session.customer as string);
   }
 
   // If this is a one-time payment
@@ -121,7 +136,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       : session.payment_intent.id;
 
     const paymentIntent = await getStripe().paymentIntents.retrieve(paymentIntentId);
-    await handlePaymentSucceeded(paymentIntent, clerkUserId);
+    await handlePaymentSucceeded(paymentIntent, clerkUserId || undefined, customerEmail || undefined, customerName);
   }
 }
 
@@ -221,51 +236,135 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
 async function handlePaymentSucceeded(
   paymentIntent: Stripe.PaymentIntent,
-  clerkUserId?: string
+  clerkUserId?: string,
+  customerEmail?: string,
+  customerName?: string,
+  sendEmail: boolean = true
 ) {
   const userId = clerkUserId || paymentIntent.metadata?.clerkUserId;
+  const userEmail = customerEmail || paymentIntent.metadata?.userEmail || paymentIntent.receipt_email;
+  const userName = customerName || paymentIntent.metadata?.userName || 'there';
 
-  if (!userId) {
-    console.error('No clerkUserId found for payment:', paymentIntent.id);
+  if (!userId && !userEmail) {
+    console.error('No clerkUserId or email found for payment:', paymentIntent.id);
     return;
   }
 
-  // Record the payment
-  await withRetry(
-    () => db.insert(payments).values({
-      clerkUserId: userId,
-      stripePaymentIntentId: paymentIntent.id,
-      amount: paymentIntent.amount,
-      currency: paymentIntent.currency,
-      status: 'succeeded',
-      paymentMethod: paymentIntent.payment_method_types[0] || 'unknown',
-    }),
-    { queryName: 'webhook-insert-payment-succeeded' }
-  );
+  // Record the payment (only if we have a valid user ID)
+  if (userId && userId !== 'guest') {
+    try {
+      await withRetry(
+        () => db.insert(payments).values({
+          clerkUserId: userId,
+          stripePaymentIntentId: paymentIntent.id,
+          amount: paymentIntent.amount,
+          currency: paymentIntent.currency,
+          status: 'succeeded',
+          paymentMethod: paymentIntent.payment_method_types[0] || 'unknown',
+        }),
+        { queryName: 'webhook-insert-payment-succeeded' }
+      );
+      console.log('✅ Payment recorded in database:', paymentIntent.id);
+    } catch (dbError) {
+      // Don't fail the webhook if database insert fails
+      console.error('❌ Failed to record payment in database:', dbError);
+      console.log('⚠️ Continuing with email notification despite database error');
+    }
+  } else {
+    console.log('⚠️ Guest purchase - skipping database record for payment:', paymentIntent.id);
+  }
 
   console.log('Payment succeeded:', paymentIntent.id);
+
+  // Send payment success email (only if sendEmail is true)
+  if (sendEmail && userEmail) {
+    try {
+      const dashboardUrl = process.env.NEXT_PUBLIC_APP_URL
+        ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`
+        : undefined;
+
+      console.log('Attempting to send payment success email to:', userEmail);
+
+      const emailResult = await sendPaymentSuccessEmail({
+        userEmail,
+        userName,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+        paymentIntentId: paymentIntent.id,
+        dashboardUrl,
+      });
+
+      if (emailResult.success) {
+        console.log('✅ Payment success email sent to:', userEmail);
+      } else {
+        console.error('❌ Failed to send payment success email:', emailResult.error);
+      }
+    } catch (emailError) {
+      // Don't fail the webhook if email fails - just log it
+      console.error('❌ Exception while sending payment success email:', emailError);
+      if (emailError instanceof Error) {
+        console.error('Email error details:', emailError.message);
+      }
+    }
+  } else if (!sendEmail) {
+    console.log('ℹ️ Skipping email notification (will be sent by checkout.session.completed)');
+  } else {
+    console.warn('⚠️ No email address found to send payment confirmation');
+  }
 }
 
 async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
   const userId = paymentIntent.metadata?.clerkUserId;
+  const userEmail = paymentIntent.metadata?.userEmail || paymentIntent.receipt_email;
+  const userName = paymentIntent.metadata?.userName || 'there';
 
-  if (!userId) {
-    console.error('No clerkUserId found for failed payment:', paymentIntent.id);
+  if (!userId && !userEmail) {
+    console.error('No clerkUserId or email found for failed payment:', paymentIntent.id);
     return;
   }
 
-  // Record the failed payment
-  await withRetry(
-    () => db.insert(payments).values({
-      clerkUserId: userId,
-      stripePaymentIntentId: paymentIntent.id,
-      amount: paymentIntent.amount,
-      currency: paymentIntent.currency,
-      status: 'failed',
-      paymentMethod: paymentIntent.payment_method_types[0] || 'unknown',
-    }),
-    { queryName: 'webhook-insert-payment-failed' }
-  );
+  // Record the failed payment (only if we have a valid user ID)
+  if (userId && userId !== 'guest') {
+    try {
+      await withRetry(
+        () => db.insert(payments).values({
+          clerkUserId: userId,
+          stripePaymentIntentId: paymentIntent.id,
+          amount: paymentIntent.amount,
+          currency: paymentIntent.currency,
+          status: 'failed',
+          paymentMethod: paymentIntent.payment_method_types[0] || 'unknown',
+        }),
+        { queryName: 'webhook-insert-payment-failed' }
+      );
+      console.log('✅ Failed payment recorded in database:', paymentIntent.id);
+    } catch (dbError) {
+      console.error('❌ Failed to record failed payment in database:', dbError);
+      console.log('⚠️ Continuing with email notification despite database error');
+    }
+  } else {
+    console.log('⚠️ Guest purchase - skipping database record for failed payment:', paymentIntent.id);
+  }
 
   console.log('Payment failed:', paymentIntent.id);
+
+  // Send payment failure email
+  if (userEmail) {
+    const failureReason = paymentIntent.last_payment_error?.message || 'Unknown reason';
+
+    const emailResult = await sendPaymentFailureEmail({
+      userEmail,
+      userName,
+      amount: paymentIntent.amount,
+      currency: paymentIntent.currency,
+      paymentIntentId: paymentIntent.id,
+      failureReason,
+    });
+
+    if (emailResult.success) {
+      console.log('Payment failure email sent to:', userEmail);
+    } else {
+      console.error('Failed to send payment failure email:', emailResult.error);
+    }
+  }
 }

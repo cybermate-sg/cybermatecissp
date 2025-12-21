@@ -13,16 +13,25 @@ async function verifyExistingAuth(browser: Browser): Promise<boolean> {
     const context = await browser.newContext({ storageState: authFile });
     const testPage = await context.newPage();
 
-    await testPage.goto('/admin/classes', {
+    // Try dashboard first (works for all authenticated users)
+    await testPage.goto('/dashboard', {
       waitUntil: 'domcontentloaded',
       timeout: 10000
     });
 
     const url = testPage.url();
-    if (url.includes('/admin/classes')) {
-      const hasNewClassButton = await testPage.locator('button:has-text("New Class")').isVisible({ timeout: 5000 });
 
-      if (hasNewClassButton) {
+    // Check if we're on dashboard (not redirected to sign-in)
+    if (url.includes('/dashboard')) {
+      // Look for authenticated user indicators
+      const userButton = testPage.locator('button[data-testid="user-menu"]')
+        .or(testPage.locator('[data-clerk-button]'))
+        .or(testPage.locator('text=/sign out/i'))
+        .first();
+
+      const hasUserIndicator = await userButton.isVisible({ timeout: 5000 }).catch(() => false);
+
+      if (hasUserIndicator || url.includes('/dashboard')) {
         console.log('✅ Existing authentication is valid');
         console.log('🎉 Skipping re-authentication');
         console.log('');
@@ -51,8 +60,8 @@ function printSignInInstructions(): void {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('');
   console.log('Please complete these steps in the browser:');
-  console.log('1. Sign in with LinkedIn');
-  console.log('2. Wait for redirect to admin/classes page');
+  console.log('1. Sign in with LinkedIn (or your configured provider)');
+  console.log('2. Wait for redirect to dashboard page');
   console.log('3. Test will continue automatically');
   console.log('');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -62,8 +71,8 @@ function printSignInInstructions(): void {
 async function performAuthentication(page: Page): Promise<void> {
   await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-  console.log('⏳ Navigating to admin page...');
-  await page.goto('/admin/classes', {
+  console.log('⏳ Navigating to dashboard...');
+  await page.goto('/dashboard', {
     waitUntil: 'commit',
     timeout: 30000
   }).catch(() => {
@@ -71,13 +80,18 @@ async function performAuthentication(page: Page): Promise<void> {
   });
 
   console.log('⏳ Waiting for you to sign in...');
-  await page.waitForURL(/\/admin\/classes/, { timeout: 120000 });
+  await page.waitForURL(/\/dashboard/, { timeout: 120000 });
 
   console.log('');
   console.log('✅ Successfully authenticated!');
   console.log('📝 Saving authentication state...');
 
-  await page.waitForSelector('button:has-text("New Class")', { timeout: 15000 });
+  // Wait for page to be fully loaded
+  await page.waitForLoadState('domcontentloaded');
+
+  // Give a moment for Clerk to initialize
+  await page.waitForTimeout(2000);
+
   await page.context().storageState({ path: authFile });
 
   console.log('✅ Authentication state saved to:', authFile);
@@ -92,9 +106,9 @@ function handleAuthError(error: unknown): never {
   console.error('Error:', error);
   console.error('');
   console.error('Please ensure you:');
-  console.error('  1. Signed in with LinkedIn');
-  console.error('  2. Were redirected to /admin/classes');
-  console.error('  3. Can see the admin page');
+  console.error('  1. Signed in with your configured provider (LinkedIn, email, etc.)');
+  console.error('  2. Were redirected to /dashboard');
+  console.error('  3. Can see the dashboard page');
   console.error('');
   console.error('Then try running: pnpm test:e2e:headed');
   console.error('');

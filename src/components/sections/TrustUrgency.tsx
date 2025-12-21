@@ -26,7 +26,7 @@ export default function TrustUrgency() {
               </div>
 
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
-                Be One of the First to Pass with My System
+                Ace Your CISSP With My Proven System!
               </h2>
 
               <StatsGrid />
