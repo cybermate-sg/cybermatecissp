@@ -1,16 +1,6 @@
-import { auth } from "@clerk/nextjs/server";
 import dynamic from "next/dynamic";
 import { CTAButtons } from "@/components/CTAButtons";
-
-type HasPlanFn = ((params: { plan: string }) => boolean) | undefined;
-
-function hasPaidPlanForUser(has: HasPlanFn) {
-    if (!has) {
-        return false;
-    }
-
-    return has({ plan: "paid" });
-}
+import { hasPaidAccess } from "@/lib/subscription";
 
 const BuyNowButton = dynamic(() => import("@/components/BuyNowButton"), {
     loading: () => (
@@ -20,8 +10,7 @@ const BuyNowButton = dynamic(() => import("@/components/BuyNowButton"), {
 });
 
 export async function FinalCTAButtons() {
-    const { has } = await auth();
-    const hasPaidPlan = hasPaidPlanForUser(has);
+    const hasPaidPlan = await hasPaidAccess();
 
     return (
         <CTAButtons

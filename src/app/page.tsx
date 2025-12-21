@@ -4,6 +4,7 @@ import FeatureHighlights from "@/components/sections/FeatureHighlights";
 import Testimonials from "@/components/sections/Testimonials";
 import WhyStudentsPass from "@/components/sections/WhyStudentsPass";
 import TrustUrgency from "@/components/sections/TrustUrgency";
+import SMARTMethodology from "@/components/sections/SMARTMethodology";
 import FinalCTA from "@/components/sections/FinalCTA";
 
 const ClientFloatingBadge = dynamic(
@@ -21,7 +22,10 @@ export default function Home() {
 
       {/* Trust + Urgency Section */}
       <TrustUrgency />
-      
+
+      {/* SMART Methodology Section */}
+      <SMARTMethodology />
+
       {/* Feature Highlights */}
       <FeatureHighlights />
 

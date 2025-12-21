@@ -9,6 +9,7 @@ import { classes, userCardProgress, flashcards, decks } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { Bookmark, ClipboardCheck } from "lucide-react";
 import { cache } from "react";
+import { hasPaidAccess } from "@/lib/subscription";
 
 // PERFORMANCE: Cache the classes query (changes rarely, no user-specific data)
 // This reduces database load significantly for concurrent users
@@ -40,13 +41,13 @@ const getCachedClasses = cache(async () => {
 
 export default async function DashboardPage() {
   // PERFORMANCE: Optimize Clerk calls - only fetch what we need
-  const { userId, has } = await auth();
+  const { userId } = await auth();
 
   if (!userId) {
     redirect("/sign-in");
   }
 
-  const hasPaidPlan = has({ plan: 'paid' });
+  const hasPaidPlan = await hasPaidAccess();
 
   // PERFORMANCE: Fetch user in parallel with database queries (not blocking)
   // This reduces total wait time significantly
