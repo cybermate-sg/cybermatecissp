@@ -20,7 +20,6 @@ function HeroCTAButtons({ centered = false }: { centered?: boolean }) {
     const containerClassName = `flex flex-col sm:flex-row gap-6 items-center ${centered ? "justify-center" : "justify-center lg:justify-start"}`;
 
     const priceId = process.env.NEXT_PUBLIC_STRIPE_LIFETIME_PRICE_ID!;
-    console.log("HeroSection - NEXT_PUBLIC_STRIPE_LIFETIME_PRICE_ID:", priceId);
 
     return (
         <CTAButtons
