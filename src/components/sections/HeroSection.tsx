@@ -115,6 +115,7 @@ export default function HeroSection() {
                                 <div className="absolute inset-0 bg-gradient-to-br from-purple-600/30 to-cyan-500/30 rounded-3xl blur-2xl" />
                                 <div className="relative bg-gradient-to-br from-[#1a2235] to-[#0f1729] border border-purple-500/30 rounded-3xl p-6 shadow-2xl backdrop-blur-sm">
                                     <div className="space-y-4 text-center">
+                                        <p className="text-base font-semibold text-white">Raju Ragavan (RR)</p>
                                         <Image
                                             src="/images/raju.jpg"
                                             alt="Raju - CISSP Certified Instructor"
