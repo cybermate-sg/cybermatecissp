@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import LayoutWrapper from "@/components/LayoutWrapper";
-import { SpeedInsights } from '@vercel/speed-insights/next';
+import Analytics from "@/components/Analytics";
 
 // Note: Using system fonts for better build compatibility
 // If Google Fonts are needed, they can be loaded via CDN in production
@@ -36,14 +36,7 @@ export default function RootLayout({
           suppressHydrationWarning
         >
           <LayoutWrapper>{children}</LayoutWrapper>
-          <SpeedInsights
-              sampleRate={0.1}
-              beforeSend={(event) => {
-                const pathname = window.location.pathname;
-                // Return null to drop events from admin/api routes, otherwise return the event
-                return !pathname.startsWith('/admin') && !pathname.startsWith('/api') ? event : null;
-              }}
-            />
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>
