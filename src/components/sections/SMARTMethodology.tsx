@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 interface SMARTCard {
   letter: string;
   word: string;
@@ -43,7 +45,7 @@ const smartCards: SMARTCard[] = [
   {
     letter: "T",
     word: "Time Bound",
-    description: "Bite-sized flashcards with measurable milestones. Aim to complete the exam prep in 3-3 month time frame. Conquer all 8 domains by your target exam date.",
+    description: "Bite-sized flashcards with measurable milestones. Aim to complete the exam prep in 60 days time frame. Conquer all 8 domains by your target exam date.",
     colorFrom: "from-red-500",
     colorTo: "to-red-600",
     borderColor: "border-red-500"
@@ -82,17 +84,27 @@ export default function SMARTMethodology() {
             </h2>
 
             <div className="flex items-center justify-center gap-3 mb-8">
-              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                {/* <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
-                </svg>
-              </div>
-              <span className="text-2xl font-bold text-white">CyberMateConsulting.com</span>
+                </svg> */}
+                <Image
+                              src="/images/cybermate-logo-trans.png"
+                              alt="Cybermate Logo"
+                              width={40}
+                              height={40}
+                              className="rounded"
+                              quality={75}
+                              sizes="40px"
+                              priority
+                              fetchPriority="high"
+                            />
+              
+              <span className="text-2xl font-bold text-white">Cybermate Consulting</span>
             </div>
 
             <div className="max-w-5xl mx-auto bg-gradient-to-br from-[#1a2235]/80 to-[#0f1729]/80 border border-cyan-500/30 rounded-2xl p-6 lg:p-8">
               <p className="text-gray-300 text-base lg:text-lg leading-relaxed">
-                At CyberMateConsulting.com, we specialize in helping cybersecurity professionals like you pass the prestigious CISSP (Certified Information Systems Security Professional) exam on your first attempt. Our platform features thousands of interactive quizzes, detailed explanations, and progress tracking tools – all designed to make your study journey efficient and effective. We believe in the power of SMART goals to turn ambitious dreams into achievable realities. That&apos;s why our entire preparation system is built around the SMART methodology.
+                At Cybermate Consulting, we specialize in helping cybersecurity professionals like you pass the prestigious CISSP (Certified Information Systems Security Professional) exam on your first attempt. Our platform features thousands of interactive quizzes, detailed explanations, and progress tracking tools – all designed to make your study journey efficient and effective. We believe in the power of SMART goals to turn ambitious dreams into achievable realities. That&apos;s why our entire preparation system is built around the SMART methodology.
               </p>
             </div>
           </div>
