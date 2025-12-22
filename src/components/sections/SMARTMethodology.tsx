@@ -54,12 +54,12 @@ const smartCards: SMARTCard[] = [
 
 function SMARTCardComponent({ card }: { card: SMARTCard }) {
   return (
-    <div className={`relative bg-gradient-to-br from-[#1a2235] to-[#0f1729] border-t-4 ${card.borderColor} rounded-2xl p-6 flex flex-col items-center transition-all duration-300 hover:transform hover:scale-105 hover:shadow-2xl`}>
-      <div className={`w-32 h-32 bg-gradient-to-br ${card.colorFrom} ${card.colorTo} rounded-3xl flex items-center justify-center mb-4 shadow-lg`}>
-        <span className="text-7xl font-black text-white">{card.letter}</span>
+    <div className={`relative bg-gradient-to-br from-[#1a2235] to-[#0f1729] border-t-4 ${card.borderColor} rounded-2xl p-4 sm:p-6 flex flex-col items-center transition-all duration-300 hover:transform hover:scale-105 hover:shadow-2xl`}>
+      <div className={`w-20 h-20 sm:w-28 sm:h-28 lg:w-32 lg:h-32 bg-gradient-to-br ${card.colorFrom} ${card.colorTo} rounded-3xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg`}>
+        <span className="text-4xl sm:text-6xl lg:text-7xl font-black text-white">{card.letter}</span>
       </div>
-      <h3 className="text-2xl font-bold text-white mb-4">{card.word}</h3>
-      <p className="text-gray-300 text-center leading-relaxed text-sm">{card.description}</p>
+      <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-2 sm:mb-4">{card.word}</h3>
+      <p className="text-gray-100 text-center leading-relaxed text-sm sm:text-base">{card.description}</p>
     </div>
   );
 }
@@ -103,14 +103,14 @@ export default function SMARTMethodology() {
             </div>
 
             <div className="max-w-5xl mx-auto bg-gradient-to-br from-[#1a2235]/80 to-[#0f1729]/80 border border-cyan-500/30 rounded-2xl p-6 lg:p-8">
-              <p className="text-gray-300 text-base lg:text-lg leading-relaxed">
+              <p className="text-gray-100 text-base lg:text-lg leading-relaxed">
                 At Cybermate Consulting, we specialize in helping cybersecurity professionals like you pass the prestigious CISSP (Certified Information Systems Security Professional) exam on your first attempt. Our platform features thousands of interactive quizzes, detailed explanations, and progress tracking tools – all designed to make your study journey efficient and effective. We believe in the power of SMART goals to turn ambitious dreams into achievable realities. That&apos;s why our entire preparation system is built around the SMART methodology.
               </p>
             </div>
           </div>
 
           {/* SMART Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 lg:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 lg:gap-4">
             {smartCards.map((card, index) => (
               <SMARTCardComponent key={index} card={card} />
             ))}
