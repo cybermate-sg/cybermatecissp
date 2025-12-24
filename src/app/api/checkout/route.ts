@@ -104,6 +104,7 @@ export async function POST(req: Request) {
           clerkUserId: userId,
           userEmail: customerEmail,
           userName: customerName || customerEmail,
+          priceId: priceId,
         },
       },
     });
