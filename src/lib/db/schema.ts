@@ -47,7 +47,7 @@ export const subscriptions = pgTable('subscriptions', {
 export const payments = pgTable('payments', {
   id: uuid('id').defaultRandom().primaryKey(),
   clerkUserId: varchar('clerk_user_id', { length: 255 }).notNull().references(() => users.clerkUserId, { onDelete: 'cascade' }),
-  stripePaymentIntentId: varchar('stripe_payment_intent_id', { length: 255 }).notNull(),
+  stripePaymentIntentId: varchar('stripe_payment_intent_id', { length: 255 }).notNull().unique(),
   amount: integer('amount').notNull(), // in cents
   currency: varchar('currency', { length: 3 }).notNull().default('usd'),
   status: paymentStatusEnum('status').notNull(),

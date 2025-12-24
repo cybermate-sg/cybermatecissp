@@ -81,8 +81,10 @@ export async function POST(req: Request) {
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         console.log('Payment intent succeeded:', paymentIntent.id);
+        // Extract priceId from payment intent metadata
+        const priceId = paymentIntent.metadata?.priceId;
         // Don't send email here - it will be sent by checkout.session.completed
-        await handlePaymentSucceeded(paymentIntent, undefined, undefined, undefined, false, undefined, undefined);
+        await handlePaymentSucceeded(paymentIntent, undefined, undefined, undefined, false, undefined, priceId);
         break;
       }
 
