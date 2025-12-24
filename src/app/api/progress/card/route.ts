@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
-import { userCardProgress, flashcards, sessionCards, users, subscriptions, userStats } from '@/lib/db/schema';
+import { userCardProgress, flashcards, sessionCards } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { CacheInvalidation, safeInvalidate } from '@/lib/redis/invalidation';
 import { withErrorHandling } from '@/lib/api/error-handler';
 import { withTracing } from '@/lib/middleware/with-tracing';
+import { ensureUserExists } from '@/lib/db/ensure-user';
 
 /**
  * Calculate mastery status based on confidence level
@@ -34,58 +35,6 @@ function calculateNextReviewDate(confidenceLevel: number): Date {
   }
 
   return new Date(now.getTime() + daysUntilReview * 24 * 60 * 60 * 1000);
-}
-
-/**
- * Ensure user exists in database, create if not
- */
-async function ensureUserExists(userId: string) {
-  const existingUser = await db.query.users.findFirst({
-    where: eq(users.clerkUserId, userId),
-  });
-
-  if (!existingUser) {
-    // User doesn't exist, create them (webhook might have failed)
-    const clerkUser = await currentUser();
-
-    if (!clerkUser) {
-      throw new Error('Unable to fetch user from Clerk');
-    }
-
-    const email = clerkUser.emailAddresses[0]?.emailAddress;
-    const name = `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || null;
-
-    try {
-      // Create user
-      await db.insert(users).values({
-        clerkUserId: userId,
-        email: email!,
-        name,
-        role: 'user',
-      });
-
-      // Create free subscription
-      await db.insert(subscriptions).values({
-        clerkUserId: userId,
-        planType: 'free',
-        status: 'active',
-      });
-
-      // Initialize user stats
-      await db.insert(userStats).values({
-        clerkUserId: userId,
-        totalCardsStudied: 0,
-        studyStreakDays: 0,
-        totalStudyTime: 0,
-        dailyCardsStudiedToday: 0,
-      });
-
-      console.log('User auto-created:', userId);
-    } catch (error) {
-      console.error('Error auto-creating user:', error);
-      throw error;
-    }
-  }
 }
 
 /**

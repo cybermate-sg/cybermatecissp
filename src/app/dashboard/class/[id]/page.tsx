@@ -10,6 +10,7 @@ import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { db, withRetry } from "@/lib/db";
 import { subscriptions, userStats, studySessions } from "@/lib/db/schema";
 import { eq, and, desc, gte } from "drizzle-orm";
+import { ensureUserExists } from "@/lib/db/ensure-user";
 
 // Default stats values
 const DEFAULT_STATS = {
@@ -117,6 +118,9 @@ export default async function ClassDetailPage({
     redirect("/sign-in");
   }
 
+  // Ensure user exists in database (fallback if webhook failed)
+  await ensureUserExists(userId);
+
   // Unwrap params
   const { id: classId } = await params;
 
@@ -132,7 +136,7 @@ export default async function ClassDetailPage({
   const isAdmin = user?.publicMetadata?.role === "admin";
 
   // Fetch user subscription to calculate remaining days
-  let daysLeft: number | null = null;
+  let daysLeft: number = 365; // Default to 365 days for users without active subscription
 
   try {
     // First, check ALL subscriptions for this user (for debugging)
@@ -174,12 +178,13 @@ export default async function ClassDetailPage({
       // Debug logging to verify calculation
       console.log(`[Days Calculation] Start: ${startDate.toISOString()}, Today: ${today.toISOString()}, Days Since Start: ${daysSinceStart}, Days Left: ${daysLeft}`);
     } else {
-      console.log('[Days Calculation] No active subscription found');
+      console.log('[Days Calculation] No active subscription found, using default 365 days');
+      daysLeft = 365; // Fallback to 365 days if no active subscription
     }
   } catch (error) {
     console.error('[Subscription Error] Failed to fetch subscription:', error);
-    // Continue without subscription info - page will still work
-    daysLeft = null;
+    // Continue with default 365 days - page will still work
+    daysLeft = 365;
   }
 
   // Get user's first name

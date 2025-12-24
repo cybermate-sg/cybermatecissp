@@ -24,7 +24,7 @@ interface ClassDetailClientProps {
   classData: ClassData;
   isAdmin: boolean;
   userName: string;
-  daysLeft: number | null;
+  daysLeft: number;
   userStats?: {
     streak: number;
     minutesToday: number;

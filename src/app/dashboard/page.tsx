@@ -9,6 +9,9 @@ import { classes, userCardProgress, flashcards, decks } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { Bookmark, ClipboardCheck } from "lucide-react";
 import { cache } from "react";
+import { ensureUserExists } from "@/lib/db/ensure-user";
+import { Suspense } from "react";
+import DashboardMessage from "@/components/DashboardMessage";
 
 // PERFORMANCE: Cache the classes query (changes rarely, no user-specific data)
 // This reduces database load significantly for concurrent users
@@ -45,6 +48,9 @@ export default async function DashboardPage() {
   if (!userId) {
     redirect("/sign-in");
   }
+
+  // Ensure user exists in database (fallback if webhook failed)
+  await ensureUserExists(userId);
 
   // PERFORMANCE: Fetch user in parallel with database queries (not blocking)
   // This reduces total wait time significantly
@@ -117,6 +123,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0f1729] via-[#1a2235] to-[#0f1729]">
+      <Suspense fallback={null}>
+        <DashboardMessage />
+      </Suspense>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Header */}
         <div className="mb-12">

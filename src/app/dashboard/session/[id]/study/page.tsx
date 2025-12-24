@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { studySessions, decks, flashcards } from "@/lib/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import StudySessionClient from "@/components/StudySessionClient";
+import { ensureUserExists } from "@/lib/db/ensure-user";
 
 export default async function StudySessionPage({
   params,
@@ -17,6 +18,9 @@ export default async function StudySessionPage({
   if (!userId) {
     redirect("/sign-in");
   }
+
+  // Ensure user exists in database (fallback if webhook failed)
+  await ensureUserExists(userId);
 
   const { id: sessionId } = await params;
   const { decks: deckIdsParam } = await searchParams;

@@ -30,7 +30,7 @@ function HeroCTAButtons({ centered = false }: { centered?: boolean }) {
                     priceId={priceId}
                     text="Unlock the Course – $197 (Special Launch Rate)"
                     className="!bg-gradient-to-r !from-purple-600 !via-purple-500 !to-purple-600 hover:!from-purple-500 hover:!via-purple-400 hover:!to-purple-500 !text-white !font-bold !px-10 !py-5 !text-lg !shadow-2xl !shadow-purple-500/30 hover:!shadow-purple-500/50 !transform hover:!scale-105"
-                    disabled={true}
+                    disabled={false}
                 />
             }
         />

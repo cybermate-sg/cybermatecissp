@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { classes, decks, flashcards, userCardProgress } from "@/lib/db/schema";
 import { eq, asc, inArray, and } from "drizzle-orm";
 import SessionSelector from "@/components/SessionSelector";
+import { ensureUserExists } from "@/lib/db/ensure-user";
 
 export default async function NewSessionPage() {
   const { userId } = await auth();
@@ -14,6 +15,9 @@ export default async function NewSessionPage() {
   if (!userId) {
     redirect("/sign-in");
   }
+
+  // Ensure user exists in database (fallback if webhook failed)
+  await ensureUserExists(userId);
 
   // Fetch all classes with their decks and flashcards
   const allClasses = await db.query.classes.findMany({
