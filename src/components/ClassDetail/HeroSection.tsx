@@ -2,7 +2,7 @@
 
 interface HeroSectionProps {
   userName: string;
-  daysLeft: number | null;
+  daysLeft: number;
   overallProgress: number;
   className: string;
 }
@@ -24,7 +24,7 @@ export function HeroSection({ userName, daysLeft, overallProgress, className }: 
         <div className="flex-1 text-center md:text-left">
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2">
             Hi {userName}, you have{' '}
-            <span className="text-yellow-400">{daysLeft ?? '...'} days</span> left to crush the CISSP
+            <span className="text-yellow-400">{daysLeft} days</span> left to crush the CISSP
           </h1>
           <p className="text-base md:text-lg text-blue-200 mb-1">
             {className}

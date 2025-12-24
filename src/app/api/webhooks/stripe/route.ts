@@ -55,7 +55,13 @@ export async function POST(req: Request) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log('Checkout session completed:', session.id);
-        await handleCheckoutCompleted(session);
+
+        // Fetch session with line_items expanded to get price ID
+        const sessionWithLineItems = await getStripe().checkout.sessions.retrieve(session.id, {
+          expand: ['line_items', 'line_items.data.price'],
+        });
+
+        await handleCheckoutCompleted(sessionWithLineItems);
         break;
       }
 
@@ -76,7 +82,7 @@ export async function POST(req: Request) {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         console.log('Payment intent succeeded:', paymentIntent.id);
         // Don't send email here - it will be sent by checkout.session.completed
-        await handlePaymentSucceeded(paymentIntent, undefined, undefined, undefined, false);
+        await handlePaymentSucceeded(paymentIntent, undefined, undefined, undefined, false, undefined, undefined);
         break;
       }
 
@@ -111,6 +117,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const clerkUserId = session.metadata?.userId || session.client_reference_id;
   const customerEmail = session.customer_email || session.customer_details?.email;
   const customerName = session.customer_details?.name || 'there';
+  const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
 
   if (!clerkUserId && !customerEmail) {
     console.error('No clerkUserId or customer email in session metadata');
@@ -126,17 +133,27 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     // Fetch full subscription details from Stripe
     const stripeSubscription = await getStripe().subscriptions.retrieve(subscriptionId);
 
-    await handleSubscriptionUpdate(stripeSubscription, clerkUserId || undefined, session.customer as string);
+    await handleSubscriptionUpdate(stripeSubscription, clerkUserId || undefined, customerId);
   }
 
-  // If this is a one-time payment
+  // If this is a one-time payment (e.g., lifetime access)
   if (session.mode === 'payment' && session.payment_intent) {
     const paymentIntentId = typeof session.payment_intent === 'string'
       ? session.payment_intent
       : session.payment_intent.id;
 
     const paymentIntent = await getStripe().paymentIntents.retrieve(paymentIntentId);
-    await handlePaymentSucceeded(paymentIntent, clerkUserId || undefined, customerEmail || undefined, customerName);
+
+    // Also pass session line items to determine if this is a lifetime purchase
+    await handlePaymentSucceeded(
+      paymentIntent,
+      clerkUserId || undefined,
+      customerEmail || undefined,
+      customerName,
+      true,
+      customerId,
+      session.line_items?.data[0]?.price?.id
+    );
   }
 }
 
@@ -234,44 +251,114 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   console.log('Subscription canceled:', subscription.id);
 }
 
+async function updateSubscriptionForLifetimePurchase(
+  clerkUserId: string,
+  stripeCustomerId?: string
+) {
+  try {
+    // Find existing subscription for this user
+    const existingSubscription = await withRetry(
+      () => db.query.subscriptions.findFirst({
+        where: eq(subscriptions.clerkUserId, clerkUserId),
+      }),
+      { queryName: 'webhook-find-user-subscription' }
+    );
+
+    if (existingSubscription) {
+      // Update existing subscription to lifetime
+      await withRetry(
+        () => db
+          .update(subscriptions)
+          .set({
+            planType: 'lifetime',
+            status: 'active',
+            stripeCustomerId: stripeCustomerId || existingSubscription.stripeCustomerId,
+            updatedAt: new Date(),
+          })
+          .where(eq(subscriptions.clerkUserId, clerkUserId)),
+        { queryName: 'webhook-update-subscription-lifetime' }
+      );
+
+      console.log('✅ Updated subscription to lifetime for user:', clerkUserId);
+    } else {
+      // Create new lifetime subscription if none exists
+      await withRetry(
+        () => db.insert(subscriptions).values({
+          clerkUserId,
+          stripeCustomerId,
+          planType: 'lifetime',
+          status: 'active',
+        }),
+        { queryName: 'webhook-create-subscription-lifetime' }
+      );
+
+      console.log('✅ Created new lifetime subscription for user:', clerkUserId);
+    }
+  } catch (error) {
+    console.error('❌ Failed to update subscription for lifetime purchase:', error);
+    throw error;
+  }
+}
+
 async function handlePaymentSucceeded(
   paymentIntent: Stripe.PaymentIntent,
   clerkUserId?: string,
   customerEmail?: string,
   customerName?: string,
-  sendEmail: boolean = true
+  sendEmail: boolean = true,
+  stripeCustomerId?: string,
+  priceId?: string
 ) {
   const userId = clerkUserId || paymentIntent.metadata?.clerkUserId;
   const userEmail = customerEmail || paymentIntent.metadata?.userEmail || paymentIntent.receipt_email;
   const userName = customerName || paymentIntent.metadata?.userName || 'there';
 
-  if (!userId && !userEmail) {
-    console.error('No clerkUserId or email found for payment:', paymentIntent.id);
+  // Require valid userId (no guest purchases allowed)
+  if (!userId) {
+    console.error('❌ CRITICAL: No clerkUserId found for payment:', paymentIntent.id);
+    console.error('Payment metadata:', paymentIntent.metadata);
+    console.error('This should not happen with auth-required checkout flow');
+    // Still send email if we have an email address
+    if (userEmail && sendEmail) {
+      await sendPaymentSuccessEmail({
+        userEmail,
+        userName,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+        paymentIntentId: paymentIntent.id,
+        dashboardUrl: process.env.NEXT_PUBLIC_APP_URL
+          ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`
+          : undefined,
+      });
+    }
     return;
   }
 
-  // Record the payment (only if we have a valid user ID)
-  if (userId && userId !== 'guest') {
-    try {
-      await withRetry(
-        () => db.insert(payments).values({
-          clerkUserId: userId,
-          stripePaymentIntentId: paymentIntent.id,
-          amount: paymentIntent.amount,
-          currency: paymentIntent.currency,
-          status: 'succeeded',
-          paymentMethod: paymentIntent.payment_method_types[0] || 'unknown',
-        }),
-        { queryName: 'webhook-insert-payment-succeeded' }
-      );
-      console.log('✅ Payment recorded in database:', paymentIntent.id);
-    } catch (dbError) {
-      // Don't fail the webhook if database insert fails
-      console.error('❌ Failed to record payment in database:', dbError);
-      console.log('⚠️ Continuing with email notification despite database error');
+  // Record the payment
+  try {
+    await withRetry(
+      () => db.insert(payments).values({
+        clerkUserId: userId,
+        stripePaymentIntentId: paymentIntent.id,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+        status: 'succeeded',
+        paymentMethod: paymentIntent.payment_method_types[0] || 'unknown',
+      }),
+      { queryName: 'webhook-insert-payment-succeeded' }
+    );
+    console.log('✅ Payment recorded in database:', paymentIntent.id);
+
+    // If this is a lifetime purchase, update the user's subscription
+    const lifetimePriceId = process.env.STRIPE_LIFETIME_PRICE_ID;
+    if (priceId === lifetimePriceId || priceId === process.env.NEXT_PUBLIC_STRIPE_LIFETIME_PRICE_ID) {
+      console.log('🔥 Lifetime purchase detected, updating subscription...');
+      await updateSubscriptionForLifetimePurchase(userId, stripeCustomerId);
     }
-  } else {
-    console.log('⚠️ Guest purchase - skipping database record for payment:', paymentIntent.id);
+  } catch (dbError) {
+    // Don't fail the webhook if database insert fails
+    console.error('❌ Failed to record payment in database:', dbError);
+    console.log('⚠️ Continuing with email notification despite database error');
   }
 
   console.log('Payment succeeded:', paymentIntent.id);
@@ -318,32 +405,43 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
   const userEmail = paymentIntent.metadata?.userEmail || paymentIntent.receipt_email;
   const userName = paymentIntent.metadata?.userName || 'there';
 
-  if (!userId && !userEmail) {
-    console.error('No clerkUserId or email found for failed payment:', paymentIntent.id);
+  // Require valid userId (no guest purchases allowed)
+  if (!userId) {
+    console.error('❌ CRITICAL: No clerkUserId found for failed payment:', paymentIntent.id);
+    console.error('Payment metadata:', paymentIntent.metadata);
+    console.error('This should not happen with auth-required checkout flow');
+    // Still send email if we have an email address
+    if (userEmail) {
+      const failureReason = paymentIntent.last_payment_error?.message || 'Unknown reason';
+      await sendPaymentFailureEmail({
+        userEmail,
+        userName,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+        paymentIntentId: paymentIntent.id,
+        failureReason,
+      });
+    }
     return;
   }
 
-  // Record the failed payment (only if we have a valid user ID)
-  if (userId && userId !== 'guest') {
-    try {
-      await withRetry(
-        () => db.insert(payments).values({
-          clerkUserId: userId,
-          stripePaymentIntentId: paymentIntent.id,
-          amount: paymentIntent.amount,
-          currency: paymentIntent.currency,
-          status: 'failed',
-          paymentMethod: paymentIntent.payment_method_types[0] || 'unknown',
-        }),
-        { queryName: 'webhook-insert-payment-failed' }
-      );
-      console.log('✅ Failed payment recorded in database:', paymentIntent.id);
-    } catch (dbError) {
-      console.error('❌ Failed to record failed payment in database:', dbError);
-      console.log('⚠️ Continuing with email notification despite database error');
-    }
-  } else {
-    console.log('⚠️ Guest purchase - skipping database record for failed payment:', paymentIntent.id);
+  // Record the failed payment
+  try {
+    await withRetry(
+      () => db.insert(payments).values({
+        clerkUserId: userId,
+        stripePaymentIntentId: paymentIntent.id,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+        status: 'failed',
+        paymentMethod: paymentIntent.payment_method_types[0] || 'unknown',
+      }),
+      { queryName: 'webhook-insert-payment-failed' }
+    );
+    console.log('✅ Failed payment recorded in database:', paymentIntent.id);
+  } catch (dbError) {
+    console.error('❌ Failed to record failed payment in database:', dbError);
+    console.log('⚠️ Continuing with email notification despite database error');
   }
 
   console.log('Payment failed:', paymentIntent.id);

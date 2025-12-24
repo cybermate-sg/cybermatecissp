@@ -9,7 +9,9 @@ import { classes, userCardProgress, flashcards, decks } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { Bookmark, ClipboardCheck } from "lucide-react";
 import { cache } from "react";
-import { hasPaidAccess } from "@/lib/subscription";
+import { ensureUserExists } from "@/lib/db/ensure-user";
+import { Suspense } from "react";
+import DashboardMessage from "@/components/DashboardMessage";
 
 // PERFORMANCE: Cache the classes query (changes rarely, no user-specific data)
 // This reduces database load significantly for concurrent users
@@ -47,7 +49,8 @@ export default async function DashboardPage() {
     redirect("/sign-in");
   }
 
-  const hasPaidPlan = await hasPaidAccess();
+  // Ensure user exists in database (fallback if webhook failed)
+  await ensureUserExists(userId);
 
   // PERFORMANCE: Fetch user in parallel with database queries (not blocking)
   // This reduces total wait time significantly
@@ -89,10 +92,7 @@ export default async function DashboardPage() {
     let studiedCount = 0;
     if (totalCards > 0) {
       studiedCount = flashcardIds.filter((id) => studiedFlashcardIds.has(id)).length;
-      // For free users, cap the total cards used in progress calculation
-      const effectiveTotalCards = hasPaidPlan ? totalCards : Math.min(totalCards, 10);
-      const effectiveProgressCount = Math.min(studiedCount, effectiveTotalCards);
-      progress = Math.round((effectiveProgressCount / effectiveTotalCards) * 100);
+      progress = Math.round((studiedCount / totalCards) * 100);
     }
 
     return {
@@ -114,11 +114,8 @@ export default async function DashboardPage() {
   // OPTIMIZATION: Use already-fetched progress data instead of another query
   const studiedCards = allProgressRecords.length;
 
-  // For free users, limit the total cards displayed and used in calculations
-  const displayTotalCards = hasPaidPlan ? totalCards : Math.min(totalCards, 10);
-  // Cap studied cards at display total to prevent progress > 100%
-  const effectiveStudiedCards = Math.min(studiedCards, displayTotalCards);
-  const overallProgress = displayTotalCards > 0 ? Math.round((effectiveStudiedCards / displayTotalCards) * 100) : 0;
+  // Calculate overall progress based on all flashcards
+  const overallProgress = totalCards > 0 ? Math.round((studiedCards / totalCards) * 100) : 0;
 
   // Determine which class to continue with
   // Priority: First in-progress class (0% < progress < 100%), or first class overall
@@ -126,6 +123,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0f1729] via-[#1a2235] to-[#0f1729]">
+      <Suspense fallback={null}>
+        <DashboardMessage />
+      </Suspense>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Header */}
         <div className="mb-12">
@@ -147,7 +147,7 @@ export default async function DashboardPage() {
                   <div>
                     <h2 className="text-xl font-semibold text-gray-900 mb-1">CISSP in 50 Days Program</h2>
                     <p className="text-sm text-gray-500">
-                      {effectiveStudiedCards}/{displayTotalCards} Cards Studied
+                      {studiedCards}/{totalCards} Cards Studied
                     </p>
                   </div>
                   <span className="text-3xl font-bold text-blue-600">{overallProgress}%</span>

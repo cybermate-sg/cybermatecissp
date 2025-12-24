@@ -1,8 +1,32 @@
-import Link from "next/link";
-import { CheckCircle } from "lucide-react";
-import { Suspense } from "react";
+"use client";
 
-function SuccessContent() {
+import Link from "next/link";
+import { CheckCircle, Loader2 } from "lucide-react";
+import { useAuth, useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+export default function SuccessPage() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect to sign-in if not authenticated
+    if (isLoaded && !isSignedIn) {
+      router.push("/sign-in?redirect_url=/success");
+    }
+  }, [isLoaded, isSignedIn, router]);
+
+  // Show loading while checking auth
+  if (!isLoaded || !isSignedIn) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-slate-800 rounded-2xl shadow-2xl p-8 text-center">
@@ -14,8 +38,12 @@ function SuccessContent() {
           Payment Successful!
         </h1>
 
+        <p className="text-gray-300 mb-2">
+          Thank you for your purchase, {user?.firstName || 'there'}!
+        </p>
+
         <p className="text-gray-300 mb-8">
-          Thank you for your purchase! Your payment has been processed successfully.
+          Your payment has been processed successfully.
           You now have full access to CISSP Mastery.
         </p>
 
@@ -36,21 +64,9 @@ function SuccessContent() {
         </div>
 
         <p className="text-sm text-gray-400 mt-6">
-          A confirmation email has been sent to your email address.
+          A confirmation email has been sent to {user?.emailAddresses[0]?.emailAddress}.
         </p>
       </div>
     </div>
-  );
-}
-
-export default function SuccessPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
-      </div>
-    }>
-      <SuccessContent />
-    </Suspense>
   );
 }
