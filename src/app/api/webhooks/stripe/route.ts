@@ -146,6 +146,16 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
     const paymentIntent = await getStripe().paymentIntents.retrieve(paymentIntentId);
 
+    // Extract price ID from session line items
+    const priceId = session.line_items?.data[0]?.price?.id;
+    console.log('🔍 One-time payment detected:');
+    console.log('   - Clerk User ID:', clerkUserId);
+    console.log('   - Customer Email:', customerEmail);
+    console.log('   - Price ID from line_items:', priceId);
+    console.log('   - Expected STRIPE_LIFETIME_PRICE_ID:', process.env.STRIPE_LIFETIME_PRICE_ID);
+    console.log('   - Expected NEXT_PUBLIC_STRIPE_LIFETIME_PRICE_ID:', process.env.NEXT_PUBLIC_STRIPE_LIFETIME_PRICE_ID);
+    console.log('   - Price ID matches:', priceId === process.env.STRIPE_LIFETIME_PRICE_ID || priceId === process.env.NEXT_PUBLIC_STRIPE_LIFETIME_PRICE_ID);
+
     // Also pass session line items to determine if this is a lifetime purchase
     await handlePaymentSucceeded(
       paymentIntent,
@@ -154,7 +164,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       customerName,
       true,
       customerId,
-      session.line_items?.data[0]?.price?.id
+      priceId
     );
   }
 }
@@ -353,9 +363,20 @@ async function handlePaymentSucceeded(
 
     // If this is a lifetime purchase, update the user's subscription
     const lifetimePriceId = process.env.STRIPE_LIFETIME_PRICE_ID;
+    console.log('🔍 Checking if this is a lifetime purchase:');
+    console.log('   - Price ID received:', priceId);
+    console.log('   - STRIPE_LIFETIME_PRICE_ID:', lifetimePriceId);
+    console.log('   - NEXT_PUBLIC_STRIPE_LIFETIME_PRICE_ID:', process.env.NEXT_PUBLIC_STRIPE_LIFETIME_PRICE_ID);
+    console.log('   - Match result:', priceId === lifetimePriceId || priceId === process.env.NEXT_PUBLIC_STRIPE_LIFETIME_PRICE_ID);
+
     if (priceId === lifetimePriceId || priceId === process.env.NEXT_PUBLIC_STRIPE_LIFETIME_PRICE_ID) {
       console.log('🔥 Lifetime purchase detected, updating subscription...');
+      console.log('   - User ID:', userId);
+      console.log('   - Stripe Customer ID:', stripeCustomerId);
       await updateSubscriptionForLifetimePurchase(userId, stripeCustomerId);
+    } else {
+      console.log('⚠️ Price ID does not match lifetime price - subscription NOT updated');
+      console.log('   - This might be a different product or the price ID is incorrect');
     }
   } catch (dbError) {
     // Don't fail the webhook if database insert fails
