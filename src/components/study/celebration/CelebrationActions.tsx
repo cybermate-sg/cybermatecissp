@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Home } from "lucide-react";
 import Link from "next/link";
@@ -10,6 +13,13 @@ interface CelebrationActionsProps {
 }
 
 export const CelebrationActions = ({ onRestart, backLink, backLinkLabel }: CelebrationActionsProps) => {
+    const router = useRouter();
+
+    const handleBackClick = () => {
+        router.push(backLink);
+        router.refresh(); // Force revalidation of the page data
+    };
+
     return (
         <>
             {/* Action Buttons */}
@@ -25,16 +35,15 @@ export const CelebrationActions = ({ onRestart, backLink, backLinkLabel }: Celeb
                     </Button>
                 )}
 
-                <Link href={backLink}>
-                    <Button
-                        variant="outline"
-                        size="lg"
-                        className="w-full sm:w-auto border-2 border-cyber-cyan/50 hover:border-cyber-cyan hover:bg-cyber-cyan/10 text-white font-semibold px-8 py-6 text-lg"
-                    >
-                        <Home className="w-5 h-5 mr-2" />
-                        Back to {backLinkLabel}
-                    </Button>
-                </Link>
+                <Button
+                    onClick={handleBackClick}
+                    variant="outline"
+                    size="lg"
+                    className="w-full sm:w-auto border-2 border-cyber-cyan/50 hover:border-cyber-cyan hover:bg-cyber-cyan/10 text-white font-semibold px-8 py-6 text-lg"
+                >
+                    <Home className="w-5 h-5 mr-2" />
+                    Back to {backLinkLabel}
+                </Button>
             </div>
 
             {/* Next Steps Suggestion */}

@@ -12,6 +12,10 @@ import { subscriptions, userStats, studySessions } from "@/lib/db/schema";
 import { eq, and, desc, gte } from "drizzle-orm";
 import { ensureUserExists } from "@/lib/db/ensure-user";
 
+// Force dynamic rendering - never cache this page
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Default stats values
 const DEFAULT_STATS = {
   streak: 0,
