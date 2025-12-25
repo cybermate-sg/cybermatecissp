@@ -21,13 +21,13 @@ export interface SecurityHeadersConfig {
 function buildCSPDirectives(customCSP?: string): string {
   return customCSP || [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://clerk.cisspmastery.com.au https://js.stripe.com https://*.clerk.accounts.dev https://challenges.cloudflare.com",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://clerk.cisspmastery.com.au https://js.stripe.com https://*.clerk.accounts.dev https://challenges.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com",
     "worker-src 'self' blob:",
     "child-src 'self' blob:",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' data: https://fonts.gstatic.com",
     "img-src 'self' data: blob: https: http:",
-    "connect-src 'self' https://*.clerk.accounts.dev https://api.stripe.com https://clerk.cisspmastery.com.au https://*.xata.sh https://*.vercel.app https://*.sentry.io",
+    "connect-src 'self' https://*.clerk.accounts.dev https://api.stripe.com https://clerk.cisspmastery.com.au https://*.xata.sh https://*.vercel.app https://*.sentry.io https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
     "frame-src 'self' https://js.stripe.com https://challenges.cloudflare.com",
     "object-src 'none'",
     "base-uri 'self'",
