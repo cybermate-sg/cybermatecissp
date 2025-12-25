@@ -33,6 +33,11 @@ export default function DeckStudyPage() {
   const [studiedCards, setStudiedCards] = useState<Set<number>>(new Set());
   const [showQuizModal, setShowQuizModal] = useState(false);
 
+  // Session tracking for stats
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionEnded, setSessionEnded] = useState(false);
+  const [sessionStartTime] = useState(Date.now());
+
   // Deck quiz state
   const [showDeckQuizModal, setShowDeckQuizModal] = useState(false);
   const [deckHasQuiz, setDeckHasQuiz] = useState(false);
@@ -57,13 +62,93 @@ export default function DeckStudyPage() {
     checkDeckQuiz();
   }, [deckId]);
 
+  // Create study session when flashcards are loaded
+  useEffect(() => {
+    const createSession = async () => {
+      if (flashcards.length === 0 || sessionId) return;
+
+      try {
+        const res = await fetch('/api/sessions/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deckIds: [deckId] }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setSessionId(data.sessionId);
+        } else {
+          console.error('Failed to create study session');
+        }
+      } catch (error) {
+        console.error('Error creating study session:', error);
+      }
+    };
+
+    createSession();
+  }, [flashcards.length, deckId, sessionId]);
+
+  // End session when all cards studied
+  useEffect(() => {
+    const allCardsStudied = studiedCards.size === flashcards.length && flashcards.length > 0;
+
+    if (allCardsStudied && sessionId && !sessionEnded) {
+      const endSessionNow = async () => {
+        try {
+          setSessionEnded(true);
+          await fetch('/api/sessions/end', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionId,
+              cardsStudied: studiedCards.size,
+            }),
+          });
+        } catch (error) {
+          console.error('Error ending session:', error);
+        }
+      };
+      endSessionNow();
+    }
+  }, [studiedCards.size, flashcards.length, sessionId, sessionEnded]);
+
+  // Cleanup: End session on unmount
+  useEffect(() => {
+    return () => {
+      if (sessionId && !sessionEnded && studiedCards.size > 0) {
+        fetch('/api/sessions/end', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId,
+            cardsStudied: studiedCards.size,
+          }),
+        }).catch(console.error);
+      }
+    };
+  }, [sessionId, sessionEnded, studiedCards.size]);
+
 
 
   const handleRate = async (confidence: number) => {
     if (!currentCard) return;
 
     try {
-      // Save confidence rating to database
+      // Save to session cards table (for stats tracking)
+      if (sessionId) {
+        await fetch('/api/sessions/card', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId,
+            flashcardId: currentCard.id,
+            confidenceRating: confidence,
+            responseTime: Math.floor((Date.now() - sessionStartTime) / 1000),
+          }),
+        });
+      }
+
+      // Save confidence rating to user card progress (for mastery tracking)
       const res = await fetch("/api/progress/card", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
