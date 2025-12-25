@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import LayoutWrapper from "@/components/LayoutWrapper";
@@ -35,6 +36,19 @@ export default function RootLayout({
           className="font-sans antialiased"
           suppressHydrationWarning
         >
+          {/* Google Tag Manager */}
+          <Script
+            src="https://www.googletagmanager.com/gtag/js?id=G-N83J5BNVV9"
+            strategy="afterInteractive"
+          />
+          <Script id="google-analytics" strategy="afterInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-N83J5BNVV9');
+            `}
+          </Script>
           <LayoutWrapper>{children}</LayoutWrapper>
           <Analytics />
         </body>
