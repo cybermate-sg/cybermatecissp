@@ -30,6 +30,7 @@ interface ClassDetailClientProps {
     minutesToday: number;
     cardsToday: number;
     accuracy: number;
+    last7DaysActivity: number[];
   };
 }
 
@@ -72,7 +73,7 @@ export default function ClassDetailClient({
   classData,
   userName,
   daysLeft,
-  userStats = { streak: 0, minutesToday: 0, cardsToday: 0, accuracy: 0 }
+  userStats = { streak: 0, minutesToday: 0, cardsToday: 0, accuracy: 0, last7DaysActivity: [0, 0, 0, 0, 0, 0, 0] }
 }: ClassDetailClientProps) {
   const [studyMode, setStudyMode] = useState<StudyMode>("progressive");
   const [showModeInfo, setShowModeInfo] = useState(false);
@@ -256,6 +257,7 @@ export default function ClassDetailClient({
               minutesToday={userStats.minutesToday}
               cardsToday={userStats.cardsToday}
               accuracy={userStats.accuracy}
+              last7DaysActivity={userStats.last7DaysActivity}
             />
           </div>
         </div>
