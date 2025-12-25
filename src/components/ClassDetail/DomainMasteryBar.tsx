@@ -16,7 +16,8 @@ interface DomainProgress {
 }
 
 interface DomainMasteryBarProps {
-  domainProgress: DomainProgress[];
+  flashcardProgress: DomainProgress[];
+  quizProgress: DomainProgress[];
 }
 
 // Custom label to show only percentage
@@ -41,9 +42,14 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-export function DomainMasteryBar({ domainProgress }: DomainMasteryBarProps) {
+export function DomainMasteryBar({ flashcardProgress, quizProgress }: DomainMasteryBarProps) {
   // Transform data to have equal slice sizes while preserving progress for labels
-  const equalSizedData = domainProgress.map((domain) => ({
+  const flashcardData = flashcardProgress.map((domain) => ({
+    ...domain,
+    value: 1, // Equal size for all slices
+  }));
+
+  const quizData = quizProgress.map((domain) => ({
     ...domain,
     value: 1, // Equal size for all slices
   }));
@@ -56,12 +62,12 @@ export function DomainMasteryBar({ domainProgress }: DomainMasteryBarProps) {
       <div className="bg-white/95 rounded-xl border border-gray-200 p-6 shadow-sm">
         {/* Pie Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* First Pie Chart - CISSP */}
+          {/* First Pie Chart - Flashcard Progress */}
           <div className="relative">
             <ResponsiveContainer width="100%" height={350}>
               <PieChart>
                 <Pie
-                  data={equalSizedData}
+                  data={flashcardData}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
@@ -71,7 +77,7 @@ export function DomainMasteryBar({ domainProgress }: DomainMasteryBarProps) {
                   label={renderLabel}
                   labelLine={false}
                 >
-                  {equalSizedData.map((domain, index) => (
+                  {flashcardData.map((domain, index) => (
                     <Cell key={`cell-${index}`} fill={domain.color} />
                   ))}
                 </Pie>
@@ -81,17 +87,17 @@ export function DomainMasteryBar({ domainProgress }: DomainMasteryBarProps) {
             {/* Center text */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="bg-emerald-700 text-white font-bold text-xl px-3 py-1.5 rounded shadow-md">
-                CISSP
+                Study
               </div>
             </div>
           </div>
 
-          {/* Second Pie Chart - CISSP Practice */}
+          {/* Second Pie Chart - Quiz Progress */}
           <div className="relative">
             <ResponsiveContainer width="100%" height={350}>
               <PieChart>
                 <Pie
-                  data={equalSizedData}
+                  data={quizData}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
@@ -101,7 +107,7 @@ export function DomainMasteryBar({ domainProgress }: DomainMasteryBarProps) {
                   label={renderLabel}
                   labelLine={false}
                 >
-                  {equalSizedData.map((domain, index) => (
+                  {quizData.map((domain, index) => (
                     <Cell key={`cell-${index}`} fill={domain.color} />
                   ))}
                 </Pie>
@@ -111,7 +117,7 @@ export function DomainMasteryBar({ domainProgress }: DomainMasteryBarProps) {
             {/* Center text */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="bg-emerald-700 text-white font-bold text-lg px-2.5 py-1.5 rounded shadow-md">
-                CISSP Practice
+                Quiz
               </div>
             </div>
           </div>
@@ -119,7 +125,7 @@ export function DomainMasteryBar({ domainProgress }: DomainMasteryBarProps) {
 
         {/* Domain legend */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {domainProgress.map((domain) => (
+          {flashcardProgress.map((domain, idx) => (
             <div key={domain.domain} className="flex items-center gap-2">
               <div
                 className="w-4 h-4 rounded-full flex-shrink-0"
@@ -129,7 +135,9 @@ export function DomainMasteryBar({ domainProgress }: DomainMasteryBarProps) {
                 <p className="text-xs font-semibold text-gray-700 truncate">
                   D{domain.domain}: {domain.name}
                 </p>
-                <p className="text-xs text-gray-500">{domain.progress}%</p>
+                <p className="text-xs text-gray-500">
+                  FC: {flashcardProgress[idx].progress}% | Q: {quizProgress[idx].progress}%
+                </p>
               </div>
             </div>
           ))}

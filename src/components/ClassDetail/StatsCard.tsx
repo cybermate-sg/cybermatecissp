@@ -8,9 +8,13 @@ interface StatsCardProps {
   minutesToday: number;
   cardsToday: number;
   accuracy: number;
+  last7DaysActivity: number[];
 }
 
-export function StatsCard({ streak, minutesToday, cardsToday, accuracy }: StatsCardProps) {
+export function StatsCard({ streak, minutesToday, cardsToday, accuracy, last7DaysActivity }: StatsCardProps) {
+  // Calculate max value for scaling the bars (with a minimum of 1 to avoid divide by zero)
+  const maxMinutes = Math.max(...last7DaysActivity, 1);
+
   return (
     <Card className="bg-white border-gray-200 shadow-lg sticky top-4">
       <CardHeader className="pb-4">
@@ -61,13 +65,24 @@ export function StatsCard({ streak, minutesToday, cardsToday, accuracy }: StatsC
           </div>
         </div>
 
-        {/* Mini sparkline placeholder */}
+        {/* Last 7 Days Activity Chart */}
         <div className="mt-4 pt-4 border-t border-gray-200">
           <p className="text-xs text-gray-500 mb-2">Last 7 Days Activity</p>
           <div className="flex items-end justify-between gap-1 h-16">
-            {[40, 65, 45, 80, 60, 85, 75].map((height, i) => (
-              <div key={i} className="flex-1 bg-blue-200 rounded-t" style={{ height: `${height}%` }}></div>
-            ))}
+            {last7DaysActivity.map((minutes, i) => {
+              const height = maxMinutes > 0 ? (minutes / maxMinutes) * 100 : 0;
+              const isToday = i === last7DaysActivity.length - 1;
+              return (
+                <div
+                  key={i}
+                  className={`flex-1 rounded-t transition-all hover:opacity-80 ${
+                    isToday ? 'bg-blue-500' : 'bg-blue-200'
+                  }`}
+                  style={{ height: `${Math.max(height, 5)}%` }}
+                  title={`${minutes} min${minutes !== 1 ? 's' : ''}`}
+                ></div>
+              );
+            })}
           </div>
         </div>
       </CardContent>

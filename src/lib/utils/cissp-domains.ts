@@ -129,3 +129,40 @@ export function calculateDomainProgress(decks: Array<{
     color: domainInfo.color,
   }));
 }
+
+/**
+ * Calculate QUIZ progress per domain from deck list with quiz progress data
+ * This is separate from flashcard progress
+ */
+export function calculateDomainQuizProgress(
+  decks: Array<{
+    name: string;
+    type: string;
+    domainNumber?: number | null;
+    quizProgress?: number; // Average quiz score for this deck
+  }>
+) {
+  const domainMap = new Map<number, { totalProgress: number; count: number }>();
+
+  decks.forEach((deck) => {
+    // Extract domain from name or use domainNumber field
+    const domain = deck.domainNumber || extractDomainFromDeckName(deck.name);
+    if (!domain) return;
+
+    // Only count decks with quiz progress
+    if (deck.quizProgress === undefined || deck.quizProgress === null) return;
+
+    const current = domainMap.get(domain) || { totalProgress: 0, count: 0 };
+    domainMap.set(domain, {
+      totalProgress: current.totalProgress + deck.quizProgress,
+      count: current.count + 1,
+    });
+  });
+
+  return CISSP_DOMAINS.map((domainInfo) => ({
+    domain: domainInfo.domain,
+    name: domainInfo.shortName,
+    progress: calculateAverageProgress(domainMap.get(domainInfo.domain)),
+    color: domainInfo.color,
+  }));
+}

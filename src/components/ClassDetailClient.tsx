@@ -16,7 +16,7 @@ import { DeckSection } from "./ClassDetail/DeckSection";
 import { useDeckSelection } from "./ClassDetail/useDeckSelection";
 import { useDeckCategories } from "./ClassDetail/useDeckCategories";
 import { useDeckFiltering } from "./ClassDetail/useDeckFiltering";
-import { calculateDomainProgress } from "@/lib/utils/cissp-domains";
+import { calculateDomainProgress, calculateDomainQuizProgress } from "@/lib/utils/cissp-domains";
 
 type StudyMode = "progressive" | "random";
 
@@ -30,6 +30,7 @@ interface ClassDetailClientProps {
     minutesToday: number;
     cardsToday: number;
     accuracy: number;
+    last7DaysActivity: number[];
   };
 }
 
@@ -72,7 +73,7 @@ export default function ClassDetailClient({
   classData,
   userName,
   daysLeft,
-  userStats = { streak: 0, minutesToday: 0, cardsToday: 0, accuracy: 0 }
+  userStats = { streak: 0, minutesToday: 0, cardsToday: 0, accuracy: 0, last7DaysActivity: [0, 0, 0, 0, 0, 0, 0] }
 }: ClassDetailClientProps) {
   const [studyMode, setStudyMode] = useState<StudyMode>("progressive");
   const [showModeInfo, setShowModeInfo] = useState(false);
@@ -87,8 +88,9 @@ export default function ClassDetailClient({
   // Calculate overall progress
   const overallProgress = useMemo(() => calculateOverallProgress(decks), [decks]);
 
-  // Calculate domain mastery and categorize decks
-  const domainProgress = useMemo(() => calculateDomainProgress(decks), [decks]);
+  // Calculate domain mastery (flashcard and quiz progress separately)
+  const flashcardDomainProgress = useMemo(() => calculateDomainProgress(decks), [decks]);
+  const quizDomainProgress = useMemo(() => calculateDomainQuizProgress(decks), [decks]);
   const {
     recommendedDeck,
     structuredPlanDecks,
@@ -127,7 +129,10 @@ export default function ClassDetailClient({
           {/* Left Column - Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Domain Mastery Bar */}
-            <DomainMasteryBar domainProgress={domainProgress} />
+            <DomainMasteryBar
+              flashcardProgress={flashcardDomainProgress}
+              quizProgress={quizDomainProgress}
+            />
 
             {/* Resume Study Button (Desktop) and Study Mode Selector */}
             <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
@@ -256,6 +261,7 @@ export default function ClassDetailClient({
               minutesToday={userStats.minutesToday}
               cardsToday={userStats.cardsToday}
               accuracy={userStats.accuracy}
+              last7DaysActivity={userStats.last7DaysActivity}
             />
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { cache as reactCache } from 'react';
 import { db } from '@/lib/db';
-import { classes, decks, flashcards, userCardProgress } from '@/lib/db/schema';
+import { classes, decks, flashcards, userCardProgress, deckQuizProgress, userQuizProgress } from '@/lib/db/schema';
 import { eq, and, inArray, asc } from 'drizzle-orm';
 import { cache } from '@/lib/redis';
 import { CacheKeys, CacheTTL } from '@/lib/redis/cache-keys';
@@ -14,7 +14,9 @@ export type Deck = {
   cardCount: number;
   studiedCount: number;
   progress: number;
+  quizProgress?: number; // Quiz mastery percentage
   order: number;
+  domainNumber?: number | null; // CISSP domain 1-8
 };
 
 export type ClassData = {
@@ -101,6 +103,49 @@ export const getClassWithProgress = reactCache(async (classId: string): Promise<
   // Create a Set for O(1) lookup
   const studiedCardIds = new Set(allProgressRecords.map((record) => record.flashcardId));
 
+  // OPTIMIZATION: Fetch quiz progress for all decks in a single query
+  const allDeckIds = classData.decks.map((deck) => deck.id);
+  const deckQuizProgressRecords = allDeckIds.length > 0
+    ? await db
+        .select()
+        .from(deckQuizProgress)
+        .where(
+          and(
+            eq(deckQuizProgress.clerkUserId, userId),
+            inArray(deckQuizProgress.deckId, allDeckIds)
+          )
+        )
+    : [];
+
+  // Create map for O(1) lookup of deck quiz progress
+  const deckQuizMap = new Map(
+    deckQuizProgressRecords.map((qp) => [
+      qp.deckId,
+      parseFloat(qp.masteryPercentage || '0')
+    ])
+  );
+
+  // OPTIMIZATION: Fetch flashcard-level quiz progress
+  const flashcardQuizRecords = allFlashcardIds.length > 0
+    ? await db
+        .select()
+        .from(userQuizProgress)
+        .where(
+          and(
+            eq(userQuizProgress.clerkUserId, userId),
+            inArray(userQuizProgress.flashcardId, allFlashcardIds)
+          )
+        )
+    : [];
+
+  // Create map for O(1) lookup of flashcard quiz progress
+  const flashcardQuizMap = new Map(
+    flashcardQuizRecords.map((fqp) => [
+      fqp.flashcardId,
+      parseFloat(fqp.averageScore || '0')
+    ])
+  );
+
   // Calculate progress for each deck (now in-memory, no DB queries)
   const decksWithProgress: Deck[] = classData.decks.map((deck) => {
     const flashcardIds = deck.flashcards.map((card) => card.id);
@@ -110,6 +155,24 @@ export const getClassWithProgress = reactCache(async (classId: string): Promise<
     const studiedCount = flashcardIds.filter((id) => studiedCardIds.has(id)).length;
     const progress = totalCards > 0 ? Math.round((studiedCount / totalCards) * 100) : 0;
 
+    // Calculate quiz progress
+    let quizProgress = 0;
+    if (deck.type === 'quiz') {
+      // For quiz decks, use deck-level quiz progress
+      quizProgress = deckQuizMap.get(deck.id) || 0;
+    } else {
+      // For flashcard decks, aggregate flashcard quiz scores
+      if (flashcardIds.length > 0) {
+        const quizScores = flashcardIds
+          .map((id) => flashcardQuizMap.get(id))
+          .filter((score): score is number => score !== undefined);
+
+        quizProgress = quizScores.length > 0
+          ? Math.round(quizScores.reduce((sum, score) => sum + score, 0) / quizScores.length)
+          : 0;
+      }
+    }
+
     return {
       id: deck.id,
       name: deck.name,
@@ -118,7 +181,9 @@ export const getClassWithProgress = reactCache(async (classId: string): Promise<
       cardCount: totalCards,
       studiedCount,
       progress,
+      quizProgress,
       order: deck.order,
+      domainNumber: deck.domainNumber,
     };
   });
 

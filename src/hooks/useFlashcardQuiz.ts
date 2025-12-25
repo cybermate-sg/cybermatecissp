@@ -42,6 +42,18 @@ export function useFlashcardQuiz({ flashcardId, isOpen, onClose }: UseFlashcardQ
   } | null>(null);
   const [completionMessage, setCompletionMessage] = useState<{ text: string; emoji?: string } | null>(null);
 
+  // Track quiz start time and all answers for database storage
+  const [quizStartTime] = useState(Date.now());
+  const [allAnswers, setAllAnswers] = useState<Array<{
+    questionId: string;
+    questionType: 'flashcard';
+    selectedOptionIndex: number;
+    isCorrect: boolean;
+    timeSpent: number;
+    questionOrder: number;
+  }>>([]);
+  const [questionStartTime, setQuestionStartTime] = useState(Date.now());
+
   const gamification = useQuizGamification({
     totalQuestions: questions.length || 0,
   });
@@ -72,6 +84,8 @@ export function useFlashcardQuiz({ flashcardId, isOpen, onClose }: UseFlashcardQ
     setFirstThreeWrong(false);
     setCurrentFeedback(null);
     setCompletionMessage(null);
+    setAllAnswers([]);
+    setQuestionStartTime(Date.now());
     gamification.resetSession();
   }, [gamification]);
 
@@ -95,6 +109,8 @@ export function useFlashcardQuiz({ flashcardId, isOpen, onClose }: UseFlashcardQ
         setFirstThreeWrong(false);
         setCurrentFeedback(null);
         setCompletionMessage(null);
+        setAllAnswers([]);
+        setQuestionStartTime(Date.now());
       } else {
         toast.error("No quiz questions found for this flashcard");
         onClose();
@@ -132,6 +148,17 @@ export function useFlashcardQuiz({ flashcardId, isOpen, onClose }: UseFlashcardQ
     const currentQuestion = questions[currentQuestionIndex];
     const isCorrect = currentQuestion.options[selectedOption].isCorrect;
 
+    // Record this answer for database storage
+    const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
+    setAllAnswers((prev) => [...prev, {
+      questionId: currentQuestion.id,
+      questionType: 'flashcard',
+      selectedOptionIndex: selectedOption,
+      isCorrect,
+      timeSpent,
+      questionOrder: currentQuestionIndex,
+    }]);
+
     const feedback = gamification.recordAnswer(isCorrect);
     setCurrentFeedback(feedback);
 
@@ -145,7 +172,27 @@ export function useFlashcardQuiz({ flashcardId, isOpen, onClose }: UseFlashcardQ
     }
 
     setShowExplanation(true);
-  }, [selectedOption, questions, currentQuestionIndex, gamification, triggerConfetti]);
+  }, [selectedOption, questions, currentQuestionIndex, gamification, triggerConfetti, questionStartTime]);
+
+  const saveQuizResults = useCallback(async () => {
+    try {
+      await fetch('/api/quiz-sessions/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          flashcardId,
+          quizType: 'flashcard',
+          answers: allAnswers,
+          totalQuestions: questions.length,
+          correctAnswers,
+          startTime: quizStartTime,
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to save quiz results:', error);
+      // Don't throw - allow quiz to complete even if save fails
+    }
+  }, [flashcardId, allAnswers, questions.length, correctAnswers, quizStartTime]);
 
   const handleNextQuestion = useCallback(() => {
     if (currentQuestionIndex < questions.length - 1) {
@@ -153,12 +200,16 @@ export function useFlashcardQuiz({ flashcardId, isOpen, onClose }: UseFlashcardQ
       setSelectedOption(null);
       setShowExplanation(false);
       setCurrentFeedback(null);
+      setQuestionStartTime(Date.now()); // Reset timer for next question
     } else {
+      // Quiz completed - save to database
+      saveQuizResults();
+
       const result = gamification.finalizeQuiz(correctAnswers, firstThreeWrong);
       setCompletionMessage(result.completionMessage);
       setQuizCompleted(true);
     }
-  }, [currentQuestionIndex, questions.length, gamification, correctAnswers, firstThreeWrong]);
+  }, [currentQuestionIndex, questions.length, gamification, correctAnswers, firstThreeWrong, saveQuizResults]);
 
   const handleRetakeQuiz = useCallback(() => {
     resetQuiz();

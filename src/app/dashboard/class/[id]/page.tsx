@@ -49,6 +49,66 @@ function getStartOfToday() {
   return today;
 }
 
+// Helper: Get start of day N days ago
+function getDaysAgo(daysAgo: number) {
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+// Helper: Fetch last 7 days activity (minutes studied per day)
+async function getLast7DaysActivity(userId: string): Promise<number[]> {
+  try {
+    const sevenDaysAgo = getDaysAgo(6); // Include today, so 6 days ago
+
+    const sessions = await withRetry(
+      () => db.query.studySessions.findMany({
+        where: and(
+          eq(studySessions.clerkUserId, userId),
+          gte(studySessions.startedAt, sevenDaysAgo)
+        ),
+      }),
+      { queryName: 'fetch-7-days-sessions' }
+    );
+
+    // Group sessions by day and calculate total minutes per day
+    const activityByDay = new Map<string, number>();
+
+    // Initialize all 7 days with 0
+    for (let i = 6; i >= 0; i--) {
+      const date = getDaysAgo(i);
+      const dateKey = date.toISOString().split('T')[0];
+      activityByDay.set(dateKey, 0);
+    }
+
+    // Sum up study duration for each day
+    sessions.forEach(session => {
+      const sessionDate = new Date(session.startedAt);
+      sessionDate.setHours(0, 0, 0, 0);
+      const dateKey = sessionDate.toISOString().split('T')[0];
+
+      const currentMinutes = activityByDay.get(dateKey) || 0;
+      const sessionMinutes = Math.round((session.studyDuration || 0) / 60);
+      activityByDay.set(dateKey, currentMinutes + sessionMinutes);
+    });
+
+    // Convert to array in chronological order (oldest to newest)
+    const result: number[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = getDaysAgo(i);
+      const dateKey = date.toISOString().split('T')[0];
+      result.push(activityByDay.get(dateKey) || 0);
+    }
+
+    return result;
+  } catch (error) {
+    console.error('[7-Day Activity Error] Failed to fetch activity:', error);
+    // Return default array of zeros on error
+    return [0, 0, 0, 0, 0, 0, 0];
+  }
+}
+
 // Fetch user statistics for the stats card
 async function getUserStats(userId: string) {
   try {
@@ -59,7 +119,7 @@ async function getUserStats(userId: string) {
       { queryName: 'fetch-user-stats' }
     );
 
-    if (!stats) return DEFAULT_STATS;
+    if (!stats) return { ...DEFAULT_STATS, last7DaysActivity: [0, 0, 0, 0, 0, 0, 0] };
 
     const streak = stats.studyStreakDays || 0;
     const cardsToday = stats.dailyCardsStudiedToday || 0;
@@ -79,10 +139,13 @@ async function getUserStats(userId: string) {
     const minutesToday = Math.round(totalSecondsToday / 60);
     const accuracy = calculateAccuracy(todaySessions);
 
-    return { streak, minutesToday, cardsToday, accuracy };
+    // Fetch last 7 days activity
+    const last7DaysActivity = await getLast7DaysActivity(userId);
+
+    return { streak, minutesToday, cardsToday, accuracy, last7DaysActivity };
   } catch (error) {
     console.error('[User Stats Error] Failed to fetch user stats:', error);
-    return DEFAULT_STATS;
+    return { ...DEFAULT_STATS, last7DaysActivity: [0, 0, 0, 0, 0, 0, 0] };
   }
 }
 
