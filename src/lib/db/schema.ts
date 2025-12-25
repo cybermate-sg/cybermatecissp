@@ -88,6 +88,7 @@ export const decks = pgTable('decks', {
   isPremium: boolean('is_premium').default(false), // true = requires Pro subscription
   isPublished: boolean('is_published').default(true), // Admins can draft decks
   createdBy: varchar('created_by', { length: 255 }).notNull().references(() => users.clerkUserId), // Admin who created it
+  domainNumber: integer('domain_number'), // CISSP domain 1-8 for faster domain grouping
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
@@ -95,6 +96,8 @@ export const decks = pgTable('decks', {
   classPublishedIdx: index('idx_decks_class_published').on(table.classId, table.isPublished),
   // Index for ordering decks within a class
   classOrderIdx: index('idx_decks_class_order').on(table.classId, table.order),
+  // Index for domain number
+  domainIdx: index('idx_decks_domain').on(table.domainNumber),
 }));
 
 // Flashcards table - Individual cards within a deck
@@ -253,6 +256,104 @@ export const sessionCards = pgTable('session_cards', {
   responseTime: integer('response_time'), // in seconds
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+// ============================================
+// QUIZ TRACKING TABLES
+// TRACK QUIZ ATTEMPTS, ANSWERS, AND MASTERY
+// ============================================
+
+// Quiz Sessions table - Tracks completed quiz attempts
+// ✅ USERS TAKE QUIZZES
+export const quizSessions = pgTable('quiz_sessions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  clerkUserId: varchar('clerk_user_id', { length: 255 }).notNull().references(() => users.clerkUserId, { onDelete: 'cascade' }),
+  flashcardId: uuid('flashcard_id').references(() => flashcards.id, { onDelete: 'set null' }),
+  deckId: uuid('deck_id').references(() => decks.id, { onDelete: 'set null' }),
+  quizType: varchar('quiz_type', { length: 20 }).notNull(), // 'flashcard' or 'deck'
+  startedAt: timestamp('started_at').notNull().defaultNow(),
+  endedAt: timestamp('ended_at'),
+  totalQuestions: integer('total_questions').default(0),
+  correctAnswers: integer('correct_answers').default(0),
+  scorePercentage: decimal('score_percentage', { precision: 5, scale: 2 }),
+  quizDuration: integer('quiz_duration'), // in seconds
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  // Index for querying user's quiz sessions
+  userStartedIdx: index('idx_quiz_sessions_user_started').on(table.clerkUserId, table.startedAt),
+  // Index for filtering by flashcard
+  flashcardIdx: index('idx_quiz_sessions_flashcard').on(table.flashcardId),
+  // Index for filtering by deck
+  deckIdx: index('idx_quiz_sessions_deck').on(table.deckId),
+  // Index for filtering by quiz type
+  typeIdx: index('idx_quiz_sessions_type').on(table.quizType),
+}));
+
+// Quiz Session Answers table - Tracks individual answers within a quiz session
+// ✅ USERS ANSWER QUESTIONS
+export const quizSessionAnswers = pgTable('quiz_session_answers', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  sessionId: uuid('session_id').notNull().references(() => quizSessions.id, { onDelete: 'cascade' }),
+  quizQuestionId: uuid('quiz_question_id').references(() => quizQuestions.id, { onDelete: 'set null' }),
+  deckQuizQuestionId: uuid('deck_quiz_question_id').references(() => deckQuizQuestions.id, { onDelete: 'set null' }),
+  selectedOptionIndex: integer('selected_option_index').notNull(),
+  isCorrect: boolean('is_correct').notNull(),
+  timeSpent: integer('time_spent'), // in seconds
+  questionOrder: integer('question_order').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  // Index for fetching answers by session
+  sessionIdx: index('idx_quiz_answers_session').on(table.sessionId),
+  // Index for quiz question reference
+  questionIdx: index('idx_quiz_answers_question').on(table.quizQuestionId),
+  // Index for deck quiz question reference
+  deckQuestionIdx: index('idx_quiz_answers_deck_question').on(table.deckQuizQuestionId),
+}));
+
+// User Quiz Progress table - Aggregate flashcard quiz statistics
+// ✅ FLASHCARD QUIZ MASTERY TRACKING
+export const userQuizProgress = pgTable('user_quiz_progress', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  clerkUserId: varchar('clerk_user_id', { length: 255 }).notNull().references(() => users.clerkUserId, { onDelete: 'cascade' }),
+  flashcardId: uuid('flashcard_id').notNull().references(() => flashcards.id, { onDelete: 'cascade' }),
+  timesTaken: integer('times_taken').default(0),
+  totalQuestionsAnswered: integer('total_questions_answered').default(0),
+  totalCorrectAnswers: integer('total_correct_answers').default(0),
+  averageScore: decimal('average_score', { precision: 5, scale: 2 }),
+  bestScore: decimal('best_score', { precision: 5, scale: 2 }),
+  lastScore: decimal('last_score', { precision: 5, scale: 2 }),
+  lastTaken: timestamp('last_taken'),
+  masteryStatus: masteryStatusEnum('mastery_status').notNull().default('new'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Composite index for the most common query pattern
+  userFlashcardIdx: index('idx_user_quiz_progress_user_flashcard').on(table.clerkUserId, table.flashcardId),
+  // Index for mastery status filtering
+  masteryIdx: index('idx_user_quiz_progress_mastery').on(table.clerkUserId, table.masteryStatus),
+}));
+
+// Deck Quiz Progress table - Aggregate deck quiz statistics
+// ✅ DECK QUIZ MASTERY TRACKING
+export const deckQuizProgress = pgTable('deck_quiz_progress', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  clerkUserId: varchar('clerk_user_id', { length: 255 }).notNull().references(() => users.clerkUserId, { onDelete: 'cascade' }),
+  deckId: uuid('deck_id').notNull().references(() => decks.id, { onDelete: 'cascade' }),
+  timesTaken: integer('times_taken').default(0),
+  totalQuestionsAnswered: integer('total_questions_answered').default(0),
+  totalCorrectAnswers: integer('total_correct_answers').default(0),
+  averageScore: decimal('average_score', { precision: 5, scale: 2 }),
+  bestScore: decimal('best_score', { precision: 5, scale: 2 }),
+  lastScore: decimal('last_score', { precision: 5, scale: 2 }),
+  lastTaken: timestamp('last_taken'),
+  masteryPercentage: decimal('mastery_percentage', { precision: 5, scale: 2 }).default('0'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Composite index for the most common query pattern
+  userDeckIdx: index('idx_deck_quiz_progress_user_deck').on(table.clerkUserId, table.deckId),
+  // Index for user-wide queries
+  userIdx: index('idx_deck_quiz_progress_user').on(table.clerkUserId),
+}));
 
 // Deck progress table - Aggregate statistics per deck per user
 // ✅ USERS PROGRESS PER DECK (visible to admins)
@@ -510,6 +611,10 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   deckProgress: many(deckProgress),
   classProgress: many(classProgress),
   stats: one(userStats),
+  // Quiz tracking relations
+  quizSessions: many(quizSessions),
+  userQuizProgress: many(userQuizProgress),
+  deckQuizProgress: many(deckQuizProgress),
   // Admin relations
   createdClasses: many(classes),
   createdDecks: many(decks),
@@ -553,6 +658,8 @@ export const decksRelations = relations(decks, ({ one, many }) => ({
   studySessions: many(studySessions),
   deckProgress: many(deckProgress),
   quizQuestions: many(deckQuizQuestions),
+  quizSessions: many(quizSessions),
+  deckQuizProgress: many(deckQuizProgress),
 }));
 
 export const flashcardsRelations = relations(flashcards, ({ one, many }) => ({
@@ -570,6 +677,8 @@ export const flashcardsRelations = relations(flashcards, ({ one, many }) => ({
   media: many(flashcardMedia),
   quizQuestions: many(quizQuestions),
   feedback: many(userFeedback),
+  quizSessions: many(quizSessions),
+  userQuizProgress: many(userQuizProgress),
 }));
 
 export const flashcardMediaRelations = relations(flashcardMedia, ({ one }) => ({
@@ -746,5 +855,58 @@ export const userFeedbackRelations = relations(userFeedback, ({ one }) => ({
   resolvedByUser: one(users, {
     fields: [userFeedback.resolvedBy],
     references: [users.clerkUserId],
+  }),
+}));
+
+export const quizSessionsRelations = relations(quizSessions, ({ one, many }) => ({
+  user: one(users, {
+    fields: [quizSessions.clerkUserId],
+    references: [users.clerkUserId],
+  }),
+  flashcard: one(flashcards, {
+    fields: [quizSessions.flashcardId],
+    references: [flashcards.id],
+  }),
+  deck: one(decks, {
+    fields: [quizSessions.deckId],
+    references: [decks.id],
+  }),
+  answers: many(quizSessionAnswers),
+}));
+
+export const quizSessionAnswersRelations = relations(quizSessionAnswers, ({ one }) => ({
+  session: one(quizSessions, {
+    fields: [quizSessionAnswers.sessionId],
+    references: [quizSessions.id],
+  }),
+  quizQuestion: one(quizQuestions, {
+    fields: [quizSessionAnswers.quizQuestionId],
+    references: [quizQuestions.id],
+  }),
+  deckQuizQuestion: one(deckQuizQuestions, {
+    fields: [quizSessionAnswers.deckQuizQuestionId],
+    references: [deckQuizQuestions.id],
+  }),
+}));
+
+export const userQuizProgressRelations = relations(userQuizProgress, ({ one }) => ({
+  user: one(users, {
+    fields: [userQuizProgress.clerkUserId],
+    references: [users.clerkUserId],
+  }),
+  flashcard: one(flashcards, {
+    fields: [userQuizProgress.flashcardId],
+    references: [flashcards.id],
+  }),
+}));
+
+export const deckQuizProgressRelations = relations(deckQuizProgress, ({ one }) => ({
+  user: one(users, {
+    fields: [deckQuizProgress.clerkUserId],
+    references: [users.clerkUserId],
+  }),
+  deck: one(decks, {
+    fields: [deckQuizProgress.deckId],
+    references: [decks.id],
   }),
 }));

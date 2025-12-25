@@ -87,6 +87,16 @@ export const CacheInvalidation = {
   },
 
   /**
+   * Invalidate when quiz progress is updated
+   */
+  async quizProgress(userId: string, classId: string): Promise<void> {
+    // Invalidate user-specific class details (quiz progress affects domain pie charts)
+    await cache.delPattern(CacheKeys.class.allUsers(classId));
+
+    console.log(`Cache invalidated for user ${userId} quiz progress in class ${classId}`);
+  },
+
+  /**
    * Invalidate when deck quiz is created, updated, or deleted
    */
   async deckQuiz(deckId: string, classId: string): Promise<void> {
