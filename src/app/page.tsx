@@ -35,7 +35,6 @@ export default function Home() {
       {/* Why Students Pass Section */}
       <WhyStudentsPass />
 
-
       {/* Final CTA Section */}
       <FinalCTA />
     </div>
