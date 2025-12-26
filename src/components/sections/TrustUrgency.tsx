@@ -33,7 +33,7 @@ export default function TrustUrgency() {
 
               <div className="space-y-4">
                 <p className="text-2xl font-bold text-white">
-                  <span className="text-green-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.8)]">Invest $197 USD</span> → Ace CISSP in 60 days, earn $60 refund reward. Your fast-pass starts today – sign up!.
+                  <span className="text-green-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.8)]">Invest $197 USD</span> → Ace CISSP in 60 days from the sign-up date and claim additional bonus refund of 60 USD (Limited Period only) – sign up!.
                 </p>
                 <CountdownTimer />
               </div>
