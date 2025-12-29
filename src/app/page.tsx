@@ -6,6 +6,7 @@ import WhyStudentsPass from "@/components/sections/WhyStudentsPass";
 import TrustUrgency from "@/components/sections/TrustUrgency";
 import SMARTMethodology from "@/components/sections/SMARTMethodology";
 import FinalCTA from "@/components/sections/FinalCTA";
+import ConstructionOverlay from "@/components/ConstructionOverlay";
 
 const ClientFloatingBadge = dynamic(
   () => import("@/components/sections/ClientFloatingBadge")
@@ -14,6 +15,9 @@ const ClientFloatingBadge = dynamic(
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0f1729] via-[#1a2235] to-[#0f1729]">
+      {/* TEMPORARY: Construction Overlay - Remove when ready to launch */}
+      <ConstructionOverlay />
+
       {/* Floating Pass Rate Badge */}
       <ClientFloatingBadge />
 
