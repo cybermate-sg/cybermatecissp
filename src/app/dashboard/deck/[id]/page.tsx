@@ -14,6 +14,7 @@ import { EmptyDeckState } from "@/components/study/EmptyDeckState";
 import { DeckCompletionState } from "@/components/study/DeckCompletionState";
 import { toast } from "sonner";
 import { useDeckData } from "@/components/study/hooks/useDeckData";
+import GoogleTranslate from "@/components/GoogleTranslate";
 
 
 
@@ -360,6 +361,11 @@ export default function DeckStudyPage() {
       {globalStyles}
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Language Translator */}
+        <div className="mb-4 flex justify-end">
+          <GoogleTranslate />
+        </div>
+
         {/* Header */}
         <StudyPageHeader
           navigation={{
