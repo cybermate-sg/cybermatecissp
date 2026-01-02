@@ -110,7 +110,7 @@ function handleAuthError(error: unknown): never {
   console.error('  2. Were redirected to /dashboard');
   console.error('  3. Can see the dashboard page');
   console.error('');
-  console.error('Then try running: pnpm test:e2e:headed');
+  console.error('Then try running: bun run test:e2e:headed');
   console.error('');
   throw new Error('Authentication failed - could not complete sign in');
 }

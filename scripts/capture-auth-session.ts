@@ -7,7 +7,7 @@
  * Prerequisites:
  * 1. Make sure you're signed in to http://localhost:3000 in Chrome
  * 2. Verify you have admin access
- * 3. Run this script: pnpm tsx scripts/capture-auth-session.ts
+ * 3. Run this script: bun run scripts/capture-auth-session.ts
  */
 
 import { chromium } from 'playwright';
@@ -66,7 +66,7 @@ async function captureSession() {
   await context.storageState({ path: authFile });
 
   console.log('✅ Session saved to:', authFile);
-  console.log('🎉 You can now run E2E tests with: pnpm test:e2e:classes\n');
+  console.log('🎉 You can now run E2E tests with: bun run test:e2e:classes\n');
 
   await browser.close();
 }
