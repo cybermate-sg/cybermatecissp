@@ -3,18 +3,51 @@
 import { useEffect, useState, useCallback } from 'react';
 import Script from 'next/script';
 
+// Type definitions for Google Translate
+interface GoogleTranslateElement {
+  InlineLayout: {
+    SIMPLE: number;
+    HORIZONTAL: number;
+    VERTICAL: number;
+  };
+}
+
+interface GoogleTranslate {
+  TranslateElement: {
+    new (config: {
+      pageLanguage: string;
+      includedLanguages: string;
+      layout: number;
+      autoDisplay: boolean;
+      multilanguagePage: boolean;
+    }, elementId: string): void;
+    InlineLayout: GoogleTranslateElement['InlineLayout'];
+  };
+}
+
+interface GoogleApi {
+  translate: GoogleTranslate;
+}
+
+declare global {
+  interface Window {
+    google?: GoogleApi;
+    googleTranslateElementInit?: () => void;
+  }
+}
+
 export default function GoogleTranslate() {
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
   const initializeGoogleTranslate = useCallback(() => {
-    if ((window as any).google && (window as any).google.translate) {
+    if (window.google?.translate) {
       const element = document.getElementById('google_translate_element');
       if (element && !element.hasChildNodes()) {
-        new (window as any).google.translate.TranslateElement(
+        new window.google.translate.TranslateElement(
           {
             pageLanguage: 'en',
             includedLanguages: 'en,es,fr,de,ar,zh-CN,zh-TW,ja,ko,pt,ru,hi,it,nl,pl,tr,vi,th',
-            layout: (window as any).google.translate.TranslateElement.InlineLayout.HORIZONTAL,
+            layout: window.google.translate.TranslateElement.InlineLayout.HORIZONTAL,
             autoDisplay: true,
             multilanguagePage: true,
           },
@@ -26,7 +59,7 @@ export default function GoogleTranslate() {
 
   useEffect(() => {
     // Set up the global callback for Google Translate
-    (window as any).googleTranslateElementInit = initializeGoogleTranslate;
+    window.googleTranslateElementInit = initializeGoogleTranslate;
 
     // If script is already loaded, initialize immediately
     if (isScriptLoaded) {
