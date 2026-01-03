@@ -69,7 +69,7 @@ export function DeckQuizModal({ isOpen, onClose, deckId, deckName }: DeckQuizMod
 
         {/* Translate Button - only show if Google Translate is active */}
         {showTranslateButton && (
-          <div className="flex justify-end mb-4 notranslate">
+          <div className="flex justify-end mb-4 mr-12 notranslate">
             <Button
               onClick={handleTranslate}
               disabled={isTranslating}
