@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Loader2, Languages } from "lucide-react";
 
 // Gamified components
 import { QuizCompletionScreen } from "@/components/quiz/QuizCompletionScreen";
@@ -9,6 +12,7 @@ import { DeckQuizActiveView } from "@/components/quiz/DeckQuizActiveView";
 
 // Quiz hook
 import { useDeckQuiz } from "@/hooks/useDeckQuiz";
+import { triggerGoogleTranslate, isGoogleTranslateActive } from "@/lib/utils/google-translate";
 
 interface DeckQuizModalProps {
   isOpen: boolean;
@@ -32,6 +36,19 @@ export function DeckQuizModal({ isOpen, onClose, deckId, deckName }: DeckQuizMod
     handlers,
   } = useDeckQuiz({ deckId, isOpen, onClose });
 
+  const [isTranslating, setIsTranslating] = useState(false);
+
+  const handleTranslate = () => {
+    console.log('Translate button clicked');
+    setIsTranslating(true);
+    // Trigger translation after a short delay to ensure content is rendered
+    setTimeout(() => {
+      triggerGoogleTranslate();
+      // Wait longer for translation to complete (300ms switch + processing time)
+      setTimeout(() => setIsTranslating(false), 2000);
+    }, 100);
+  };
+
   if (loading) {
     return <DeckQuizLoading isOpen={isOpen} onClose={handlers.handleClose} />;
   }
@@ -41,6 +58,7 @@ export function DeckQuizModal({ isOpen, onClose, deckId, deckName }: DeckQuizMod
   }
 
   const currentQuestion = questions[currentQuestionIndex];
+  const showTranslateButton = isGoogleTranslateActive();
 
   return (
     <Dialog open={isOpen} onOpenChange={handlers.handleClose}>
@@ -48,6 +66,31 @@ export function DeckQuizModal({ isOpen, onClose, deckId, deckName }: DeckQuizMod
         <DialogTitle className="sr-only">
           Deck Test: {deckName}
         </DialogTitle>
+
+        {/* Translate Button - only show if Google Translate is active */}
+        {showTranslateButton && (
+          <div className="flex justify-end mb-4 notranslate">
+            <Button
+              onClick={handleTranslate}
+              disabled={isTranslating}
+              variant="outline"
+              size="sm"
+              className="border-blue-400/50 text-blue-300 hover:bg-blue-500/10 hover:border-blue-400 notranslate"
+            >
+              {isTranslating ? (
+                <span className="flex items-center notranslate">
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Translating...
+                </span>
+              ) : (
+                <span className="flex items-center notranslate">
+                  <Languages className="w-4 h-4 mr-2" />
+                  Translate
+                </span>
+              )}
+            </Button>
+          </div>
+        )}
 
         {!quizCompleted ? (
           <DeckQuizActiveView

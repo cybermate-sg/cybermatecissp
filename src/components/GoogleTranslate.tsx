@@ -40,14 +40,16 @@ export default function GoogleTranslate() {
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
   const initializeGoogleTranslate = useCallback(() => {
-    if (window.google?.translate) {
+    if (window.google?.translate?.TranslateElement) {
       const element = document.getElementById('google_translate_element');
       if (element && !element.hasChildNodes()) {
+        // Use numeric values instead of enum (HORIZONTAL = 1)
+        // This is more reliable as the InlineLayout enum may not be loaded yet
         new window.google.translate.TranslateElement(
           {
             pageLanguage: 'en',
             includedLanguages: 'en,es,fr,de,ar,zh-CN,zh-TW,ja,ko,pt,ru,hi,it,nl,pl,tr,vi,th',
-            layout: window.google.translate.TranslateElement.InlineLayout.HORIZONTAL,
+            layout: 1, // HORIZONTAL layout (0=SIMPLE, 1=HORIZONTAL, 2=VERTICAL)
             autoDisplay: true,
             multilanguagePage: true,
           },
