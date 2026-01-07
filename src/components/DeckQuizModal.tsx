@@ -49,12 +49,17 @@ export function DeckQuizModal({ isOpen, onClose, deckId, deckName }: DeckQuizMod
     }
 
     setIsTranslating(true);
-    // Trigger translation after a short delay to ensure content is rendered
+
+    // Trigger translation sequence
+    // We give it a moment to ensure any UI updates are processed
     setTimeout(() => {
       triggerGoogleTranslate();
-      // Wait longer for translation to complete (300ms switch + processing time)
-      setTimeout(() => setIsTranslating(false), 2000);
-    }, 100);
+
+      // Keep loading state visible for a bit to show activity
+      setTimeout(() => {
+        setIsTranslating(false);
+      }, 2500);
+    }, 300); // Increased delay slightly to 300ms
   };
 
   if (loading) {
