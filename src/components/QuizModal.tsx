@@ -7,7 +7,7 @@ import { Loader2, Languages } from "lucide-react";
 import { FlashcardQuizActiveView } from "@/components/quiz/FlashcardQuizActiveView";
 import { QuizCompletionScreen } from "@/components/quiz/QuizCompletionScreen";
 import { useFlashcardQuiz } from "@/hooks/useFlashcardQuiz";
-import { triggerGoogleTranslate, isGoogleTranslateActive } from "@/lib/utils/google-translate";
+import { triggerGoogleTranslate, isGoogleTranslateLoaded } from "@/lib/utils/google-translate";
 
 interface QuizModalProps {
   isOpen: boolean;
@@ -50,7 +50,7 @@ export function QuizModal({ isOpen, onClose, flashcardId, flashcardQuestion }: Q
 
   const currentQuestion = quiz.questions[quiz.currentQuestionIndex];
 
-  const showTranslateButton = isGoogleTranslateActive();
+  const showTranslateButton = isGoogleTranslateLoaded();
 
   return (
     <Dialog open={isOpen} onOpenChange={quiz.handlers.handleClose}>
@@ -59,7 +59,7 @@ export function QuizModal({ isOpen, onClose, flashcardId, flashcardQuestion }: Q
           Quiz: {stripHtml(flashcardQuestion)}
         </DialogTitle>
 
-        {/* Translate Button - only show if Google Translate is active */}
+        {/* Translate Button - only show if Google Translate widget is loaded */}
         {showTranslateButton && (
           <div className="flex justify-end mb-4 mr-12 notranslate">
             <Button
