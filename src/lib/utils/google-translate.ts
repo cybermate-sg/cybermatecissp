@@ -6,6 +6,10 @@
  * Triggers Google Translate to re-translate the page or a specific element
  * This is useful for dynamically added content like modals
  */
+/**
+ * Triggers Google Translate to re-translate the page or a specific element
+ * This is useful for dynamically added content like modals
+ */
 export function triggerGoogleTranslate(): void {
   console.log('triggerGoogleTranslate called');
 
@@ -20,62 +24,87 @@ export function triggerGoogleTranslate(): void {
   }
 
   // Extract the target language code (format is /en/es)
-  const parts = currentLang.split('/');
-  const targetLang = parts.length > 2 ? parts[2] : null;
+  // Handle various formats: /en/es, /auto/es, etc.
+  const parts = currentLang.split('/').filter(Boolean);
+  const targetLang = parts.length >= 2 ? parts[parts.length - 1] : null;
   console.log('Target language extracted:', targetLang);
 
-  if (!targetLang) {
-    console.log('No target language found, aborting');
+  if (!targetLang || targetLang === 'en') {
+    console.log('No valid target language found (or target is English), aborting');
     return;
   }
 
-  // Method 1: Try to trigger via the select dropdown with longer delays
+  // Helper to force reflow/repaint
+  const forceReflow = () => {
+    const html = document.documentElement;
+    // Toggling these classes sometimes wakes up the translator
+    if (html.classList.contains('translated-ltr')) {
+      html.classList.remove('translated-ltr');
+      void html.offsetHeight; // Force reflow
+      setTimeout(() => html.classList.add('translated-ltr'), 50);
+    }
+    if (html.classList.contains('translated-rtl')) {
+      html.classList.remove('translated-rtl');
+      void html.offsetHeight; // Force reflow
+      setTimeout(() => html.classList.add('translated-rtl'), 50);
+    }
+  };
+
+  // Method 1: Try to trigger via the select dropdown
   const selectElement = document.querySelector('.goog-te-combo') as HTMLSelectElement;
-  console.log('Select element found:', !!selectElement);
 
   if (selectElement) {
-    console.log('Current select value before reset:', selectElement.value);
     console.log('Found select element, triggering translation to:', targetLang);
 
-    // First, reset to English
-    selectElement.value = '';
-    const changeEvent1 = new Event('change', { bubbles: true });
-    selectElement.dispatchEvent(changeEvent1);
-    console.log('Dispatched reset event');
+    // Initial reflow attempt
+    forceReflow();
 
-    // Wait longer before switching back to target language
+    // Reset loop to ensure change event fires
+    // We do this in a staggered way to ensure the browser processes each state change
     setTimeout(() => {
-      selectElement.value = targetLang;
-      const changeEvent2 = new Event('change', { bubbles: true });
-      selectElement.dispatchEvent(changeEvent2);
-      console.log('Dispatched change event to:', targetLang);
-      console.log('Select value after change:', selectElement.value);
-    }, 300);
+      // 1. Reset to English/Empty
+      selectElement.value = '';
+      selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+
+      // 2. Wait and set to target language
+      setTimeout(() => {
+        selectElement.value = targetLang;
+        selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+        console.log('Dispatched change event to:', targetLang);
+
+        // 3. Final safety check - sometimes it needs a second nudge
+        setTimeout(() => {
+          if (selectElement.value !== targetLang) {
+            selectElement.value = targetLang;
+            selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }, 500);
+      }, 300);
+    }, 100);
+
     return;
   }
 
-  console.log('Select element not found, trying DOM manipulation method');
+  console.log('Select element not found, falling back to iframe manipulation');
 
-  // Method 2: Force full page reload of translation by manipulating the DOM
-  setTimeout(() => {
-    const html = document.documentElement;
-    const isRTL = html.classList.contains('translated-rtl');
-    const isLTR = html.classList.contains('translated-ltr');
-
-    if (isRTL || isLTR) {
-      // Remove translation classes
-      html.classList.remove('translated-ltr', 'translated-rtl');
-
-      // Force a reflow
-      void html.offsetHeight;
-
-      // Restore classes after a brief delay
-      setTimeout(() => {
-        if (isRTL) html.classList.add('translated-rtl');
-        if (isLTR) html.classList.add('translated-ltr');
-      }, 100);
+  // Method 2: Fallback for when select is hidden/customized
+  // Try to find the iframe that Google Translate creates
+  const iframe = document.querySelector('.skiptranslate iframe') as HTMLIFrameElement;
+  if (iframe) {
+    try {
+      // Sometimes accessing iframe content forces a refresh check
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (iframeDoc) {
+        const restoreBtn = iframeDoc.getElementById(':1.restore') as HTMLElement;
+        if (restoreBtn) {
+          // If we found the restore button, we could theoretically click it to reset
+          // But that might be too aggressive. Instead, we rely on the cookie + reload method below.
+        }
+      }
+    } catch (e) {
+      console.log('Cannot access iframe content (CORS)', e);
     }
-  }, 200);
+  }
 }
 
 /**
@@ -111,7 +140,7 @@ export function isGoogleTranslateActive(): boolean {
 
   // Also check if the page has been translated by looking for Google Translate classes
   const hasTranslatedClass = document.documentElement.classList.contains('translated-ltr') ||
-                             document.documentElement.classList.contains('translated-rtl');
+    document.documentElement.classList.contains('translated-rtl');
 
   console.log('Is Google Translate active:', isActive, 'Has translated class:', hasTranslatedClass);
 
