@@ -21,14 +21,14 @@ export interface SecurityHeadersConfig {
 function buildCSPDirectives(customCSP?: string): string {
   return customCSP || [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://clerk.cisspmastery.com.au https://js.stripe.com https://*.clerk.accounts.dev https://challenges.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com https://translate.google.com https://*.googleapis.com https://va.vercel-scripts.com",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://clerk.cisspmastery.com.au https://js.stripe.com https://*.clerk.accounts.dev https://challenges.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com https://translate.google.com https://translate.googleapis.com https://*.googleapis.com https://va.vercel-scripts.com",
     "worker-src 'self' blob:",
     "child-src 'self' blob:",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://www.gstatic.com https://translate.googleapis.com",
     "font-src 'self' data: https://fonts.gstatic.com",
     "img-src 'self' data: blob: https: http:",
-    "connect-src 'self' https://*.clerk.accounts.dev https://api.stripe.com https://clerk.cisspmastery.com.au https://*.xata.sh https://*.vercel.app https://*.sentry.io https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.googleapis.com https://vitals.vercel-insights.com",
-    "frame-src 'self' https://js.stripe.com https://challenges.cloudflare.com https://translate.google.com https://*.googleapis.com",
+    "connect-src 'self' https://*.clerk.accounts.dev https://api.stripe.com https://clerk.cisspmastery.com.au https://*.xata.sh https://*.vercel.app https://*.sentry.io https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.googleapis.com https://translate.googleapis.com https://vitals.vercel-insights.com",
+    "frame-src 'self' https://js.stripe.com https://challenges.cloudflare.com https://translate.google.com https://translate.googleapis.com https://*.googleapis.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
