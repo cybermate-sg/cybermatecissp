@@ -67,12 +67,19 @@ export function triggerGoogleTranslate(): void {
 
 /**
  * Get a cookie value by name
+ * Handles URL-encoded cookie values from Google Translate
  */
 function getCookie(name: string): string {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
   if (parts.length === 2) {
-    return parts.pop()?.split(';').shift() || '';
+    const cookieValue = parts.pop()?.split(';').shift() || '';
+    // Decode URL-encoded cookie value (Google Translate encodes cookies)
+    try {
+      return decodeURIComponent(cookieValue);
+    } catch {
+      return cookieValue;
+    }
   }
   return '';
 }
@@ -81,8 +88,21 @@ function getCookie(name: string): string {
  * Check if Google Translate is currently active (language already selected)
  */
 export function isGoogleTranslateActive(): boolean {
+  if (typeof window === 'undefined') return false;
+
   const currentLang = getCookie('googtrans');
-  return !!(currentLang && currentLang !== '/en/en' && currentLang !== '');
+  console.log('Google Translate cookie value:', currentLang);
+
+  // Check if a language is selected (not empty and not English-to-English)
+  const isActive = !!(currentLang && currentLang !== '/en/en' && currentLang !== '');
+
+  // Also check if the page has been translated by looking for Google Translate classes
+  const hasTranslatedClass = document.documentElement.classList.contains('translated-ltr') ||
+                             document.documentElement.classList.contains('translated-rtl');
+
+  console.log('Is Google Translate active:', isActive, 'Has translated class:', hasTranslatedClass);
+
+  return isActive || hasTranslatedClass;
 }
 
 /**
