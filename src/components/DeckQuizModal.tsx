@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2, Languages } from "lucide-react";
 
@@ -74,6 +74,9 @@ export function DeckQuizModal({ isOpen, onClose, deckId, deckName }: DeckQuizMod
         <DialogTitle className="sr-only">
           Deck Test: {deckName}
         </DialogTitle>
+        <DialogDescription className="sr-only">
+          Take a quiz covering all cards in the {deckName} deck.
+        </DialogDescription>
 
         {/* Translate Button - only show if Google Translate widget is loaded */}
         {showTranslateButton && (
