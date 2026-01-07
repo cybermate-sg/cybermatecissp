@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2, Languages } from "lucide-react";
 import { FlashcardQuizActiveView } from "@/components/quiz/FlashcardQuizActiveView";
@@ -46,6 +46,7 @@ export function QuizModal({ isOpen, onClose, flashcardId, flashcardQuestion }: Q
       <Dialog open={isOpen} onOpenChange={quiz.handlers.handleClose}>
         <DialogContent className="max-w-2xl bg-slate-900 border-slate-700">
           <DialogTitle className="sr-only">Loading quiz questions</DialogTitle>
+          <DialogDescription className="sr-only">Please wait while the quiz questions are likely generated.</DialogDescription>
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
           </div>
@@ -66,6 +67,9 @@ export function QuizModal({ isOpen, onClose, flashcardId, flashcardQuestion }: Q
         <DialogTitle className="sr-only">
           Quiz: {stripHtml(flashcardQuestion)}
         </DialogTitle>
+        <DialogDescription className="sr-only">
+          Answer the following multiple-choice question to test your knowledge.
+        </DialogDescription>
 
         {/* Translate Button - only show if Google Translate widget is loaded */}
         {showTranslateButton && (
