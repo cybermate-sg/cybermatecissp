@@ -12,7 +12,7 @@ import { DeckQuizActiveView } from "@/components/quiz/DeckQuizActiveView";
 
 // Quiz hook
 import { useDeckQuiz } from "@/hooks/useDeckQuiz";
-import { triggerGoogleTranslate, isGoogleTranslateLoaded } from "@/lib/utils/google-translate";
+import { triggerGoogleTranslate, isGoogleTranslateLoaded, isGoogleTranslateActive } from "@/lib/utils/google-translate";
 
 interface DeckQuizModalProps {
   isOpen: boolean;
@@ -40,6 +40,14 @@ export function DeckQuizModal({ isOpen, onClose, deckId, deckName }: DeckQuizMod
 
   const handleTranslate = () => {
     console.log('Translate button clicked');
+
+    // Check if user has selected a language first
+    if (!isGoogleTranslateActive()) {
+      // No language selected yet - guide the user
+      alert('Please select a language from the dropdown at the top of the page first, then click this button to translate the quiz content.');
+      return;
+    }
+
     setIsTranslating(true);
     // Trigger translation after a short delay to ensure content is rendered
     setTimeout(() => {
