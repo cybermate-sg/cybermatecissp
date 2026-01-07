@@ -41,8 +41,12 @@ export function DeckQuizModal({ isOpen, onClose, deckId, deckName }: DeckQuizMod
   const handleTranslate = () => {
     console.log('Translate button clicked');
 
+    const isActive = isGoogleTranslateActive();
+    console.log('triggerGoogleTranslate called: Button clicked. Active state:', isActive);
+
     // Check if user has selected a language first
-    if (!isGoogleTranslateActive()) {
+    if (!isActive) {
+      console.log('triggerGoogleTranslate called: Early return due to inactive translation');
       // No language selected yet - guide the user
       alert('Please select a language from the dropdown at the top of the page first, then click this button to translate the quiz content.');
       return;
