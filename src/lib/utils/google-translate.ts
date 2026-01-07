@@ -7,29 +7,41 @@
  * This is useful for dynamically added content like modals
  */
 export function triggerGoogleTranslate(): void {
+  console.log('triggerGoogleTranslate called');
+
   // Check if Google Translate is active
   const currentLang = getCookie('googtrans');
+  console.log('Current language from cookie:', currentLang);
 
   if (!currentLang || currentLang === '/en/en' || currentLang === '') {
     // No translation active, skip
+    console.log('No translation active, skipping trigger');
     return;
   }
 
   // Extract the target language code (format is /en/es)
   const parts = currentLang.split('/');
   const targetLang = parts.length > 2 ? parts[2] : null;
+  console.log('Target language extracted:', targetLang);
 
-  if (!targetLang) return;
+  if (!targetLang) {
+    console.log('No target language found, aborting');
+    return;
+  }
 
   // Method 1: Try to trigger via the select dropdown with longer delays
   const selectElement = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+  console.log('Select element found:', !!selectElement);
+
   if (selectElement) {
+    console.log('Current select value before reset:', selectElement.value);
     console.log('Found select element, triggering translation to:', targetLang);
 
     // First, reset to English
     selectElement.value = '';
     const changeEvent1 = new Event('change', { bubbles: true });
     selectElement.dispatchEvent(changeEvent1);
+    console.log('Dispatched reset event');
 
     // Wait longer before switching back to target language
     setTimeout(() => {
@@ -37,6 +49,7 @@ export function triggerGoogleTranslate(): void {
       const changeEvent2 = new Event('change', { bubbles: true });
       selectElement.dispatchEvent(changeEvent2);
       console.log('Dispatched change event to:', targetLang);
+      console.log('Select value after change:', selectElement.value);
     }, 300);
     return;
   }

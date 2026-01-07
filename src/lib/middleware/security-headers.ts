@@ -27,7 +27,7 @@ function buildCSPDirectives(customCSP?: string): string {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://www.gstatic.com https://translate.googleapis.com",
     "font-src 'self' data: https://fonts.gstatic.com",
     "img-src 'self' data: blob: https: http:",
-    "connect-src 'self' https://*.clerk.accounts.dev https://api.stripe.com https://clerk.cisspmastery.com.au https://*.xata.sh https://*.vercel.app https://*.sentry.io https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.googleapis.com https://translate.googleapis.com https://vitals.vercel-insights.com",
+    "connect-src 'self' https://*.clerk.accounts.dev https://api.stripe.com https://clerk.cisspmastery.com.au https://*.xata.sh https://*.vercel.app https://*.sentry.io https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.googleapis.com https://translate.googleapis.com https://translate.google.com https://vitals.vercel-insights.com",
     "frame-src 'self' https://js.stripe.com https://challenges.cloudflare.com https://translate.google.com https://translate.googleapis.com https://*.googleapis.com",
     "object-src 'none'",
     "base-uri 'self'",
