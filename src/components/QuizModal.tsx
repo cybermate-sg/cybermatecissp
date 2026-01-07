@@ -7,7 +7,7 @@ import { Loader2, Languages } from "lucide-react";
 import { FlashcardQuizActiveView } from "@/components/quiz/FlashcardQuizActiveView";
 import { QuizCompletionScreen } from "@/components/quiz/QuizCompletionScreen";
 import { useFlashcardQuiz } from "@/hooks/useFlashcardQuiz";
-import { triggerGoogleTranslate, isGoogleTranslateLoaded } from "@/lib/utils/google-translate";
+import { triggerGoogleTranslate, isGoogleTranslateLoaded, isGoogleTranslateActive } from "@/lib/utils/google-translate";
 
 interface QuizModalProps {
   isOpen: boolean;
@@ -24,6 +24,14 @@ export function QuizModal({ isOpen, onClose, flashcardId, flashcardQuestion }: Q
 
   const handleTranslate = () => {
     console.log('Translate button clicked');
+
+    // Check if user has selected a language first
+    if (!isGoogleTranslateActive()) {
+      // No language selected yet - guide the user
+      alert('Please select a language from the dropdown at the top of the page first, then click this button to translate the quiz content.');
+      return;
+    }
+
     setIsTranslating(true);
     // Trigger translation after a short delay to ensure content is rendered
     setTimeout(() => {
