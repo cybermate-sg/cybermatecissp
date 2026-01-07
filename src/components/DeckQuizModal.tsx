@@ -12,7 +12,7 @@ import { DeckQuizActiveView } from "@/components/quiz/DeckQuizActiveView";
 
 // Quiz hook
 import { useDeckQuiz } from "@/hooks/useDeckQuiz";
-import { triggerGoogleTranslate, isGoogleTranslateActive } from "@/lib/utils/google-translate";
+import { triggerGoogleTranslate, isGoogleTranslateLoaded } from "@/lib/utils/google-translate";
 
 interface DeckQuizModalProps {
   isOpen: boolean;
@@ -58,7 +58,7 @@ export function DeckQuizModal({ isOpen, onClose, deckId, deckName }: DeckQuizMod
   }
 
   const currentQuestion = questions[currentQuestionIndex];
-  const showTranslateButton = isGoogleTranslateActive();
+  const showTranslateButton = isGoogleTranslateLoaded();
 
   return (
     <Dialog open={isOpen} onOpenChange={handlers.handleClose}>
@@ -67,7 +67,7 @@ export function DeckQuizModal({ isOpen, onClose, deckId, deckName }: DeckQuizMod
           Deck Test: {deckName}
         </DialogTitle>
 
-        {/* Translate Button - only show if Google Translate is active */}
+        {/* Translate Button - only show if Google Translate widget is loaded */}
         {showTranslateButton && (
           <div className="flex justify-end mb-4 mr-12 notranslate">
             <Button

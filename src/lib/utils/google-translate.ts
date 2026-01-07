@@ -78,11 +78,27 @@ function getCookie(name: string): string {
 }
 
 /**
- * Check if Google Translate is currently active
+ * Check if Google Translate is currently active (language already selected)
  */
 export function isGoogleTranslateActive(): boolean {
   const currentLang = getCookie('googtrans');
   return !!(currentLang && currentLang !== '/en/en' && currentLang !== '');
+}
+
+/**
+ * Check if Google Translate widget is loaded and available
+ * This checks if the translate dropdown/widget is present in the DOM
+ */
+export function isGoogleTranslateLoaded(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  // Check if the translate element exists in DOM
+  const translateElement = document.getElementById('google_translate_element');
+  if (!translateElement) return false;
+
+  // Check if the select dropdown is present (indicates widget is loaded)
+  const selectElement = document.querySelector('.goog-te-combo');
+  return !!selectElement;
 }
 
 /**
