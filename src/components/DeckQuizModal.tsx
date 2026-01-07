@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2, Languages } from "lucide-react";
@@ -38,20 +38,15 @@ export function DeckQuizModal({ isOpen, onClose, deckId, deckName }: DeckQuizMod
 
   const [isTranslating, setIsTranslating] = useState(false);
 
-  // Debug: Confirm component mount and code version
-  useEffect(() => {
-    console.error('DEBUG: DeckQuizModal mounted. Translation debugging active.');
-  }, []);
-
   const handleTranslate = () => {
-    console.error('DEBUG: Translate button clicked');
+    console.log('Translate button clicked');
 
     const isActive = isGoogleTranslateActive();
-    console.error('DEBUG: triggerGoogleTranslate called: Button clicked. Active state:', isActive);
+    console.log('triggerGoogleTranslate called: Button clicked. Active state:', isActive);
 
     // Check if user has selected a language first
     if (!isActive) {
-      console.error('DEBUG: triggerGoogleTranslate called: Early return due to inactive translation');
+      console.log('triggerGoogleTranslate called: Early return due to inactive translation');
       // No language selected yet - guide the user
       alert('Please select a language from the dropdown at the top of the page first, then click this button to translate the quiz content.');
       return;

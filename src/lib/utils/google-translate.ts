@@ -11,17 +11,17 @@
  * This is useful for dynamically added content like modals
  */
 export function triggerGoogleTranslate(): void {
-  console.error('DEBUG: triggerGoogleTranslate called');
+  console.log('triggerGoogleTranslate called');
 
   // Check if Google Translate is active
   let currentLang = getCookie('googtrans');
-  console.error('DEBUG: triggerGoogleTranslate called. Cookie:', currentLang);
+  console.log('Current language from cookie:', currentLang);
 
   // Fallback: Check dropdown value if cookie is empty
   if (!currentLang || currentLang === '/en/en' || currentLang === '') {
     const selectElement = document.querySelector('.goog-te-combo') as HTMLSelectElement;
     if (selectElement && selectElement.value) {
-      console.error('DEBUG: Cookie empty, checking dropdown fallback:', selectElement.value);
+      console.log('Cookie empty, checking dropdown fallback:', selectElement.value);
       if (selectElement.value !== 'en') {
         // Construct a fake cookie-like string for the logic below
         currentLang = `/en/${selectElement.value}`;
@@ -31,7 +31,7 @@ export function triggerGoogleTranslate(): void {
 
   if (!currentLang || currentLang === '/en/en' || currentLang === '') {
     // No translation active, skip
-    console.error('DEBUG: No translation active, skipping trigger');
+    console.log('No translation active, skipping trigger');
     return;
   }
 
@@ -39,10 +39,10 @@ export function triggerGoogleTranslate(): void {
   // Handle various formats: /en/es, /auto/es, etc.
   const parts = currentLang.split('/').filter(Boolean);
   const targetLang = parts.length >= 2 ? parts[parts.length - 1] : null;
-  console.error('DEBUG: Target language extracted:', targetLang);
+  console.log('Target language extracted:', targetLang);
 
   if (!targetLang || targetLang === 'en') {
-    console.error('DEBUG: No valid target language found (or target is English), aborting');
+    console.log('No valid target language found (or target is English), aborting');
     return;
   }
 
@@ -67,7 +67,7 @@ export function triggerGoogleTranslate(): void {
 
   if (selectElement) {
 
-    console.error('DEBUG: Found select element, triggering translation to:', targetLang);
+    console.log('Found select element, triggering translation to:', targetLang);
 
     // Initial reflow attempt
     forceReflow();
@@ -83,7 +83,7 @@ export function triggerGoogleTranslate(): void {
       setTimeout(() => {
         selectElement.value = targetLang;
         selectElement.dispatchEvent(new Event('change', { bubbles: true }));
-        console.error('DEBUG: Dispatched change event to:', targetLang);
+        console.log('Dispatched change event to:', targetLang);
 
         // 3. Final safety check - sometimes it needs a second nudge
         setTimeout(() => {
@@ -98,7 +98,7 @@ export function triggerGoogleTranslate(): void {
     return;
   }
 
-  console.error('DEBUG: Select element not found, falling back to iframe manipulation');
+  console.log('Select element not found, falling back to iframe manipulation');
 
   // Method 2: Fallback for when select is hidden/customized
   // Try to find the iframe that Google Translate creates
