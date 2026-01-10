@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { validateQuizFile, type QuizFile } from "@/lib/validations/quiz";
 import { AiQuizGenerationModal } from "@/components/admin/AiQuizGenerationModal";
 import { FormattedContent } from "@/components/admin/FormattedContent";
+import { QuizQuestionList } from "@/components/admin/QuizQuestionList";
 
 interface DeckData {
   id: string;
@@ -44,7 +45,14 @@ interface QuizQuestion {
   questionText: string;
   options: Array<{ text: string; isCorrect: boolean }>;
   explanation: string | null;
+  eliminationTactics: Record<string, string> | null;
+  correctAnswerWithJustification: Record<string, string> | null;
+  compareRemainingOptionsWithJustification: Record<string, string> | null;
+  correctOptionsJustification: Record<string, string> | null;
   order: number;
+  createdAt: Date;
+  createdBy: string;
+  difficulty?: number | null;
 }
 
 interface Flashcard {
@@ -156,6 +164,12 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
   const [deckHasQuiz, setDeckHasQuiz] = useState(false);
   const [deckQuizCount, setDeckQuizCount] = useState(0);
 
+  // Quiz question management state
+  const [flashcardQuizQuestions, setFlashcardQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [loadingFlashcardQuiz, setLoadingFlashcardQuiz] = useState(false);
+  const [deckQuizQuestions, setDeckQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [loadingDeckQuiz, setLoadingDeckQuiz] = useState(false);
+
   // Unwrap params
   useEffect(() => {
     params.then((p) => setDeckId(p.id));
@@ -212,6 +226,29 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
     checkDeckQuiz();
   }, [deckId]);
 
+  // Load deck quiz questions when deck has quiz
+  useEffect(() => {
+    const loadDeckQuizQuestions = async () => {
+      if (!deckId || !deckHasQuiz) return;
+
+      setLoadingDeckQuiz(true);
+      try {
+        const res = await fetch(`/api/admin/decks/${deckId}/quiz/list`);
+        if (res.ok) {
+          const data = await res.json();
+          setDeckQuizQuestions(data.questions || []);
+        }
+      } catch (error) {
+        console.error('Error loading deck quiz questions:', error);
+        setDeckQuizQuestions([]);
+      } finally {
+        setLoadingDeckQuiz(false);
+      }
+    };
+
+    loadDeckQuizQuestions();
+  }, [deckId, deckHasQuiz]);
+
   const openCreateDialog = () => {
     setEditingCard(null);
     setFormData({
@@ -225,11 +262,12 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
     setAnswerImages([]);
     setQuizData(null);
     setQuizFileName("");
+    setFlashcardQuizQuestions([]);
     setActiveTab("edit");
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (card: Flashcard) => {
+  const openEditDialog = async (card: Flashcard) => {
     setEditingCard(card);
     setFormData({
       question: card.question,
@@ -238,6 +276,11 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
       order: card.order,
       isPublished: card.isPublished,
     });
+
+    // Clear quiz state first
+    setFlashcardQuizQuestions([]);
+    setQuizData(null);
+    setQuizFileName("");
 
     console.log('Opening edit dialog for card:', card);
     console.log('Card media:', card.media);
@@ -280,12 +323,28 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
       setAnswerImages([]);
     }
 
-    // TODO: Load existing quiz data if available
-    setQuizData(null);
-    setQuizFileName("");
-
+    // Open dialog first, then load quiz questions
     setActiveTab("edit");
     setIsDialogOpen(true);
+
+    // Load existing quiz questions
+    setLoadingFlashcardQuiz(true);
+    try {
+      const res = await fetch(`/api/admin/flashcards/${card.id}/quiz`);
+      if (res.ok) {
+        const data = await res.json();
+        console.log('Loaded quiz questions:', data.questions?.length || 0);
+        setFlashcardQuizQuestions(data.questions || []);
+      } else {
+        console.error('Failed to load quiz questions, status:', res.status);
+        setFlashcardQuizQuestions([]);
+      }
+    } catch (error) {
+      console.error('Error loading flashcard quiz questions:', error);
+      setFlashcardQuizQuestions([]);
+    } finally {
+      setLoadingFlashcardQuiz(false);
+    }
   };
 
   const openDeleteDialog = (card: Flashcard) => {
@@ -370,6 +429,35 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
     toast.success('Quiz removed');
   };
 
+  // Flashcard quiz question delete handler
+  const handleDeleteFlashcardQuizQuestion = async (questionId: string) => {
+    if (!editingCard) return;
+
+    // Store original state for rollback
+    const originalQuestions = [...flashcardQuizQuestions];
+
+    // Optimistically update UI
+    setFlashcardQuizQuestions((prev) => prev.filter((q) => q.id !== questionId));
+
+    try {
+      const res = await fetch(`/api/admin/flashcards/${editingCard.id}/quiz/${questionId}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) throw new Error('Failed to delete question');
+
+      toast.success('Quiz question deleted successfully');
+
+      // Refresh flashcard list to update quiz count badge
+      await loadDeckData();
+    } catch (error) {
+      console.error('Error deleting flashcard quiz question:', error);
+      // Rollback on error
+      setFlashcardQuizQuestions(originalQuestions);
+      toast.error('Failed to delete quiz question');
+    }
+  };
+
   // Deck-level quiz handlers
   const handleDeckQuizFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -422,6 +510,13 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
       setDeckQuizCount(data.count || deckQuizData.questions.length);
       setDeckQuizData(null);
       setDeckQuizFileName("");
+
+      // Refresh questions list
+      const listRes = await fetch(`/api/admin/decks/${deckId}/quiz/list`);
+      if (listRes.ok) {
+        const listData = await listRes.json();
+        setDeckQuizQuestions(listData.questions || []);
+      }
     } catch (error) {
       toast.error('Failed to upload deck quiz');
       console.error(error);
@@ -448,11 +543,47 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
       setDeckQuizCount(0);
       setDeckQuizData(null);
       setDeckQuizFileName("");
+      setDeckQuizQuestions([]);
     } catch (error) {
       toast.error('Failed to delete deck quiz');
       console.error(error);
     } finally {
       setDeckQuizLoading(false);
+    }
+  };
+
+  // Deck quiz question delete handler
+  const handleDeleteDeckQuizQuestion = async (questionId: string) => {
+    if (!deckId) return;
+
+    // Store original state for rollback
+    const originalQuestions = [...deckQuizQuestions];
+    const originalCount = deckQuizCount;
+
+    // Optimistically update UI
+    setDeckQuizQuestions((prev) => prev.filter((q) => q.id !== questionId));
+    setDeckQuizCount((prev) => Math.max(0, prev - 1));
+
+    // Update hasQuiz flag if no questions left
+    if (deckQuizQuestions.length <= 1) {
+      setDeckHasQuiz(false);
+    }
+
+    try {
+      const res = await fetch(`/api/admin/decks/${deckId}/quiz/${questionId}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) throw new Error('Failed to delete question');
+
+      toast.success('Quiz question deleted successfully');
+    } catch (error) {
+      console.error('Error deleting deck quiz question:', error);
+      // Rollback on error
+      setDeckQuizQuestions(originalQuestions);
+      setDeckQuizCount(originalCount);
+      setDeckHasQuiz(originalQuestions.length > 0);
+      toast.error('Failed to delete quiz question');
     }
   };
 
@@ -538,15 +669,22 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
         : "/api/admin/flashcards";
       const method = editingCard ? "PATCH" : "POST";
 
+      // Only include quizData if there's new quiz data to upload
+      const requestBody: Record<string, unknown> = {
+        ...formData,
+        deckId: deckId,
+        media: uploadedMedia,
+      };
+
+      // Only add quizData if it's not null (user uploaded new quiz file)
+      if (quizData !== null) {
+        requestBody.quizData = quizData;
+      }
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          deckId: deckId,
-          quizData: quizData,
-          media: uploadedMedia,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!res.ok) {
@@ -832,6 +970,21 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
                       </pre>
                     </CollapsibleContent>
                   </Collapsible>
+
+                  {/* Existing Deck Quiz Questions */}
+                  {deckHasQuiz && (
+                    <div className="mt-6 border-t pt-4">
+                      <Label className="text-base font-semibold mb-3 block">
+                        Manage Existing Questions
+                      </Label>
+                      <QuizQuestionList
+                        questions={deckQuizQuestions}
+                        onDelete={handleDeleteDeckQuizQuestion}
+                        isLoading={loadingDeckQuiz}
+                        emptyMessage="No quiz questions found."
+                      />
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -1172,6 +1325,23 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
                 </pre>
               </details>
             </div>
+
+            {/* Existing Quiz Questions List */}
+            {editingCard && (
+              <div className="space-y-3">
+                <div className="border-t pt-4">
+                  <Label className="text-base font-semibold mb-3 block">
+                    Manage Existing Questions
+                  </Label>
+                  <QuizQuestionList
+                    questions={flashcardQuizQuestions}
+                    onDelete={handleDeleteFlashcardQuizQuestion}
+                    isLoading={loadingFlashcardQuiz}
+                    emptyMessage="No quiz questions yet. Upload a JSON file or use AI to generate questions."
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="space-y-3">
               <Label htmlFor="order" className="text-base font-semibold">Card Order</Label>
