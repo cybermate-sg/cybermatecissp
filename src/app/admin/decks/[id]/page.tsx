@@ -23,10 +23,11 @@ import { Badge } from "@/components/ui/badge";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import { Loader2, Plus, Edit2, Trash2, ArrowLeft, Image as ImageIcon, ClipboardList, TestTube, Upload, X, ChevronDown, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { validateQuizFile, type QuizFile } from "@/lib/validations/quiz";
+import { validateQuizFile, type QuizFile, type QuizQuestionUpdate, type DeckQuizQuestionUpdate } from "@/lib/validations/quiz";
 import { AiQuizGenerationModal } from "@/components/admin/AiQuizGenerationModal";
 import { FormattedContent } from "@/components/admin/FormattedContent";
 import { QuizQuestionList } from "@/components/admin/QuizQuestionList";
+import { QuizQuestionEditDialog } from "@/components/admin/QuizQuestionEditDialog";
 
 interface DeckData {
   id: string;
@@ -169,6 +170,14 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
   const [loadingFlashcardQuiz, setLoadingFlashcardQuiz] = useState(false);
   const [deckQuizQuestions, setDeckQuizQuestions] = useState<QuizQuestion[]>([]);
   const [loadingDeckQuiz, setLoadingDeckQuiz] = useState(false);
+
+  // Quiz question edit state
+  const [editingFlashcardQuestion, setEditingFlashcardQuestion] = useState<QuizQuestion | null>(null);
+  const [isFlashcardQuizEditDialogOpen, setIsFlashcardQuizEditDialogOpen] = useState(false);
+  const [savingFlashcardQuizEdit, setSavingFlashcardQuizEdit] = useState(false);
+  const [editingDeckQuestion, setEditingDeckQuestion] = useState<QuizQuestion | null>(null);
+  const [isDeckQuizEditDialogOpen, setIsDeckQuizEditDialogOpen] = useState(false);
+  const [savingDeckQuizEdit, setSavingDeckQuizEdit] = useState(false);
 
   // Unwrap params
   useEffect(() => {
@@ -455,6 +464,109 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
       // Rollback on error
       setFlashcardQuizQuestions(originalQuestions);
       toast.error('Failed to delete quiz question');
+    }
+  };
+
+  // Flashcard quiz question edit handlers
+  const handleEditFlashcardQuestion = (question: QuizQuestion) => {
+    setEditingFlashcardQuestion(question);
+    setIsFlashcardQuizEditDialogOpen(true);
+  };
+
+  const handleSaveFlashcardQuizQuestion = async (
+    questionId: string,
+    data: QuizQuestionUpdate
+  ) => {
+    if (!editingCard) return;
+
+    // Store original for rollback
+    const originalQuestions = [...flashcardQuizQuestions];
+
+    // Optimistic update
+    setFlashcardQuizQuestions((prev) =>
+      prev.map((q) => (q.id === questionId ? { ...q, ...data } : q))
+    );
+
+    setSavingFlashcardQuizEdit(true);
+    try {
+      const res = await fetch(`/api/admin/flashcards/${editingCard.id}/quiz/${questionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Update failed:', errorData);
+        throw new Error(errorData.error || 'Failed to update question');
+      }
+
+      const result = await res.json();
+      setFlashcardQuizQuestions((prev) =>
+        prev.map((q) => (q.id === questionId ? result.question : q))
+      );
+
+      toast.success('Quiz question updated successfully');
+      setIsFlashcardQuizEditDialogOpen(false);
+      await loadDeckData();
+    } catch (error) {
+      console.error('Error updating flashcard quiz question:', error);
+      setFlashcardQuizQuestions(originalQuestions);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update quiz question';
+      toast.error(errorMessage);
+    } finally {
+      setSavingFlashcardQuizEdit(false);
+    }
+  };
+
+  // Deck quiz question edit handlers
+  const handleEditDeckQuestion = (question: QuizQuestion) => {
+    setEditingDeckQuestion(question);
+    setIsDeckQuizEditDialogOpen(true);
+  };
+
+  const handleSaveDeckQuizQuestion = async (
+    questionId: string,
+    data: DeckQuizQuestionUpdate
+  ) => {
+    if (!deckId) return;
+
+    // Store original for rollback
+    const originalQuestions = [...deckQuizQuestions];
+
+    // Optimistic update
+    setDeckQuizQuestions((prev) =>
+      prev.map((q) => (q.id === questionId ? { ...q, ...data } : q))
+    );
+
+    setSavingDeckQuizEdit(true);
+    try {
+      const res = await fetch(`/api/admin/decks/${deckId}/quiz/${questionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Update failed:', errorData);
+        throw new Error(errorData.error || 'Failed to update question');
+      }
+
+      const result = await res.json();
+      setDeckQuizQuestions((prev) =>
+        prev.map((q) => (q.id === questionId ? result.question : q))
+      );
+
+      toast.success('Quiz question updated successfully');
+      setIsDeckQuizEditDialogOpen(false);
+    } catch (error) {
+      console.error('Error updating deck quiz question:', error);
+      setDeckQuizQuestions(originalQuestions);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update quiz question';
+      toast.error(errorMessage);
+    } finally {
+      setSavingDeckQuizEdit(false);
     }
   };
 
@@ -979,6 +1091,7 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
                       </Label>
                       <QuizQuestionList
                         questions={deckQuizQuestions}
+                        onEdit={handleEditDeckQuestion}
                         onDelete={handleDeleteDeckQuizQuestion}
                         isLoading={loadingDeckQuiz}
                         emptyMessage="No quiz questions found."
@@ -1335,6 +1448,7 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
                   </Label>
                   <QuizQuestionList
                     questions={flashcardQuizQuestions}
+                    onEdit={handleEditFlashcardQuestion}
                     onDelete={handleDeleteFlashcardQuizQuestion}
                     isLoading={loadingFlashcardQuiz}
                     emptyMessage="No quiz questions yet. Upload a JSON file or use AI to generate questions."
@@ -1446,6 +1560,26 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Flashcard Quiz Question Edit Dialog */}
+      <QuizQuestionEditDialog
+        question={editingFlashcardQuestion}
+        isOpen={isFlashcardQuizEditDialogOpen}
+        onOpenChange={setIsFlashcardQuizEditDialogOpen}
+        onSave={handleSaveFlashcardQuizQuestion}
+        isSaving={savingFlashcardQuizEdit}
+        isDeckQuiz={false}
+      />
+
+      {/* Deck Quiz Question Edit Dialog */}
+      <QuizQuestionEditDialog
+        question={editingDeckQuestion}
+        isOpen={isDeckQuizEditDialogOpen}
+        onOpenChange={setIsDeckQuizEditDialogOpen}
+        onSave={handleSaveDeckQuizQuestion}
+        isSaving={savingDeckQuizEdit}
+        isDeckQuiz={true}
+      />
 
       {/* Global Styles for Formatted Content */}
       <style jsx global>{`

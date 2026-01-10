@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Eye, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Eye, Edit, Trash2, ChevronUp } from 'lucide-react';
 
 interface QuizOption {
   text: string;
@@ -38,10 +38,11 @@ interface QuizQuestion {
 interface QuizQuestionCardProps {
   question: QuizQuestion;
   index: number;
+  onEdit: (question: QuizQuestion) => void;
   onDelete: (questionId: string) => Promise<void>;
 }
 
-export function QuizQuestionCard({ question, index, onDelete }: QuizQuestionCardProps) {
+export function QuizQuestionCard({ question, index, onEdit, onDelete }: QuizQuestionCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -118,6 +119,16 @@ export function QuizQuestionCard({ question, index, onDelete }: QuizQuestionCard
                   </Button>
                 </CollapsibleTrigger>
               </Collapsible>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onEdit(question)}
+                className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                title="Edit question"
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
 
               <Button
                 variant="ghost"
