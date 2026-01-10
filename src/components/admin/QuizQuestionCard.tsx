@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Eye, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Eye, Trash2, ChevronUp } from 'lucide-react';
 
 interface QuizOption {
   text: string;
