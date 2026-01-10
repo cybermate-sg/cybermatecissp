@@ -29,6 +29,7 @@ interface QuizQuestion {
 
 interface QuizQuestionListProps {
   questions: QuizQuestion[];
+  onEdit: (question: QuizQuestion) => void;
   onDelete: (questionId: string) => Promise<void>;
   isLoading: boolean;
   emptyMessage?: string;
@@ -36,6 +37,7 @@ interface QuizQuestionListProps {
 
 export function QuizQuestionList({
   questions,
+  onEdit,
   onDelete,
   isLoading,
   emptyMessage = 'No quiz questions yet. Upload a JSON file or use AI to generate questions.',
@@ -80,6 +82,7 @@ export function QuizQuestionList({
                 key={question.id}
                 question={question}
                 index={index}
+                onEdit={onEdit}
                 onDelete={onDelete}
               />
             ))}
