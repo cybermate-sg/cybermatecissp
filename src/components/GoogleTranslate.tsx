@@ -36,7 +36,11 @@ declare global {
   }
 }
 
-export default function GoogleTranslate() {
+interface GoogleTranslateProps {
+  variant?: 'default' | 'compact';
+}
+
+export default function GoogleTranslate({ variant = 'default' }: GoogleTranslateProps) {
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
   const initializeGoogleTranslate = useCallback(() => {
@@ -84,23 +88,42 @@ export default function GoogleTranslate() {
       />
 
       {/* Container for the translator dropdown */}
-      <div className="flex items-center gap-3 bg-slate-800/50 px-4 py-2 rounded-lg border border-blue-400/30">
-        <svg
-          className="w-5 h-5 text-blue-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-          />
-        </svg>
-        <span className="text-sm text-blue-300 font-semibold">Language:</span>
-        <div id="google_translate_element" className="notranslate" />
-      </div>
+      {variant === 'compact' ? (
+        <div className="flex items-center gap-2">
+          <svg
+            className="w-5 h-5 text-blue-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+            />
+          </svg>
+          <div id="google_translate_element" className="notranslate" />
+        </div>
+      ) : (
+        <div className="flex items-center gap-3 bg-slate-800/50 px-4 py-2 rounded-lg border border-blue-400/30">
+          <svg
+            className="w-5 h-5 text-blue-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+            />
+          </svg>
+          <span className="text-sm text-blue-300 font-semibold">Language:</span>
+          <div id="google_translate_element" className="notranslate" />
+        </div>
+      )}
 
       {/* Dark theme styling for Google Translate widget */}
       <style jsx global>{`
@@ -120,13 +143,13 @@ export default function GoogleTranslate() {
           background-color: #1e293b !important; /* slate-800 */
           border: 2px solid #60a5fa !important; /* blue-400 - more visible */
           color: #ffffff !important; /* white text for better contrast */
-          padding: 10px 36px 10px 14px !important;
+          padding: ${variant === 'compact' ? '6px 28px 6px 10px' : '10px 36px 10px 14px'} !important;
           border-radius: 0.5rem !important;
-          font-size: 0.9375rem !important;
+          font-size: ${variant === 'compact' ? '0.875rem' : '0.9375rem'} !important;
           font-weight: 600 !important;
           outline: none !important;
           cursor: pointer !important;
-          min-width: 180px !important;
+          min-width: ${variant === 'compact' ? '140px' : '180px'} !important;
           appearance: auto !important;
           -webkit-appearance: menulist !important;
           -moz-appearance: menulist !important;
