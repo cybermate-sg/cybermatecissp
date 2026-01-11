@@ -48,7 +48,7 @@ export default function GoogleTranslate() {
         new window.google.translate.TranslateElement(
           {
             pageLanguage: 'en',
-            includedLanguages: 'en,es,fr,de,ar,zh-CN,zh-TW,ja,ko,pt,ru,hi,it,nl,pl,tr,vi,th',
+            includedLanguages: 'en,es,fr,de,ar,zh-CN,zh-TW,gu,ja,kn,ko,ml,mr,pt,ru,hi,it,nl,pl,ta,te,tr,ur,vi,th',
             layout: 1, // HORIZONTAL layout (0=SIMPLE, 1=HORIZONTAL, 2=VERTICAL)
             autoDisplay: true,
             multilanguagePage: true,
