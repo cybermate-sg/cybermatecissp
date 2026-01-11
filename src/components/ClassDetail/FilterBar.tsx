@@ -33,7 +33,7 @@ export function FilterBar({ activeFilter, onFilterChange, counts }: FilterBarPro
     { id: "all", label: "All", count: counts.all },
     { id: "not-started", label: "Not Started", count: counts.notStarted },
     { id: "in-progress", label: "In Progress", count: counts.inProgress },
-    { id: "mastered", label: "Mastered", count: counts.mastered },
+    { id: "mastered", label: "Completed", count: counts.mastered },
     { id: "quiz", label: "Quiz Decks", count: counts.quiz },
   ];
 
