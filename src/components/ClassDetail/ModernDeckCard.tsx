@@ -29,14 +29,14 @@ export function ModernDeckCard({ deck, isSelected, onToggle, studyMode }: Modern
   const isQuiz = deck.type === 'quiz';
 
   // Calculate circular progress for the progress ring
-  const radius = 28;
+  const radius = 24;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (deck.progress / 100) * circumference;
 
   return (
     <div
       className={`
-        relative group bg-slate-800/80 rounded-xl border p-4
+        relative group bg-slate-800/80 rounded-xl border p-3
         transition-all duration-300 hover:bg-slate-800
         ${isSelected ? 'border-blue-500' : 'border-gray-700 hover:border-blue-400'}
         ${deck.isRecommended ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-slate-900' : ''}
@@ -49,42 +49,51 @@ export function ModernDeckCard({ deck, isSelected, onToggle, studyMode }: Modern
         </div>
       )}
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {/* Checkbox */}
         <button
           onClick={onToggle}
-          className="flex-shrink-0 mt-1 cursor-pointer"
+          className="flex-shrink-0 cursor-pointer"
           aria-label="Select deck"
         >
-          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
             isSelected
               ? 'bg-blue-500 border-blue-500 shadow-md'
               : 'border-gray-600 hover:border-blue-400'
           }`}>
-            {isSelected && <Check className="w-4 h-4 text-white" />}
+            {isSelected && <Check className="w-3 h-3 text-white" />}
           </div>
         </button>
 
         {/* Deck icon */}
         <div className="flex-shrink-0">
           {isQuiz ? (
-            <div className="w-14 h-14 rounded-xl bg-blue-900/50 flex items-center justify-center">
-              <Target className="w-7 h-7 text-blue-400" />
+            <div className="w-12 h-12 rounded-lg bg-blue-900/50 flex items-center justify-center">
+              <Target className="w-6 h-6 text-blue-400" />
             </div>
           ) : (
-            <div className="w-14 h-14 rounded-xl bg-green-900/50 flex items-center justify-center">
-              <Layers className="w-7 h-7 text-green-400" />
+            <div className="w-12 h-12 rounded-lg bg-green-900/50 flex items-center justify-center">
+              <Layers className="w-6 h-6 text-green-400" />
             </div>
           )}
         </div>
 
         {/* Deck info */}
         <div className="flex-1 min-w-0">
-          {/* Deck title and badges */}
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <h3 className="text-lg font-bold text-white line-clamp-1">
-              {deck.name}
-            </h3>
+          {/* Deck title */}
+          <h3 className="text-base font-bold text-white mb-0.5 line-clamp-1">
+            {deck.name}
+          </h3>
+
+          {/* Progress info with badges */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm text-gray-400">
+              {isQuiz ? (
+                <span>{deck.studiedCount} of {deck.cardCount} questions attempted</span>
+              ) : (
+                <span>{deck.studiedCount} of {deck.cardCount} cards completed</span>
+              )}
+            </p>
             <span className={`text-xs px-2 py-1 rounded-full font-medium ${
               isQuiz
                 ? 'bg-blue-100 text-blue-700'
@@ -99,36 +108,27 @@ export function ModernDeckCard({ deck, isSelected, onToggle, studyMode }: Modern
               </span>
             )}
           </div>
-
-          {/* Progress info */}
-          <p className="text-sm text-gray-400">
-            {isQuiz ? (
-              <span>{deck.studiedCount} of {deck.cardCount} questions attempted</span>
-            ) : (
-              <span>{deck.studiedCount} of {deck.cardCount} cards completed</span>
-            )}
-          </p>
         </div>
 
         {/* Progress circle and play button */}
-        <div className="flex-shrink-0 flex items-center justify-center gap-3">
+        <div className="flex-shrink-0 flex items-center justify-center gap-2">
           {/* Circular progress indicator */}
-          <div className="relative w-16 h-16">
-            <svg className="transform -rotate-90 w-16 h-16">
+          <div className="relative w-14 h-14">
+            <svg className="transform -rotate-90 w-14 h-14">
               <circle
-                cx="32"
-                cy="32"
+                cx="28"
+                cy="28"
                 r={radius}
                 stroke="#374151"
-                strokeWidth="4"
+                strokeWidth="3"
                 fill="none"
               />
               <circle
-                cx="32"
-                cy="32"
+                cx="28"
+                cy="28"
                 r={radius}
                 stroke={isMastered ? '#facc15' : '#3b82f6'}
-                strokeWidth="4"
+                strokeWidth="3"
                 fill="none"
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
@@ -137,7 +137,7 @@ export function ModernDeckCard({ deck, isSelected, onToggle, studyMode }: Modern
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className={`text-sm font-bold ${isMastered ? 'text-yellow-400' : 'text-blue-400'}`}>
+              <span className={`text-xs font-bold ${isMastered ? 'text-yellow-400' : 'text-blue-400'}`}>
                 {deck.progress}%
               </span>
             </div>
@@ -146,10 +146,10 @@ export function ModernDeckCard({ deck, isSelected, onToggle, studyMode }: Modern
           {/* Play button */}
           <Link href={`/dashboard/deck/${deck.id}?mode=${studyMode}`}>
             <button
-              className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center group-hover:scale-110"
+              className="w-11 h-11 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center group-hover:scale-110"
               aria-label="Start studying"
             >
-              <Play className="w-5 h-5 fill-white" />
+              <Play className="w-4 h-4 fill-white" />
             </button>
           </Link>
         </div>

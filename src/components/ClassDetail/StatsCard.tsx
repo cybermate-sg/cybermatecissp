@@ -16,11 +16,11 @@ export function StatsCard({ streak, minutesToday, cardsToday, accuracy, last7Day
   const maxMinutes = Math.max(...last7DaysActivity, 1);
 
   return (
-    <Card className="bg-white border-gray-200 shadow-lg sticky top-4">
-      <CardHeader className="pb-4">
+    <Card className="bg-white border-gray-200 shadow-lg sticky top-4 mt-12 h-[500px] flex flex-col">
+      <CardHeader className="pb-4 flex-shrink-0">
         <CardTitle className="text-lg font-bold text-gray-900">Your Stats Today</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 flex-1 flex flex-col justify-evenly overflow-hidden">
         {/* Streak */}
         <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-xl border border-orange-200">
           <div className="flex-shrink-0 w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
