@@ -36,10 +36,10 @@ export function ModernDeckCard({ deck, isSelected, onToggle, studyMode }: Modern
   return (
     <div
       className={`
-        relative group bg-white rounded-2xl border-2 p-6
-        transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-1
-        ${isSelected ? 'border-blue-500 shadow-blue-200' : 'border-gray-200 hover:border-blue-300'}
-        ${deck.isRecommended ? 'ring-2 ring-yellow-400 ring-offset-2' : ''}
+        relative group bg-slate-800/80 rounded-xl border p-4
+        transition-all duration-300 hover:bg-slate-800
+        ${isSelected ? 'border-blue-500' : 'border-gray-700 hover:border-blue-400'}
+        ${deck.isRecommended ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-slate-900' : ''}
       `}
     >
       {/* Recommended ribbon */}
@@ -59,7 +59,7 @@ export function ModernDeckCard({ deck, isSelected, onToggle, studyMode }: Modern
           <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
             isSelected
               ? 'bg-blue-500 border-blue-500 shadow-md'
-              : 'border-gray-300 hover:border-blue-400'
+              : 'border-gray-600 hover:border-blue-400'
           }`}>
             {isSelected && <Check className="w-4 h-4 text-white" />}
           </div>
@@ -68,41 +68,23 @@ export function ModernDeckCard({ deck, isSelected, onToggle, studyMode }: Modern
         {/* Deck icon */}
         <div className="flex-shrink-0">
           {isQuiz ? (
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center shadow-sm">
-              <Target className="w-7 h-7 text-blue-600" />
+            <div className="w-14 h-14 rounded-xl bg-blue-900/50 flex items-center justify-center">
+              <Target className="w-7 h-7 text-blue-400" />
             </div>
           ) : (
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center shadow-sm">
-              <Layers className="w-7 h-7 text-green-600" />
+            <div className="w-14 h-14 rounded-xl bg-green-900/50 flex items-center justify-center">
+              <Layers className="w-7 h-7 text-green-400" />
             </div>
           )}
         </div>
 
         {/* Deck info */}
         <div className="flex-1 min-w-0">
-          {/* Deck title */}
-          <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-2">
-            {deck.name}
-          </h3>
-
-          {/* Domain tag */}
-          {deck.domain && deck.domainName && (
-            <p className="text-sm text-gray-600 mb-2">
-              Domain {deck.domain} – {deck.domainName}
-            </p>
-          )}
-
-          {/* Progress info */}
-          <p className="text-sm text-gray-500">
-            {isQuiz ? (
-              <span>{deck.studiedCount} of {deck.cardCount} questions attempted</span>
-            ) : (
-              <span>{deck.studiedCount} of {deck.cardCount} cards mastered</span>
-            )}
-          </p>
-
-          {/* Type badge and Mastered badge */}
-          <div className="mt-2 flex items-center gap-2 flex-wrap">
+          {/* Deck title and badges */}
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <h3 className="text-lg font-bold text-white line-clamp-1">
+              {deck.name}
+            </h3>
             <span className={`text-xs px-2 py-1 rounded-full font-medium ${
               isQuiz
                 ? 'bg-blue-100 text-blue-700'
@@ -113,14 +95,23 @@ export function ModernDeckCard({ deck, isSelected, onToggle, studyMode }: Modern
             {isMastered && (
               <span className="flex items-center gap-1 bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-1 rounded-full border border-yellow-300">
                 <Shield className="w-3 h-3" />
-                Mastered
+                Completed
               </span>
             )}
           </div>
+
+          {/* Progress info */}
+          <p className="text-sm text-gray-400">
+            {isQuiz ? (
+              <span>{deck.studiedCount} of {deck.cardCount} questions attempted</span>
+            ) : (
+              <span>{deck.studiedCount} of {deck.cardCount} cards completed</span>
+            )}
+          </p>
         </div>
 
         {/* Progress circle and play button */}
-        <div className="flex-shrink-0 flex flex-col items-center justify-center gap-3">
+        <div className="flex-shrink-0 flex items-center justify-center gap-3">
           {/* Circular progress indicator */}
           <div className="relative w-16 h-16">
             <svg className="transform -rotate-90 w-16 h-16">
@@ -128,7 +119,7 @@ export function ModernDeckCard({ deck, isSelected, onToggle, studyMode }: Modern
                 cx="32"
                 cy="32"
                 r={radius}
-                stroke="#e5e7eb"
+                stroke="#374151"
                 strokeWidth="4"
                 fill="none"
               />
@@ -146,7 +137,7 @@ export function ModernDeckCard({ deck, isSelected, onToggle, studyMode }: Modern
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className={`text-sm font-bold ${isMastered ? 'text-yellow-600' : 'text-blue-600'}`}>
+              <span className={`text-sm font-bold ${isMastered ? 'text-yellow-400' : 'text-blue-400'}`}>
                 {deck.progress}%
               </span>
             </div>
