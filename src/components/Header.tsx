@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import GoogleTranslate from "@/components/GoogleTranslate";
 
 export default function Header() {
   return (
@@ -31,6 +32,9 @@ export default function Header() {
 
           {/* Navigation and Auth buttons */}
           <div className="flex items-center gap-3">
+            {/* Language Selector */}
+            <GoogleTranslate variant="compact" />
+
             <SignedOut>
               <Link href="/sign-in">
                 <Button variant="ghost" className="text-gray-300 hover:text-white hover:bg-gray-800">
