@@ -33,7 +33,7 @@ export default function ConfidenceRating({ onRate, disabled = false }: Confidenc
             key={level.value}
             onClick={() => onRate(level.value)}
             disabled={disabled}
-            className={`${level.color} text-white h-auto py-4 flex flex-col items-center gap-2 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed`}
+            className={`${level.color} text-white h-auto py-4 flex flex-col items-center gap-2 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed rounded-[2.5rem]`}
           >
             <span className="text-2xl font-bold">{level.value}</span>
             <span className="text-xs font-semibold">{level.label}</span>

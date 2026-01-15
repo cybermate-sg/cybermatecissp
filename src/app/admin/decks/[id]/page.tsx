@@ -21,7 +21,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import RichTextEditor from "@/components/admin/RichTextEditor";
-import { Loader2, Plus, Edit2, Trash2, ArrowLeft, Image as ImageIcon, ClipboardList, TestTube, Upload, X, ChevronDown, Sparkles } from "lucide-react";
+import { Loader2, Plus, Edit2, Trash2, ArrowLeft, Image as ImageIcon, ClipboardList, FileCheck2, Upload, X, ChevronDown, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { validateQuizFile, type QuizFile, type QuizQuestionUpdate, type DeckQuizQuestionUpdate } from "@/lib/validations/quiz";
 import { AiQuizGenerationModal } from "@/components/admin/AiQuizGenerationModal";
@@ -948,7 +948,7 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <TestTube className="w-5 h-5 text-blue-600" />
+                    <FileCheck2 className="w-5 h-5 text-blue-600" />
                     <h2 className="text-lg font-semibold text-slate-800">
                       Deck-Level Test/Quiz
                     </h2>
@@ -967,7 +967,7 @@ export default function AdminDeckDetailPage({ params }: { params: Promise<{ id: 
                 {/* Current Quiz Status */}
                 {deckHasQuiz && (
                   <Alert className="mb-4 bg-blue-50 border-blue-200">
-                    <TestTube className="h-4 w-4 text-blue-600" />
+                    <FileCheck2 className="h-4 w-4 text-blue-600" />
                     <AlertDescription className="text-blue-800">
                       This deck has {deckQuizCount} quiz question{deckQuizCount !== 1 ? 's' : ''}.
                       Upload a new file to add more questions, or delete all questions using the button below.

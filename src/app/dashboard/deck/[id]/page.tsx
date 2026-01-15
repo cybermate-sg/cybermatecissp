@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, TestTube } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileCheck2 } from "lucide-react";
 import ConfidenceRating from "@/components/ConfidenceRating";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { QuizModal } from "@/components/QuizModal";
@@ -381,9 +381,11 @@ export default function DeckStudyPage() {
               <Button
                 onClick={handleDeckTest}
                 variant="outline"
-                className="border-blue-400 text-blue-200 hover:bg-blue-500/10"
+                className="border-emerald-500/50 text-emerald-300 hover:bg-emerald-500/10
+                  hover:border-emerald-400 transition-all duration-200"
+                aria-label="Take deck test"
               >
-                <TestTube className="w-4 h-4 mr-2" />
+                <FileCheck2 className="h-4 w-4 mr-2" />
                 Take Deck Test
               </Button>
             )
