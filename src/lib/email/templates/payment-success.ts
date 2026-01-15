@@ -160,7 +160,7 @@ export function getPaymentSuccessHtml(props: PaymentSuccessProps): string {
               <li><strong>500+ Flashcards</strong> - Battle-tested and hand-curated content</li>
               <li><strong>1000+ Practice Questions</strong> - First-attempt proven strategies</li>
               <li><strong>Official CBK References</strong> - Everything you need to succeed</li>
-              <li><strong>12 Months Full Access</strong> - All future updates included</li>
+              <li><strong>6 Months Full Access</strong> - All future updates included</li>
             </ul>
           </div>
 
@@ -216,7 +216,7 @@ What's included in your access:
 - 500+ Flashcards - Battle-tested and hand-curated content
 - 1000+ Practice Questions - First-attempt proven strategies
 - Official CBK References - Everything you need to succeed
-- 12 Months Full Access - All future updates included
+- 6 Months Full Access - All future updates included
 
 ${dashboardUrl ? `Access your dashboard: ${dashboardUrl}` : ''}
 

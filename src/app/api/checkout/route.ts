@@ -44,16 +44,22 @@ export async function POST(req: Request) {
     const { db } = await import("@/lib/db");
     const { subscriptions } = await import("@/lib/db/schema");
     const { eq } = await import("drizzle-orm");
+    const { isSubscriptionExpired } = await import("@/lib/subscription");
 
     const subscription = await db.query.subscriptions.findFirst({
       where: eq(subscriptions.clerkUserId, userId),
     });
 
     if (subscription) {
+      // Check if subscription has expired - allow re-purchase if expired
+      const isExpired = subscription.createdAt ? isSubscriptionExpired(subscription.createdAt) : false;
+
       const hasPaidAccess =
-        subscription.planType === 'lifetime' ||
-        (subscription.planType === 'pro_monthly' && subscription.status === 'active') ||
-        (subscription.planType === 'pro_yearly' && subscription.status === 'active');
+        !isExpired && (
+          subscription.planType === 'lifetime' ||
+          (subscription.planType === 'pro_monthly' && subscription.status === 'active') ||
+          (subscription.planType === 'pro_yearly' && subscription.status === 'active')
+        );
 
       if (hasPaidAccess) {
         console.log("⚠️ User already has paid access, blocking checkout");
@@ -64,6 +70,10 @@ export async function POST(req: Request) {
           },
           { status: 400 }
         );
+      }
+
+      if (isExpired) {
+        console.log("ℹ️ User's previous subscription has expired, allowing re-purchase");
       }
     }
 

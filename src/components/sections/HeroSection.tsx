@@ -103,7 +103,7 @@ export default function HeroSection() {
                             </Suspense>
 
                             <p className="text-sm text-gray-400">
-                                Pocket friendly pricing · 12 months full access · All future updates included
+                                Pocket friendly pricing · 6 months full access · All future updates included
                             </p>
                         </div>
 
