@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
-import { X, ZoomIn, ZoomOut, Maximize2, TestTube, Bookmark, BookmarkCheck } from "lucide-react";
+import { X, ZoomIn, ZoomOut, Maximize2, FileCheck2, Bookmark, BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DOMPurify from "isomorphic-dompurify";
 import FeedbackButton from "@/components/feedback/FeedbackButton";
@@ -412,25 +412,33 @@ export default function Flashcard({
             {/* Header */}
             <div className="flex-shrink-0 border-b border-slate-700 bg-slate-900/50 px-4 sm:px-6 py-3 sm:py-4">
               <div className="text-xs sm:text-sm font-semibold text-purple-400 text-center">
-                QUESTION
+                Card Front
               </div>
             </div>
 
             {/* Body - Scrollable content area */}
-            <div className="flex-1 min-h-0">
-              <FlashcardContentArea
-                sanitizedHtml={sanitizedQuestion}
-                images={questionImages}
-                onImageClick={handleImageClick}
-                borderColor="border-slate-600"
-                hoverBgColor="bg-slate-900/70"
-              />
+            <div className="flex-1 min-h-0 relative overflow-hidden">
+              {/* Watermark */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
+                <span className="text-slate-700/20 text-2xl sm:text-3xl font-bold whitespace-nowrap -rotate-45">
+                  Cybermate Consulting
+                </span>
+              </div>
+              <div className="relative z-10 h-full">
+                <FlashcardContentArea
+                  sanitizedHtml={sanitizedQuestion}
+                  images={questionImages}
+                  onImageClick={handleImageClick}
+                  borderColor="border-slate-600"
+                  hoverBgColor="bg-slate-900/70"
+                />
+              </div>
             </div>
 
             {/* Footer */}
             <div className="flex-shrink-0 border-t border-slate-700 bg-slate-900/50 px-4 sm:px-6 py-3 sm:py-4">
               <div className="text-center text-xs sm:text-sm text-gray-400">
-                Click to reveal answer
+                Click to Card Back
               </div>
             </div>
           </CardContent>
@@ -451,11 +459,11 @@ export default function Flashcard({
               <div className="flex items-center justify-between">
                 <div className="flex-1 text-center">
                   <div className="text-xs sm:text-sm font-semibold text-blue-300">
-                    ANSWER
+                    Card Back
                   </div>
                 </div>
                 {/* Action Buttons */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   {/* Feedback Button */}
                   {flashcardId && (
                     <FeedbackButton
@@ -464,8 +472,8 @@ export default function Flashcard({
                         setIsFeedbackModalOpen(true);
                       }}
                       variant="ghost"
-                      size="sm"
-                      className="text-blue-300 hover:text-white hover:bg-blue-800/50"
+                      size="icon"
+                      className="h-8 w-8 border border-blue-400/50 rounded-md shadow-[0_0_8px_rgba(96,165,250,0.4)]"
                     />
                   )}
                   {/* Bookmark Button */}
@@ -473,14 +481,20 @@ export default function Flashcard({
                     <Button
                       onClick={handleBookmarkClick}
                       variant="ghost"
-                      size="sm"
-                      className="text-blue-300 hover:text-white hover:bg-blue-800/50 transition-colors"
-                      title={bookmarked ? "Remove bookmark" : "Add bookmark"}
+                      size="icon"
+                      className={`h-8 w-8 border border-blue-400/50 rounded-md shadow-[0_0_8px_rgba(96,165,250,0.4)] transition-all duration-200 hover:scale-105 ${
+                        bookmarked
+                          ? "text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                          : "text-slate-400 hover:text-blue-400 hover:bg-blue-500/10"
+                      }`}
+                      title={bookmarked ? "Remove bookmark" : "Save for later"}
+                      aria-label={bookmarked ? "Remove bookmark" : "Add bookmark"}
+                      aria-pressed={bookmarked}
                     >
                       {bookmarked ? (
-                        <BookmarkCheck className="w-4 h-4" />
+                        <BookmarkCheck className="h-4 w-4 fill-current" />
                       ) : (
-                        <Bookmark className="w-4 h-4" />
+                        <Bookmark className="h-4 w-4" />
                       )}
                     </Button>
                   )}
@@ -490,9 +504,12 @@ export default function Flashcard({
                       onClick={handleTestClick}
                       variant="ghost"
                       size="sm"
-                      className="text-blue-300 hover:text-white hover:bg-blue-800/50 transition-colors"
+                      className="h-8 px-3 border border-blue-400/50 rounded-md shadow-[0_0_8px_rgba(96,165,250,0.4)] text-slate-400
+                        hover:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/50
+                        transition-all duration-200 hover:scale-105"
+                      aria-label="Start practice test"
                     >
-                      <TestTube className="w-4 h-4 mr-2" />
+                      <FileCheck2 className="h-4 w-4 mr-1.5" />
                       Test
                     </Button>
                   )}
@@ -501,20 +518,28 @@ export default function Flashcard({
             </div>
 
             {/* Body - Scrollable content area */}
-            <div className="flex-1 min-h-0">
-              <FlashcardContentArea
-                sanitizedHtml={sanitizedAnswer}
-                images={answerImages}
-                onImageClick={handleImageClick}
-                borderColor="border-blue-400"
-                hoverBgColor="bg-blue-900/70"
-              />
+            <div className="flex-1 min-h-0 relative overflow-hidden">
+              {/* Watermark */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
+                <span className="text-blue-900/20 text-2xl sm:text-3xl font-bold whitespace-nowrap -rotate-45">
+                  Cybermate Consulting
+                </span>
+              </div>
+              <div className="relative z-10 h-full">
+                <FlashcardContentArea
+                  sanitizedHtml={sanitizedAnswer}
+                  images={answerImages}
+                  onImageClick={handleImageClick}
+                  borderColor="border-blue-400"
+                  hoverBgColor="bg-blue-900/70"
+                />
+              </div>
             </div>
 
             {/* Footer */}
             <div className="flex-shrink-0 border-t border-blue-500/20 bg-slate-900/50 px-4 sm:px-6 py-3 sm:py-4">
               <div className="text-center text-xs sm:text-sm text-blue-300">
-                Click to see question
+                Click to Card Front
               </div>
             </div>
           </CardContent>

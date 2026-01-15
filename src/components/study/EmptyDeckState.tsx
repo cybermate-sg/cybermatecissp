@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, TestTube } from "lucide-react";
+import { ArrowLeft, FileCheck2 } from "lucide-react";
 import { DeckQuizModal } from "@/components/DeckQuizModal";
 
 interface DeckData {
@@ -40,7 +40,7 @@ function DeckQuizActions({ deckHasQuiz, onDeckTest }: { deckHasQuiz: boolean; on
             onClick={onDeckTest}
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
         >
-            <TestTube className="w-4 h-4 mr-2" />
+            <FileCheck2 className="h-4 w-4 mr-2" />
             Take Deck Test
         </Button>
     );

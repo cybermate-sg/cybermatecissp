@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageSquare } from "lucide-react";
+import { Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface FeedbackButtonProps {
@@ -30,12 +30,14 @@ export default function FeedbackButton({
       onClick={onClick}
       variant={variant}
       size={size}
-      className={`text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors ${className}`}
+      className={`text-slate-400 hover:text-amber-400 hover:bg-amber-500/10
+        hover:border-amber-500/50 transition-all duration-200 hover:scale-105 ${className}`}
       title="Report an issue or provide feedback"
+      aria-label="Report an issue or provide feedback"
       type="button"
     >
-      <MessageSquare className="w-4 h-4" />
-      {showLabel && <span className="ml-2">Feedback</span>}
+      <Flag className="h-4 w-4" />
+      {showLabel && <span className="ml-2">Report</span>}
     </Button>
   );
 }
