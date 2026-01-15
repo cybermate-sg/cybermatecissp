@@ -11,6 +11,7 @@ import { db, withRetry } from "@/lib/db";
 import { subscriptions, userStats, studySessions } from "@/lib/db/schema";
 import { eq, and, desc, gte } from "drizzle-orm";
 import { ensureUserExists } from "@/lib/db/ensure-user";
+import { ACCESS_DURATION_DAYS, calculateDaysRemaining } from "@/lib/subscription";
 
 // Force dynamic rendering - never cache this page
 export const dynamic = 'force-dynamic';
@@ -203,7 +204,7 @@ export default async function ClassDetailPage({
   const isAdmin = user?.publicMetadata?.role === "admin";
 
   // Fetch user subscription to calculate remaining days
-  let daysLeft: number = 365; // Default to 365 days for users without active subscription
+  let daysLeft: number = ACCESS_DURATION_DAYS; // Default to ACCESS_DURATION_DAYS for users without active subscription
 
   try {
     // First, check ALL subscriptions for this user (for debugging)
@@ -235,23 +236,20 @@ export default async function ClassDetailPage({
       { queryName: 'fetch-active-subscription' }
     );
 
-    // Calculate remaining days from subscription creation date (365 days total)
+    // Calculate remaining days from subscription creation date using shared function
     if (subscription?.createdAt) {
-      const startDate = new Date(subscription.createdAt);
-      const today = new Date();
-      const daysSinceStart = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-      daysLeft = Math.max(0, 365 - daysSinceStart);
+      daysLeft = calculateDaysRemaining(subscription.createdAt);
 
       // Debug logging to verify calculation
-      console.log(`[Days Calculation] Start: ${startDate.toISOString()}, Today: ${today.toISOString()}, Days Since Start: ${daysSinceStart}, Days Left: ${daysLeft}`);
+      console.log(`[Days Calculation] Start: ${subscription.createdAt.toISOString()}, Days Left: ${daysLeft}, Access Duration: ${ACCESS_DURATION_DAYS} days`);
     } else {
-      console.log('[Days Calculation] No active subscription found, using default 365 days');
-      daysLeft = 365; // Fallback to 365 days if no active subscription
+      console.log(`[Days Calculation] No active subscription found, using default ${ACCESS_DURATION_DAYS} days`);
+      daysLeft = ACCESS_DURATION_DAYS; // Fallback if no active subscription
     }
   } catch (error) {
     console.error('[Subscription Error] Failed to fetch subscription:', error);
-    // Continue with default 365 days - page will still work
-    daysLeft = 365;
+    // Continue with default - page will still work
+    daysLeft = ACCESS_DURATION_DAYS;
   }
 
   // Get user's first name

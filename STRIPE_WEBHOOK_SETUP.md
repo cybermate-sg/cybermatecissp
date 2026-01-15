@@ -134,14 +134,21 @@ The system uses the subscription `createdAt` date (when the subscription was fir
 const startDate = new Date(subscription.createdAt);
 const today = new Date();
 const daysSinceStart = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-const daysLeft = Math.max(0, 365 - daysSinceStart);
+const daysLeft = Math.max(0, ACCESS_DURATION_DAYS - daysSinceStart);
 ```
 
 **How it works:**
 - When a user completes payment, the webhook creates a subscription record with `createdAt` timestamp
-- The class page calculates: Days remaining = 365 - (days since createdAt)
+- The class page calculates: Days remaining = ACCESS_DURATION_DAYS - (days since createdAt)
 - Shows: "Hi, [Name], you have [X] days left"
-- Users get **365 days (1 year)** of access from their subscription date
+- Users get **180 days (6 months)** of access from their subscription date
+- When `daysLeft` reaches 0, access is blocked and users can re-purchase
+
+**Access Control:**
+- The `ACCESS_DURATION_DAYS` constant in `src/lib/subscription.ts` controls the duration (currently 180 days)
+- `hasPaidAccess()` function checks both subscription status AND expiry
+- Expired users are blocked from accessing premium content
+- Expired users CAN re-purchase to renew their access
 
 ## Important: Include clerkUserId in Checkout
 

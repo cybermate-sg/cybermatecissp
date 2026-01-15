@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { subscriptions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { isSubscriptionExpired, calculateDaysRemaining, ACCESS_DURATION_DAYS } from "@/lib/subscription";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -28,19 +29,31 @@ export async function GET() {
         hasPaidAccess: false,
         planType: "free",
         status: "inactive",
+        daysRemaining: 0,
+        accessDurationDays: ACCESS_DURATION_DAYS,
       });
     }
 
+    // Check if subscription has expired (more than ACCESS_DURATION_DAYS since creation)
+    const isExpired = subscription.createdAt ? isSubscriptionExpired(subscription.createdAt) : false;
+    const daysRemaining = subscription.createdAt ? calculateDaysRemaining(subscription.createdAt) : 0;
+
     // Check if user has paid access (lifetime, pro_monthly, or pro_yearly with active status)
+    // AND subscription hasn't expired
     const hasPaidAccess =
-      subscription.planType === 'lifetime' ||
-      (subscription.planType === 'pro_monthly' && subscription.status === 'active') ||
-      (subscription.planType === 'pro_yearly' && subscription.status === 'active');
+      !isExpired && (
+        subscription.planType === 'lifetime' ||
+        (subscription.planType === 'pro_monthly' && subscription.status === 'active') ||
+        (subscription.planType === 'pro_yearly' && subscription.status === 'active')
+      );
 
     return NextResponse.json({
       hasPaidAccess,
       planType: subscription.planType,
-      status: subscription.status,
+      status: isExpired ? 'expired' : subscription.status,
+      daysRemaining,
+      accessDurationDays: ACCESS_DURATION_DAYS,
+      isExpired,
     });
   } catch (error) {
     console.error("Error checking subscription status:", error);
