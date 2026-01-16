@@ -1,36 +1,44 @@
 import { MetadataRoute } from 'next'
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.cisspmastery.com'
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://cybermateconsulting.com'
+  const currentDate = new Date()
 
   return [
     {
-      url: baseUrl,
-      lastModified: new Date(),
+      url: BASE_URL,
+      lastModified: currentDate,
       changeFrequency: 'weekly',
-      priority: 1,
+      priority: 1.0,
     },
     {
-      url: `${baseUrl}/pricing`,
-      lastModified: new Date(),
+      url: `${BASE_URL}/pricing`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${BASE_URL}/appointment`,
+      lastModified: currentDate,
       changeFrequency: 'monthly',
-      priority: 0.8,
+      priority: 0.7,
     },
     {
-      url: `${baseUrl}/privacy-policy`,
-      lastModified: new Date(),
+      url: `${BASE_URL}/privacy-policy`,
+      lastModified: currentDate,
       changeFrequency: 'yearly',
       priority: 0.3,
     },
     {
-      url: `${baseUrl}/cookie-policy`,
-      lastModified: new Date(),
+      url: `${BASE_URL}/terms-and-conditions`,
+      lastModified: currentDate,
       changeFrequency: 'yearly',
       priority: 0.3,
     },
     {
-      url: `${baseUrl}/terms-and-conditions`,
-      lastModified: new Date(),
+      url: `${BASE_URL}/cookie-policy`,
+      lastModified: currentDate,
       changeFrequency: 'yearly',
       priority: 0.3,
     },

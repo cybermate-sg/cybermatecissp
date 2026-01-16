@@ -131,7 +131,7 @@ function CheckoutContent() {
           </div>
           <div className="flex items-center justify-between">
             <span className="text-gray-300">Product:</span>
-            <span className="text-white font-semibold">CISSP Mastery Lifetime Access</span>
+            <span className="text-white font-semibold">CISSP Mastery 180-Day Access</span>
           </div>
         </div>
 

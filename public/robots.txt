@@ -1,0 +1,31 @@
+# Robots.txt for CISSP Mastery (Cybermate Professional Training)
+# https://www.cisspmastery.com
+
+User-agent: *
+Allow: /
+
+# Allow all public pages
+Allow: /pricing
+Allow: /privacy-policy
+Allow: /terms-and-conditions
+Allow: /cookie-policy
+Allow: /appointment
+
+# Disallow authenticated/private areas
+Disallow: /dashboard
+Disallow: /dashboard/*
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /checkout
+Disallow: /success
+Disallow: /api/
+
+# Disallow auth pages (Clerk handles these)
+Disallow: /sign-in
+Disallow: /sign-up
+
+# Sitemap location
+Sitemap: https://www.cisspmastery.com/sitemap.xml
+
+# Crawl-delay for politeness (optional, respected by some bots)
+Crawl-delay: 1
