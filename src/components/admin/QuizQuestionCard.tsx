@@ -33,6 +33,17 @@ interface QuizQuestion {
   createdAt: Date;
   createdBy: string;
   difficulty?: number | null;
+  subTopicId?: string | null;
+  subTopic?: {
+    id: string;
+    subTopicName: string;
+    topic: {
+      id: string;
+      topicCode: string;
+      topicName: string;
+      domainNumber: number;
+    };
+  } | null;
 }
 
 interface QuizQuestionCardProps {
@@ -75,6 +86,16 @@ export function QuizQuestionCard({ question, index, onEdit, onDelete }: QuizQues
 
             {/* Question Summary */}
             <div className="flex-1 min-w-0">
+              {/* Topic Badge */}
+              {question.subTopic && (
+                <div className="mb-2">
+                  <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-300 text-xs">
+                    {question.subTopic.topic.topicCode} &gt; {question.subTopic.subTopicName.length > 40
+                      ? question.subTopic.subTopicName.substring(0, 40) + '...'
+                      : question.subTopic.subTopicName}
+                  </Badge>
+                </div>
+              )}
               <p className="text-sm font-medium text-slate-800 line-clamp-2 mb-2">
                 {question.questionText}
               </p>

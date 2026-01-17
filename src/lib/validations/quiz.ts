@@ -26,6 +26,9 @@ export const quizQuestionSchema = z.object({
   correct_answer_with_justification: z.record(z.string(), z.string()).optional(), // Object with correct option as key, justification as value
   compare_remaining_options_with_justification: z.record(z.string(), z.string()).optional(), // Object comparing remaining options after elimination
   correct_options_justification: z.record(z.string(), z.string()).optional(), // Object with correct option as key, detailed justification as value
+  // Topic reference for categorization (e.g., "1.2.1" or "5 Pillars of Information Security")
+  topic_code: z.string().optional(), // e.g., "1.2" - references topics.topic_code
+  sub_topic_name: z.string().optional(), // e.g., "5 Pillars of Information Security" - references sub_topics.sub_topic_name
 });
 
 // Quiz file schema (for JSON upload)

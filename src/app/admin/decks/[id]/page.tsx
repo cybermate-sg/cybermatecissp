@@ -54,6 +54,17 @@ interface QuizQuestion {
   createdAt: Date;
   createdBy: string;
   difficulty?: number | null;
+  subTopicId?: string | null;
+  subTopic?: {
+    id: string;
+    subTopicName: string;
+    topic: {
+      id: string;
+      topicCode: string;
+      topicName: string;
+      domainNumber: number;
+    };
+  } | null;
 }
 
 interface Flashcard {
@@ -108,6 +119,8 @@ interface MediaUpload {
 const DECK_QUIZ_JSON_EXAMPLE = {
   questions: [
     {
+      topic_code: "1.2",
+      sub_topic_name: "5 Pillars of Information Security",
       question: "What does CIA stand for in information security?",
       options: [
         { text: "Confidentiality, Integrity, Availability", isCorrect: true },
