@@ -56,6 +56,42 @@ export const payments = pgTable('payments', {
 });
 
 // ============================================
+// TOPICS HIERARCHY: TOPICS → SUB-TOPICS
+// ADMIN-ONLY CREATION (via seed scripts)
+// ============================================
+
+// Topics table - Stores course topics (e.g., "1.1 - Understand, adhere to, and promote professional ethics")
+// Generic naming for future scalability (not just CISSP)
+export const topics = pgTable('topics', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  domainNumber: integer('domain_number').notNull(), // Domain 1-8 for CISSP
+  topicCode: varchar('topic_code', { length: 20 }).notNull(), // e.g., "1.1", "1.2", "2.1"
+  topicName: text('topic_name').notNull(), // Full topic name
+  order: integer('order').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Index for filtering topics by domain
+  domainIdx: index('idx_topics_domain').on(table.domainNumber),
+  // Unique constraint on topic code
+  topicCodeUnique: index('idx_topics_code_unique').on(table.topicCode),
+}));
+
+// Sub-topics table - Stores sub-topics under each topic
+// e.g., "5 Pillars of Information Security" under topic "1.2"
+export const subTopics = pgTable('sub_topics', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  topicId: uuid('topic_id').notNull().references(() => topics.id, { onDelete: 'cascade' }),
+  subTopicName: text('sub_topic_name').notNull(),
+  order: integer('order').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Index for fetching sub-topics by topic
+  topicIdx: index('idx_sub_topics_topic').on(table.topicId),
+}));
+
+// ============================================
 // BRAINSCAPE MODEL: CLASSES → DECKS → CARDS
 // ADMIN-ONLY CREATION / USER CONSUMPTION
 // ============================================
@@ -176,6 +212,7 @@ export const deckQuizQuestions = pgTable('deck_quiz_questions', {
   correctOptionsJustification: text('correct_options_justification'), // Detailed justification for correct options
   order: integer('order').notNull().default(0),
   difficulty: integer('difficulty'), // Optional: 1-5 difficulty level
+  subTopicId: uuid('sub_topic_id').references(() => subTopics.id, { onDelete: 'set null' }), // Link to sub-topic for categorization
   createdBy: varchar('created_by', { length: 255 }).notNull().references(() => users.clerkUserId),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -184,6 +221,8 @@ export const deckQuizQuestions = pgTable('deck_quiz_questions', {
   deckIdx: index('idx_deck_quiz_questions_deck').on(table.deckId),
   // Index for ordering questions within a deck
   deckOrderIdx: index('idx_deck_quiz_questions_deck_order').on(table.deckId, table.order),
+  // Index for filtering questions by sub-topic
+  subTopicIdx: index('idx_deck_quiz_questions_sub_topic').on(table.subTopicId),
 }));
 
 // ============================================
@@ -636,6 +675,19 @@ export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
   }),
 }));
 
+// Topics and Sub-topics relations
+export const topicsRelations = relations(topics, ({ many }) => ({
+  subTopics: many(subTopics),
+}));
+
+export const subTopicsRelations = relations(subTopics, ({ one, many }) => ({
+  topic: one(topics, {
+    fields: [subTopics.topicId],
+    references: [topics.id],
+  }),
+  deckQuizQuestions: many(deckQuizQuestions),
+}));
+
 export const classesRelations = relations(classes, ({ one, many }) => ({
   createdBy: one(users, {
     fields: [classes.createdBy],
@@ -708,6 +760,10 @@ export const deckQuizQuestionsRelations = relations(deckQuizQuestions, ({ one, m
   createdBy: one(users, {
     fields: [deckQuizQuestions.createdBy],
     references: [users.clerkUserId],
+  }),
+  subTopic: one(subTopics, {
+    fields: [deckQuizQuestions.subTopicId],
+    references: [subTopics.id],
   }),
   feedback: many(userFeedback),
 }));

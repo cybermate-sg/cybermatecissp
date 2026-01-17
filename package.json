@@ -15,6 +15,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "bun run scripts/seed-cissp-content.ts",
+    "db:seed-topics": "bun run scripts/seed-topics.ts",
     "check-admin": "bun run scripts/check-admin-status.ts",
     "make-admin": "bun run scripts/make-admin.ts",
     "test:e2e": "playwright test",

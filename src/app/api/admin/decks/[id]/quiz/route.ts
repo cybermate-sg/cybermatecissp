@@ -1,14 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
-import { deckQuizQuestions } from '@/lib/db/schema';
+import { deckQuizQuestions, topics, subTopics } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { validateQuizFile, QuizFile } from '@/lib/validations/quiz';
+import { validateQuizFile, QuizFile, QuizQuestion } from '@/lib/validations/quiz';
 import { CacheInvalidation } from '@/lib/redis/invalidation';
 import { withErrorHandling } from '@/lib/api/error-handler';
 import { withTracing } from '@/lib/middleware/with-tracing';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * Helper function to resolve sub_topic_id from topic_code and sub_topic_name
+ */
+async function resolveSubTopicId(
+  topicCode: string | undefined,
+  subTopicName: string | undefined
+): Promise<string | null> {
+  if (!topicCode || !subTopicName) {
+    return null;
+  }
+
+  try {
+    // Find the topic by code
+    const topic = await db.query.topics.findFirst({
+      where: eq(topics.topicCode, topicCode),
+    });
+
+    if (!topic) {
+      console.warn(`Topic not found for code: ${topicCode}`);
+      return null;
+    }
+
+    // Find sub-topics for this topic
+    const allSubTopics = await db.query.subTopics.findMany({
+      where: eq(subTopics.topicId, topic.id),
+    });
+
+    // Try exact match first, then partial match
+    const matchedSubTopic = allSubTopics.find(
+      (st) => st.subTopicName.toLowerCase() === subTopicName.toLowerCase()
+    ) || allSubTopics.find(
+      (st) => st.subTopicName.toLowerCase().includes(subTopicName.toLowerCase()) ||
+              subTopicName.toLowerCase().includes(st.subTopicName.toLowerCase())
+    );
+
+    if (!matchedSubTopic) {
+      console.warn(`Sub-topic not found: "${subTopicName}" under topic ${topicCode}`);
+      return null;
+    }
+
+    return matchedSubTopic.id;
+  } catch (error) {
+    console.error('Error resolving sub-topic:', error);
+    return null;
+  }
+}
 
 /**
  * PUT /api/admin/decks/[id]/quiz
@@ -60,21 +107,30 @@ async function updateDeckQuiz(
 
     // Insert new quiz questions (append to existing)
     if (validationResult.data.questions.length > 0) {
-      await db.insert(deckQuizQuestions).values(
-        validationResult.data.questions.map((q, index) => ({
-          deckId: deckId,
-          questionText: q.question,
-          options: q.options, // JSON array: [{text, isCorrect}]
-          explanation: q.explanation || null,
-          eliminationTactics: q.elimination_tactics ? JSON.stringify(q.elimination_tactics) : null,
-          correctAnswerWithJustification: q.correct_answer_with_justification ? JSON.stringify(q.correct_answer_with_justification) : null,
-          compareRemainingOptionsWithJustification: q.compare_remaining_options_with_justification ? JSON.stringify(q.compare_remaining_options_with_justification) : null,
-          correctOptionsJustification: q.correct_options_justification ? JSON.stringify(q.correct_options_justification) : null,
-          order: startingOrder + index,
-          difficulty: null, // Could be added to quiz validation schema later
-          createdBy: admin.clerkUserId,
-        }))
+      // Resolve sub-topic IDs for all questions that have topic references
+      const questionsWithSubTopics = await Promise.all(
+        validationResult.data.questions.map(async (q, index) => {
+          // Resolve sub-topic ID if topic_code and sub_topic_name are provided
+          const subTopicId = await resolveSubTopicId(q.topic_code, q.sub_topic_name);
+
+          return {
+            deckId: deckId,
+            questionText: q.question,
+            options: q.options, // JSON array: [{text, isCorrect}]
+            explanation: q.explanation || null,
+            eliminationTactics: q.elimination_tactics ? JSON.stringify(q.elimination_tactics) : null,
+            correctAnswerWithJustification: q.correct_answer_with_justification ? JSON.stringify(q.correct_answer_with_justification) : null,
+            compareRemainingOptionsWithJustification: q.compare_remaining_options_with_justification ? JSON.stringify(q.compare_remaining_options_with_justification) : null,
+            correctOptionsJustification: q.correct_options_justification ? JSON.stringify(q.correct_options_justification) : null,
+            order: startingOrder + index,
+            difficulty: null, // Could be added to quiz validation schema later
+            subTopicId: subTopicId, // Link to sub-topic for categorization
+            createdBy: admin.clerkUserId,
+          };
+        })
       );
+
+      await db.insert(deckQuizQuestions).values(questionsWithSubTopics);
     }
 
     // Get total count after insertion

@@ -21,9 +21,17 @@ async function listDeckQuizQuestions(
     const { id: deckId } = await params;
 
     // Fetch all quiz questions for this deck, ordered by order field
+    // Include subTopic relation for topic categorization display
     const questions = await db.query.deckQuizQuestions.findMany({
       where: eq(deckQuizQuestions.deckId, deckId),
       orderBy: [asc(deckQuizQuestions.order)],
+      with: {
+        subTopic: {
+          with: {
+            topic: true,
+          },
+        },
+      },
     });
 
     // Parse JSON fields for frontend consumption
@@ -44,6 +52,17 @@ async function listDeckQuizQuestions(
         : null,
       order: q.order,
       difficulty: q.difficulty,
+      subTopicId: q.subTopicId,
+      subTopic: q.subTopic ? {
+        id: q.subTopic.id,
+        subTopicName: q.subTopic.subTopicName,
+        topic: q.subTopic.topic ? {
+          id: q.subTopic.topic.id,
+          topicCode: q.subTopic.topic.topicCode,
+          topicName: q.subTopic.topic.topicName,
+          domainNumber: q.subTopic.topic.domainNumber,
+        } : null,
+      } : null,
       createdAt: q.createdAt,
       createdBy: q.createdBy,
     }));
