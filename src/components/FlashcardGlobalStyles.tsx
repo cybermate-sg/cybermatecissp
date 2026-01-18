@@ -1,7 +1,7 @@
 
 export default function FlashcardGlobalStyles() {
-    return (
-        <style jsx global>{`
+  return (
+    <style jsx global>{`
         .perspective-1000 {
           perspective: 1000px;
         }
@@ -41,7 +41,7 @@ export default function FlashcardGlobalStyles() {
         }
 
         .prose h1 {
-          font-size: 1.5rem;
+          font-size: 1.5em;
           font-weight: 600;
           margin-top: 0.75rem;
           margin-bottom: 0.5rem;
@@ -49,7 +49,7 @@ export default function FlashcardGlobalStyles() {
         }
 
         .prose h2 {
-          font-size: 1.25rem;
+          font-size: 1.25em;
           font-weight: 600;
           margin-top: 1rem;
           margin-bottom: 0.5rem;
@@ -57,7 +57,7 @@ export default function FlashcardGlobalStyles() {
         }
 
         .prose h3 {
-          font-size: 1.125rem;
+          font-size: 1.125em;
           font-weight: 600;
           margin-top: 0.75rem;
           margin-bottom: 0.5rem;
@@ -220,5 +220,5 @@ export default function FlashcardGlobalStyles() {
           }
         }
       `}</style>
-    );
+  );
 }

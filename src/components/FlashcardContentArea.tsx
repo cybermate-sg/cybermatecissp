@@ -20,6 +20,7 @@ export interface FlashcardContentAreaProps {
     onImageClick: (e: React.MouseEvent, img: FlashcardMedia) => void;
     borderColor: string;
     hoverBgColor: string;
+    fontScale?: number;
 }
 
 export function FlashcardContentArea({
@@ -28,7 +29,23 @@ export function FlashcardContentArea({
     onImageClick,
     borderColor,
     hoverBgColor,
+    fontScale = 0,
 }: FlashcardContentAreaProps) {
+    // Determine text size classes based on fontScale
+    const getTextSizeClass = () => {
+        // Default (0): text-sm sm:text-base prose-sm sm:prose-base
+        switch (fontScale) {
+            case -1:
+                return 'text-xs sm:text-sm prose-sm';
+            case 1:
+                return 'text-base sm:text-lg prose-base sm:prose-lg';
+            case 2:
+                return 'text-lg sm:text-xl prose-lg sm:prose-xl';
+            default:
+                return 'text-sm sm:text-base prose-sm sm:prose-base';
+        }
+    };
+
     // Determine grid layout class based on image count
     const getGridLayoutClass = () => {
         if (images.length === 0) return '';
@@ -61,7 +78,7 @@ export function FlashcardContentArea({
         >
             <div className="w-full">
                 <div
-                    className="text-sm sm:text-base text-white text-left leading-relaxed mb-6 prose prose-invert prose-sm sm:prose-base max-w-none w-full"
+                    className={`${getTextSizeClass()} text-white text-left leading-relaxed mb-6 prose prose-invert max-w-none w-full transition-all duration-200`}
                     // nosemgrep: react-dangerouslysetinnerhtml
                     dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                 />

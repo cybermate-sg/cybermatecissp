@@ -41,6 +41,17 @@ export default function Flashcard(props: FlashcardProps) {
   const [bookmarked, setBookmarked] = useState(isBookmarked);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [fontScale, setFontScale] = useState(0);
+
+  const handleIncreaseFont = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFontScale((prev) => Math.min(prev + 1, 2));
+  };
+
+  const handleDecreaseFont = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFontScale((prev) => Math.max(prev - 1, -1));
+  };
 
   // Track if component is mounted for portal rendering
   useEffect(() => {
@@ -156,8 +167,35 @@ export default function Flashcard(props: FlashcardProps) {
           <CardContent className="flex flex-col h-full p-0">
             {/* Header */}
             <div className="flex-shrink-0 border-b border-slate-700 bg-slate-900/50 px-4 sm:px-6 py-3 sm:py-4">
-              <div className="text-xs sm:text-sm font-semibold text-purple-400 text-center">
-                Card Front
+              <div className="flex items-center justify-between">
+                <div className="flex-1 text-center">
+                  <div className="text-xs sm:text-sm font-semibold text-purple-400">
+                    Card Front
+                  </div>
+                </div>
+                <div className="flex items-center gap-1" >
+                  <div className="flex items-center gap-0.5 rounded-md border border-slate-700 bg-slate-800/50 p-0.5" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      onClick={handleDecreaseFont}
+                      disabled={fontScale <= -1}
+                      variant="ghost"
+                      size="sm"
+                      className={`h-6 w-7 text-[10px] px-0 hover:bg-purple-500/10 ${fontScale <= -1 ? 'text-slate-600' : 'text-slate-400 hover:text-purple-400'}`}
+                    >
+                      A-
+                    </Button>
+                    <div className="w-px h-3 bg-slate-700" />
+                    <Button
+                      onClick={handleIncreaseFont}
+                      disabled={fontScale >= 2}
+                      variant="ghost"
+                      size="sm"
+                      className={`h-6 w-7 text-[10px] px-0 hover:bg-purple-500/10 ${fontScale >= 2 ? 'text-slate-600' : 'text-slate-400 hover:text-purple-400'}`}
+                    >
+                      A+
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -171,6 +209,7 @@ export default function Flashcard(props: FlashcardProps) {
                   onImageClick={handleImageClick}
                   borderColor="border-slate-600"
                   hoverBgColor="bg-slate-900/70"
+                  fontScale={fontScale}
                 />
               </div>
             </div>
@@ -206,6 +245,28 @@ export default function Flashcard(props: FlashcardProps) {
                 </div>
                 {/* Action Buttons */}
                 <div className="flex items-center gap-1.5">
+                  {/* Font Controls */}
+                  <div className="flex items-center gap-0.5 rounded-md border border-blue-500/20 bg-slate-900/30 p-0.5 mr-2" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      onClick={handleDecreaseFont}
+                      disabled={fontScale <= -1}
+                      variant="ghost"
+                      size="sm"
+                      className={`h-6 w-7 text-[10px] px-0 hover:bg-blue-500/10 ${fontScale <= -1 ? 'text-slate-600' : 'text-slate-400 hover:text-blue-400'}`}
+                    >
+                      A-
+                    </Button>
+                    <div className="w-px h-3 bg-blue-500/20" />
+                    <Button
+                      onClick={handleIncreaseFont}
+                      disabled={fontScale >= 2}
+                      variant="ghost"
+                      size="sm"
+                      className={`h-6 w-7 text-[10px] px-0 hover:bg-blue-500/10 ${fontScale >= 2 ? 'text-slate-600' : 'text-slate-400 hover:text-blue-400'}`}
+                    >
+                      A+
+                    </Button>
+                  </div>
                   {/* Feedback Button */}
                   {flashcardId && (
                     <FeedbackButton
@@ -268,6 +329,7 @@ export default function Flashcard(props: FlashcardProps) {
                   onImageClick={handleImageClick}
                   borderColor="border-blue-400"
                   hoverBgColor="bg-blue-900/70"
+                  fontScale={fontScale}
                 />
               </div>
             </div>
