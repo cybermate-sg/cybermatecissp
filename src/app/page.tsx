@@ -13,13 +13,18 @@ const ClientFloatingBadge = dynamic(
   () => import("@/components/sections/ClientFloatingBadge")
 );
 
+import NativeLanguageSupport from "@/components/sections/NativeLanguageSupport";
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0f1729] via-[#1a2235] to-[#0f1729]">
       {/* Structured Data for SEO */}
       <HomePageJsonLd />
       {/* TEMPORARY: Construction Overlay - Remove when ready to launch */}
-      <ConstructionOverlay />
+      {/* <ConstructionOverlay /> */}
+
+      {/* Native Language Support Section */}
+      <NativeLanguageSupport />
 
       {/* Floating Pass Rate Badge */}
       <ClientFloatingBadge />
