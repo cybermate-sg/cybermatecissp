@@ -69,11 +69,19 @@ function getResumeStudyLink(
   return '#';
 }
 
+const DEFAULT_USER_STATS = {
+  streak: 0,
+  minutesToday: 0,
+  cardsToday: 0,
+  accuracy: 0,
+  last7DaysActivity: [0, 0, 0, 0, 0, 0, 0],
+};
+
 export default function ClassDetailClient({
   classData,
   userName,
   daysLeft,
-  userStats = { streak: 0, minutesToday: 0, cardsToday: 0, accuracy: 0, last7DaysActivity: [0, 0, 0, 0, 0, 0, 0] }
+  userStats = DEFAULT_USER_STATS,
 }: ClassDetailClientProps) {
   const [studyMode, setStudyMode] = useState<StudyMode>("progressive");
   const [showModeInfo, setShowModeInfo] = useState(false);
