@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NextRequest, NextResponse } from 'next/server';
-import { GET } from './route';
+import { NextRequest } from 'next/server';
+
 
 vi.mock('@clerk/nextjs/server', () => ({
   auth: vi.fn(),
@@ -17,8 +17,8 @@ vi.mock('@/lib/db', () => ({
 }));
 
 vi.mock('@/lib/subscription', () => ({
-  isSubscriptionExpired: (createdAt: Date) => false,
-  calculateDaysRemaining: (createdAt: Date) => 30,
+  isSubscriptionExpired: () => false,
+  calculateDaysRemaining: () => 30,
   ACCESS_DURATION_DAYS: 365,
 }));
 

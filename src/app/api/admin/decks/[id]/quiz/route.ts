@@ -3,7 +3,7 @@ import { requireAdmin } from '@/lib/auth/admin';
 import { db } from '@/lib/db';
 import { deckQuizQuestions, topics, subTopics } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { validateQuizFile, QuizFile, QuizQuestion } from '@/lib/validations/quiz';
+import { validateQuizFile, QuizFile } from '@/lib/validations/quiz';
 import { CacheInvalidation } from '@/lib/redis/invalidation';
 import { withErrorHandling } from '@/lib/api/error-handler';
 import { withTracing } from '@/lib/middleware/with-tracing';
@@ -42,7 +42,7 @@ async function resolveSubTopicId(
       (st) => st.subTopicName.toLowerCase() === subTopicName.toLowerCase()
     ) || allSubTopics.find(
       (st) => st.subTopicName.toLowerCase().includes(subTopicName.toLowerCase()) ||
-              subTopicName.toLowerCase().includes(st.subTopicName.toLowerCase())
+        subTopicName.toLowerCase().includes(st.subTopicName.toLowerCase())
     );
 
     if (!matchedSubTopic) {

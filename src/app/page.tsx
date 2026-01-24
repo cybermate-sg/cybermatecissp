@@ -6,7 +6,7 @@ import WhyStudentsPass from "@/components/sections/WhyStudentsPass";
 import TrustUrgency from "@/components/sections/TrustUrgency";
 import SMARTMethodology from "@/components/sections/SMARTMethodology";
 import FinalCTA from "@/components/sections/FinalCTA";
-import ConstructionOverlay from "@/components/ConstructionOverlay";
+
 import { HomePageJsonLd } from "@/components/JsonLd";
 
 const ClientFloatingBadge = dynamic(

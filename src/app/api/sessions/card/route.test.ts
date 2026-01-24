@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NextRequest, NextResponse } from 'next/server';
-import { POST } from './route';
+import { NextRequest } from 'next/server';
+
 
 vi.mock('@clerk/nextjs/server', () => ({
   auth: vi.fn(),
@@ -12,7 +12,7 @@ vi.mock('@/lib/db', () => ({
   },
 }));
 
-const { db } = await import('@/lib/db');
+
 const { auth } = await import('@clerk/nextjs/server');
 
 function createRequest(body?: unknown) {

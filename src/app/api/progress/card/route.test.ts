@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NextRequest, NextResponse } from 'next/server';
-import { POST, GET } from './route';
+import { NextRequest } from 'next/server';
+
 
 vi.mock('@clerk/nextjs/server', () => ({
   auth: vi.fn(),
@@ -27,7 +27,7 @@ vi.mock('@/lib/db', () => ({
 
 vi.mock('@/lib/redis/invalidation', () => ({
   CacheInvalidation: {
-    userProgress: (_userId: string, _flashcardId: string, _classId: string) => ['key1'],
+    userProgress: () => ['key1'],
   },
   safeInvalidate: vi.fn().mockResolvedValue(undefined),
 }));

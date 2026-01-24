@@ -8,7 +8,7 @@ interface StudyButtonProps {
   onlyQuizDecks: boolean;
   hasBothTypes: boolean;
   flashcardDeckIds: string[];
-  quizDeckNames: string[];
+
 }
 
 export function StudyButton({
@@ -17,7 +17,7 @@ export function StudyButton({
   onlyQuizDecks,
   hasBothTypes,
   flashcardDeckIds,
-  quizDeckNames,
+
 }: StudyButtonProps) {
   if (onlyQuizDecks) {
     return (

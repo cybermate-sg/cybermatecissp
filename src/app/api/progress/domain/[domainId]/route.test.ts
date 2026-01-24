@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NextRequest, NextResponse } from 'next/server';
-import { GET } from './route';
+import { NextRequest } from 'next/server';
+
 
 vi.mock('@clerk/nextjs/server', () => ({
   auth: vi.fn(),
@@ -28,7 +28,7 @@ function createRequest(method: 'GET' = 'GET') {
 }
 
 function makeParams(domainId: string) {
-  return { params: Promise.resolve({ domainId }) } as any;
+  return { params: Promise.resolve({ domainId }) };
 }
 
 describe('/api/progress/domain/[domainId]', () => {

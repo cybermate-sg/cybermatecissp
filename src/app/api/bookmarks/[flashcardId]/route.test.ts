@@ -41,7 +41,7 @@ const { cache } = await import('@/lib/redis');
 const { auth } = await import('@clerk/nextjs/server');
 
 function makeParams(flashcardId: string | null) {
-  return { params: Promise.resolve({ flashcardId: flashcardId as string }) } as any;
+  return { params: Promise.resolve({ flashcardId: flashcardId as string }) };
 }
 
 function makeRequest(method: 'GET' | 'DELETE' = 'GET') {

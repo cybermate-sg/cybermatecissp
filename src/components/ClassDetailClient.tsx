@@ -156,7 +156,7 @@ export default function ClassDetailClient({
               onlyQuizDecks={studyConfig.onlyQuizDecks}
               hasBothTypes={studyConfig.hasBothTypes}
               flashcardDeckIds={studyConfig.flashcardDeckIds}
-              quizDeckNames={studyConfig.quizDeckNames}
+
             />
 
             {/* Filter Bar */}
