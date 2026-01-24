@@ -115,8 +115,7 @@ export default function NativeLanguageSupport() {
             <div className="container px-4 md:px-6 mx-auto">
                 <div className="flex flex-col items-center text-center space-y-6">
                     <h2 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 max-w-4xl mx-auto leading-relaxed">
-                        CISSP MASTERY with native language support for the first time to enhance
-                        your understanding and pass CISSP confidently
+                        First time ever - experience CISSP in native language support and pass confidently.
                     </h2>
 
                     <div className="flex flex-wrap justify-center gap-6 md:gap-8 max-w-5xl mx-auto mt-4 px-2">

@@ -1,0 +1,428 @@
+bun test v1.3.5 (1e86cebd)
+
+e2e\admin-classes-crud.spec.ts:
+
+# Unhandled error between tests
+-------------------------------
+70 |     this.test = test;
+71 |   }
+72 |   _currentSuite(location, title) {
+73 |     const suite = (0, import_globals.currentlyLoadingFileSuite)();
+74 |     if (!suite) {
+75 |       throw new Error([
+                     ^
+error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+      at _currentSuite (C:\Projects\cisspmastery\node_modules\playwright\lib\common\testType.js:75:17)
+      at _describe (C:\Projects\cisspmastery\node_modules\playwright\lib\common\testType.js:115:24)
+      at C:\Projects\cisspmastery\e2e\admin-classes-crud.spec.ts:15:6
+      at loadAndEvaluateModule (2:1)
+-------------------------------
+
+
+e2e\payment-authenticated-flow.spec.ts:
+
+# Unhandled error between tests
+-------------------------------
+70 |     this.test = test;
+71 |   }
+72 |   _currentSuite(location, title) {
+73 |     const suite = (0, import_globals.currentlyLoadingFileSuite)();
+74 |     if (!suite) {
+75 |       throw new Error([
+                     ^
+error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+      at _currentSuite (C:\Projects\cisspmastery\node_modules\playwright\lib\common\testType.js:75:17)
+      at _describe (C:\Projects\cisspmastery\node_modules\playwright\lib\common\testType.js:115:24)
+      at C:\Projects\cisspmastery\e2e\payment-authenticated-flow.spec.ts:22:6
+      at loadAndEvaluateModule (2:1)
+-------------------------------
+
+
+e2e\payment-failure-scenarios.spec.ts:
+
+# Unhandled error between tests
+-------------------------------
+70 |     this.test = test;
+71 |   }
+72 |   _currentSuite(location, title) {
+73 |     const suite = (0, import_globals.currentlyLoadingFileSuite)();
+74 |     if (!suite) {
+75 |       throw new Error([
+                     ^
+error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+      at _currentSuite (C:\Projects\cisspmastery\node_modules\playwright\lib\common\testType.js:75:17)
+      at _describe (C:\Projects\cisspmastery\node_modules\playwright\lib\common\testType.js:115:24)
+      at C:\Projects\cisspmastery\e2e\payment-failure-scenarios.spec.ts:23:6
+      at loadAndEvaluateModule (2:1)
+-------------------------------
+
+
+e2e\payment-guest-flow.spec.ts:
+
+# Unhandled error between tests
+-------------------------------
+70 |     this.test = test;
+71 |   }
+72 |   _currentSuite(location, title) {
+73 |     const suite = (0, import_globals.currentlyLoadingFileSuite)();
+74 |     if (!suite) {
+75 |       throw new Error([
+                     ^
+error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+      at _currentSuite (C:\Projects\cisspmastery\node_modules\playwright\lib\common\testType.js:75:17)
+      at _describe (C:\Projects\cisspmastery\node_modules\playwright\lib\common\testType.js:115:24)
+      at C:\Projects\cisspmastery\e2e\payment-guest-flow.spec.ts:21:6
+      at loadAndEvaluateModule (2:1)
+-------------------------------
+
+
+e2e\payment-webhook-handling.spec.ts:
+
+# Unhandled error between tests
+-------------------------------
+70 |     this.test = test;
+71 |   }
+72 |   _currentSuite(location, title) {
+73 |     const suite = (0, import_globals.currentlyLoadingFileSuite)();
+74 |     if (!suite) {
+75 |       throw new Error([
+                     ^
+error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+      at _currentSuite (C:\Projects\cisspmastery\node_modules\playwright\lib\common\testType.js:75:17)
+      at _describe (C:\Projects\cisspmastery\node_modules\playwright\lib\common\testType.js:115:24)
+      at C:\Projects\cisspmastery\e2e\payment-webhook-handling.spec.ts:25:6
+      at loadAndEvaluateModule (2:1)
+-------------------------------
+
+
+src\app\api\bookmarks\route.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+10 | // Use a dummy connection string for build-time type checking
+11 | const isNextBuild = process.argv.includes('build') || process.env.NEXT_PHASE === 'phase-production-build';
+12 | const effectiveConnectionString = connectionString || (isNextBuild ? 'postgresql://dummy:dummy@localhost:5432/dummy' : '');
+13 | 
+14 | if (!effectiveConnectionString && !isNextBuild) {
+15 |   throw new Error('DATABASE_URL or POSTGRES_URL environment variable is required');
+                 ^
+error: DATABASE_URL or POSTGRES_URL environment variable is required
+      at C:\Projects\cisspmastery\src\lib\db\index.ts:15:13
+-------------------------------
+
+
+src\app\api\bookmarks\[flashcardId]\route.test.ts:
+Redis cache is not configured. Caching will be disabled.
+[req_d5593a63e739cde46cbe600626264371] [DELETE /api/bookmarks/123] [0ms] Incoming request {"method":"DELETE","url":"http://localhost:3000/api/bookmarks/123","headers":{}}
+(pass) /api/bookmarks/[flashcardId] > DELETE > returns 401 when unauthenticated
+(pass) /api/bookmarks/[flashcardId] > DELETE > returns 400 when flashcardId is missing
+[req_8a54fd27346cc403500dd96c6876cf3a] [DELETE /api/bookmarks/123] [0ms] Incoming request {"method":"DELETE","url":"http://localhost:3000/api/bookmarks/123","headers":{}}
+[req_aa54765143768fe9bc8aae99797603ed] [DELETE /api/bookmarks/123] [0ms] Incoming request {"method":"DELETE","url":"http://localhost:3000/api/bookmarks/123","headers":{}}
+(pass) /api/bookmarks/[flashcardId] > DELETE > returns 404 when bookmark not found
+[req_916b97c4ecc5ba70d773add3c2c9fae0] [DELETE /api/bookmarks/123] [0ms] Incoming request {"method":"DELETE","url":"http://localhost:3000/api/bookmarks/123","headers":{}}
+ 97 |       const res = await DELETE(makeRequest('DELETE'), makeParams('f1'));
+ 98 |       const body = await res.json();
+ 99 | 
+100 |       expect(res.status).toBe(200);
+101 |       expect(body.success).toBe(true);
+102 |       expect(cache.del).toHaveBeenCalled();
+                              ^
+error: Expected value must be a mock function: [AsyncFunction: del]
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\bookmarks\[flashcardId]\route.test.ts:102:25)
+(fail) /api/bookmarks/[flashcardId] > DELETE > deletes bookmark and invalidates cache
+[req_66ca70c6b65c1c8c107d4abad5921ae7] [GET /api/bookmarks/123] [0ms] Incoming request {"method":"GET","url":"http://localhost:3000/api/bookmarks/123","headers":{}}
+(pass) /api/bookmarks/[flashcardId] > GET > returns 401 when unauthenticated
+114 |       expect(res.status).toBe(401);
+115 |       expect(body).toEqual({ error: 'Unauthorized' });
+116 |     });
+117 | 
+118 |     it('returns cached result when available', async () => {
+119 |       (cache.get as vi.Mock).mockResolvedValue(true);
+                                   ^
+TypeError: cache.get.mockResolvedValue is not a function. (In 'cache.get.mockResolvedValue(!0)', 'cache.get.mockResolvedValue' is undefined)
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\bookmarks\[flashcardId]\route.test.ts:119:30)
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\bookmarks\[flashcardId]\route.test.ts:118:48)
+(fail) /api/bookmarks/[flashcardId] > GET > returns cached result when available
+125 |       expect(res.status).toBe(200);
+126 |       expect(body).toEqual({ bookmarked: true });
+127 |     });
+128 | 
+129 |     it('queries DB and caches when no cache entry', async () => {
+130 |       (cache.get as vi.Mock).mockResolvedValue(null);
+                                   ^
+TypeError: cache.get.mockResolvedValue is not a function. (In 'cache.get.mockResolvedValue(null)', 'cache.get.mockResolvedValue' is undefined)
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\bookmarks\[flashcardId]\route.test.ts:130:30)
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\bookmarks\[flashcardId]\route.test.ts:129:53)
+(fail) /api/bookmarks/[flashcardId] > GET > queries DB and caches when no cache entry
+
+src\app\api\progress\card\route.test.ts:
+51 |     vi.clearAllMocks();
+52 |   });
+53 | 
+54 |   describe('POST', () => {
+55 |     it('returns 401 when unauthenticated', async () => {
+56 |       (await import('@clerk/nextjs/server')).auth = async () => ({ userId: null });
+                         ^
+TypeError: Attempted to assign to readonly property.
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\progress\card\route.test.ts:56:21)
+(fail) /api/progress/card > POST > returns 401 when unauthenticated
+[req_4d1d3f7c60aa996e591005aeb19e75f0] [POST /api/progress/card] [0ms] Incoming request {"method":"POST","url":"http://localhost/api/progress/card","headers":{"content-type":"application/json"}}
+(pass) /api/progress/card > POST > returns 400 when required fields are missing
+[req_302b3a65de62c996473b967faaa7127b] [POST /api/progress/card] [0ms] Incoming request {"method":"POST","url":"http://localhost/api/progress/card","headers":{"content-type":"application/json"}}
+(pass) /api/progress/card > POST > returns 400 when confidenceLevel is out of range
+[req_329cbf04a45c25607231ac2773d26e3d] [POST /api/progress/card] [0ms] Incoming request {"method":"POST","url":"http://localhost/api/progress/card","headers":{"content-type":"application/json"}}
+(pass) /api/progress/card > POST > returns 404 when flashcard does not exist
+[req_58ce16aefb26047c68ee8694c46698be] [POST /api/progress/card] [0ms] Incoming request {"method":"POST","url":"http://localhost/api/progress/card","headers":{"content-type":"application/json"}}
+(pass) /api/progress/card > POST > creates new progress and returns it
+106 |     });
+107 |   });
+108 | 
+109 |   describe('GET', () => {
+110 |     it('returns 401 when unauthenticated', async () => {
+111 |       (await import('@clerk/nextjs/server')).auth = async () => ({ userId: null });
+                          ^
+TypeError: Attempted to assign to readonly property.
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\progress\card\route.test.ts:111:21)
+(fail) /api/progress/card > GET > returns 401 when unauthenticated
+[req_6699ab151a315dbe7f1fa8ad6fe0528b] [GET /api/progress/card] [0ms] Incoming request {"method":"GET","url":"http://localhost/api/progress/card","headers":{}}
+Error fetching card progress: 168 | 
+169 |     if (!userId) {
+170 |       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+171 |     }
+172 | 
+173 |     const searchParams = request.nextUrl.searchParams;
+                                       ^
+TypeError: undefined is not an object (evaluating 'request.nextUrl.searchParams')
+      at getCardProgress (C:\Projects\cisspmastery\src\app\api\progress\card\route.ts:173:34)
+      at async <anonymous> (C:\Projects\cisspmastery\src\lib\api\error-handler.ts:307:20)
+      at async <anonymous> (C:\Projects\cisspmastery\src\lib\middleware\with-tracing.ts:58:30)
+      at async <anonymous> (C:\Projects\cisspmastery\src\app\api\progress\card\route.test.ts:123:25)
+
+121 |     it('returns 400 when flashcardId query param is missing', async () => {
+122 |       const req = new Request('http://localhost/api/progress/card');
+123 |       const res = await GET(req as any);
+124 |       const body = await res.json();
+125 | 
+126 |       expect(res.status).toBe(400);
+                               ^
+error: expect(received).toBe(expected)
+
+Expected: 400
+Received: 500
+
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\progress\card\route.test.ts:126:26)
+(fail) /api/progress/card > GET > returns 400 when flashcardId query param is missing [15.00ms]
+[req_41eb2249ca0deec23bf3e42db0720288] [GET /api/progress/card] [0ms] Incoming request {"method":"GET","url":"http://localhost/api/progress/card?flashcardId=f1","headers":{}}
+Error fetching card progress: 168 | 
+169 |     if (!userId) {
+170 |       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+171 |     }
+172 | 
+173 |     const searchParams = request.nextUrl.searchParams;
+                                       ^
+TypeError: undefined is not an object (evaluating 'request.nextUrl.searchParams')
+      at getCardProgress (C:\Projects\cisspmastery\src\app\api\progress\card\route.ts:173:34)
+      at async <anonymous> (C:\Projects\cisspmastery\src\lib\api\error-handler.ts:307:20)
+      at async <anonymous> (C:\Projects\cisspmastery\src\lib\middleware\with-tracing.ts:58:30)
+      at async <anonymous> (C:\Projects\cisspmastery\src\app\api\progress\card\route.test.ts:134:25)
+
+132 | 
+133 |       const req = new Request('http://localhost/api/progress/card?flashcardId=f1');
+134 |       const res = await GET(req as any);
+135 |       const body = await res.json();
+136 | 
+137 |       expect(res.status).toBe(200);
+                               ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: 500
+
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\progress\card\route.test.ts:137:26)
+(fail) /api/progress/card > GET > returns progress when found
+
+src\app\api\progress\update\route.test.ts:
+34 |   beforeEach(() => {
+35 |     vi.clearAllMocks();
+36 |   });
+37 | 
+38 |   it('returns 401 when unauthenticated', async () => {
+39 |     (await import('@clerk/nextjs/server')).auth = async () => ({ userId: null });
+                       ^
+TypeError: Attempted to assign to readonly property.
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\progress\update\route.test.ts:39:19)
+(fail) /api/progress/update > returns 401 when unauthenticated [16.00ms]
+[req_5b7ed04a6297c4b1fbcc2e782fd510a8] [POST /api/progress/update] [0ms] Incoming request {"method":"POST","url":"http://localhost/api/progress/update","headers":{"content-type":"application/json"}}
+(pass) /api/progress/update > returns 400 when required fields are missing
+[req_1e0f801d730103a1cb99ea22da4238e6] [POST /api/progress/update] [0ms] Incoming request {"method":"POST","url":"http://localhost/api/progress/update","headers":{"content-type":"application/json"}}
+(pass) /api/progress/update > creates new progress when no existing record
+
+src\app\api\sessions\card\route.test.ts:
+28 |   beforeEach(() => {
+29 |     vi.clearAllMocks();
+30 |   });
+31 | 
+32 |   it('returns 401 when unauthenticated', async () => {
+33 |     (await import('@clerk/nextjs/server')).auth = async () => ({ userId: null });
+                       ^
+TypeError: Attempted to assign to readonly property.
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\sessions\card\route.test.ts:33:19)
+(fail) /api/sessions/card > returns 401 when unauthenticated
+[req_3228b12e4f400d12598d955f0ffdeee7] [POST /api/sessions/card] [1ms] Incoming request {"method":"POST","url":"http://localhost/api/sessions/card","headers":{"content-type":"application/json"}}
+(pass) /api/sessions/card > returns 400 when required fields are missing
+[req_2db4930a427e327bb4d3529b235ada63] [POST /api/sessions/card] [0ms] Incoming request {"method":"POST","url":"http://localhost/api/sessions/card","headers":{"content-type":"application/json"}}
+(pass) /api/sessions/card > saves session card and returns success
+
+src\app\api\sessions\create\route.test.ts:
+33 |   beforeEach(() => {
+34 |     vi.clearAllMocks();
+35 |   });
+36 | 
+37 |   it('returns 401 when unauthenticated', async () => {
+38 |     (await import('@clerk/nextjs/server')).auth = async () => ({ userId: null });
+                       ^
+TypeError: Attempted to assign to readonly property.
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\sessions\create\route.test.ts:38:19)
+(fail) /api/sessions/create > returns 401 when unauthenticated
+[req_fab4a6cd7db623ad0524047104f0faa6] [POST /api/sessions/create] [0ms] Incoming request {"method":"POST","url":"http://localhost/api/sessions/create","headers":{"content-type":"application/json"}}
+[req_fab4a6cd7db623ad0524047104f0faa6] [POST /api/sessions/create] [1ms] Response sent {"status":400,"duration":"1ms"}
+(pass) /api/sessions/create > returns 400 when deckIds is missing or empty
+[req_301d3f79a796339feaa1dccf8be9b55a] [POST /api/sessions/create] [0ms] Incoming request {"method":"POST","url":"http://localhost/api/sessions/create","headers":{"content-type":"application/json"}}
+[req_301d3f79a796339feaa1dccf8be9b55a] [POST /api/sessions/create] [0ms] Response sent {"status":200,"duration":"0ms"}
+(pass) /api/sessions/create > creates a study session and returns session data
+
+src\app\api\sessions\end\route.test.ts:
+36 |   beforeEach(() => {
+37 |     vi.clearAllMocks();
+38 |   });
+39 | 
+40 |   it('returns 401 when unauthenticated', async () => {
+41 |     (await import('@clerk/nextjs/server')).auth = async () => ({ userId: null });
+                       ^
+TypeError: Attempted to assign to readonly property.
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\sessions\end\route.test.ts:41:19)
+(fail) /api/sessions/end > returns 401 when unauthenticated
+[req_b2a6107975688cbe6fcef313e32612aa] [POST /api/sessions/end] [0ms] Incoming request {"method":"POST","url":"http://localhost/api/sessions/end","headers":{"content-type":"application/json"}}
+(pass) /api/sessions/end > returns 400 when sessionId is missing
+[req_8f9494d06f2ced8bed794709cb3a3d26] [POST /api/sessions/end] [0ms] Incoming request {"method":"POST","url":"http://localhost/api/sessions/end","headers":{"content-type":"application/json"}}
+(pass) /api/sessions/end > returns 404 when session is not found
+[req_86572eb5e42f0d6c55fe928752073aeb] [POST /api/sessions/end] [0ms] Incoming request {"method":"POST","url":"http://localhost/api/sessions/end","headers":{"content-type":"application/json"}}
+(pass) /api/sessions/end > ends session and returns success payload [15.00ms]
+
+src\app\api\subscription\status\route.test.ts:
+28 |   beforeEach(() => {
+29 |     vi.clearAllMocks();
+30 |   });
+31 | 
+32 |   it('returns 401 when unauthenticated', async () => {
+33 |     (await import('@clerk/nextjs/server')).auth = async () => ({ userId: null });
+                       ^
+TypeError: Attempted to assign to readonly property.
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\subscription\status\route.test.ts:33:19)
+(fail) /api/subscription/status > returns 401 when unauthenticated
+(pass) /api/subscription/status > returns free plan when no subscription exists [15.00ms]
+(pass) /api/subscription/status > returns paid plan when active subscription exists
+
+src\app\api\user\is-admin\route.test.ts:
+(pass) GET /api/user/is-admin > returns isAdmin: true when checkIsAdmin returns a user
+(pass) GET /api/user/is-admin > returns isAdmin: false when checkIsAdmin returns null
+Error checking admin status: 31 |     expect(res.status).toBe(200);
+32 |     expect(body).toEqual({ isAdmin: false });
+33 |   });
+34 | 
+35 |   it('returns isAdmin: false when checkIsAdmin throws', async () => {
+36 |     (checkIsAdmin as vi.Mock).mockRejectedValue(new Error('boom'));
+                                                         ^
+error: boom
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\user\is-admin\route.test.ts:36:53)
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\user\is-admin\route.test.ts:35:57)
+
+(pass) GET /api/user/is-admin > returns isAdmin: false when checkIsAdmin throws
+
+src\app\api\progress\domain\[domainId]\route.test.ts:
+29 |   beforeEach(() => {
+30 |     vi.clearAllMocks();
+31 |   });
+32 | 
+33 |   it('returns 401 when unauthenticated', async () => {
+34 |     (await import('@clerk/nextjs/server')).auth = async () => ({ userId: null });
+                       ^
+TypeError: Attempted to assign to readonly property.
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\progress\domain\[domainId]\route.test.ts:34:19)
+(fail) /api/progress/domain/[domainId] > returns 401 when unauthenticated
+112 | /**
+113 |  * Extract request ID from headers or generate new one
+114 |  */
+115 | export function extractOrGenerateRequestId(headers: Headers): string {
+116 |   // Check for existing request ID in headers
+117 |   const existingId = headers.get('x-request-id') || headers.get('x-trace-id');
+                           ^
+TypeError: undefined is not an object (evaluating 'headers.get')
+      at extractOrGenerateRequestId (C:\Projects\cisspmastery\src\lib\tracing\request-context.ts:117:22)
+      at <anonymous> (C:\Projects\cisspmastery\src\lib\middleware\with-tracing.ts:33:23)
+      at <anonymous> (C:\Projects\cisspmastery\src\lib\middleware\with-tracing.ts:29:5)
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\progress\domain\[domainId]\route.test.ts:46:23)
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\progress\domain\[domainId]\route.test.ts:43:43)
+(fail) /api/progress/domain/[domainId] > returns 404 when domain not found
+112 | /**
+113 |  * Extract request ID from headers or generate new one
+114 |  */
+115 | export function extractOrGenerateRequestId(headers: Headers): string {
+116 |   // Check for existing request ID in headers
+117 |   const existingId = headers.get('x-request-id') || headers.get('x-trace-id');
+                           ^
+TypeError: undefined is not an object (evaluating 'headers.get')
+      at extractOrGenerateRequestId (C:\Projects\cisspmastery\src\lib\tracing\request-context.ts:117:22)
+      at <anonymous> (C:\Projects\cisspmastery\src\lib\middleware\with-tracing.ts:33:23)
+      at <anonymous> (C:\Projects\cisspmastery\src\lib\middleware\with-tracing.ts:29:5)
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\progress\domain\[domainId]\route.test.ts:59:23)
+      at <anonymous> (C:\Projects\cisspmastery\src\app\api\progress\domain\[domainId]\route.test.ts:53:57)
+(fail) /api/progress/domain/[domainId] > returns zero stats when class has no flashcards
+
+21 tests failed:
+(fail) /api/bookmarks/[flashcardId] > DELETE > deletes bookmark and invalidates cache
+(fail) /api/bookmarks/[flashcardId] > GET > returns cached result when available
+(fail) /api/bookmarks/[flashcardId] > GET > queries DB and caches when no cache entry
+(fail) /api/progress/card > POST > returns 401 when unauthenticated
+(fail) /api/progress/card > GET > returns 401 when unauthenticated
+(fail) /api/progress/card > GET > returns 400 when flashcardId query param is missing [15.00ms]
+(fail) /api/progress/card > GET > returns progress when found
+(fail) /api/progress/update > returns 401 when unauthenticated [16.00ms]
+(fail) /api/sessions/card > returns 401 when unauthenticated
+(fail) /api/sessions/create > returns 401 when unauthenticated
+(fail) /api/sessions/end > returns 401 when unauthenticated
+(fail) /api/subscription/status > returns 401 when unauthenticated
+(fail) /api/progress/domain/[domainId] > returns 401 when unauthenticated
+(fail) /api/progress/domain/[domainId] > returns 404 when domain not found
+(fail) /api/progress/domain/[domainId] > returns zero stats when class has no flashcards
+
+ 22 pass
+ 21 fail
+ 6 errors
+ 53 expect() calls
+Ran 43 tests across 15 files. [2.39s]

@@ -52,15 +52,15 @@ export function StudyButton({
           STUDY
         </Button>
       </Link>
-      {hasBothTypes && (
+      {/* {hasBothTypes && (
         <p className="text-sm text-blue-900 bg-blue-50/95 px-3 py-2 rounded mb-6 border border-blue-200 flex items-start gap-2">
           <span className="text-blue-600 font-semibold flex-shrink-0">ℹ️</span>
           <span>
-            <strong>{flashcardDeckIds.length} flashcard deck{flashcardDeckIds.length !== 1 ? 's' : ''}</strong> will be studied.
-            Quiz deck{quizDeckNames.length !== 1 ? 's' : ''} ({quizDeckNames.join(', ')}) should be accessed via {quizDeckNames.length !== 1 ? 'their' : 'its'} quick play button.
+            <strong>{flashcardDeckIds.length} flashcard deck{flashcardDeckIds.length !== 1 ? "s" : ""}</strong> will be studied.
+            Quiz deck{quizDeckNames.length !== 1 ? "s" : ""} ({quizDeckNames.join(", ")}) should be accessed via {quizDeckNames.length !== 1 ? "their" : "its"} quick play button.
           </span>
         </p>
-      )}
+      )} */}
       {!hasBothTypes && <div className="mb-6" />}
     </div>
   );
