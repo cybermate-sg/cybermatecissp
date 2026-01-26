@@ -6,12 +6,14 @@ import WhyStudentsPass from "@/components/sections/WhyStudentsPass";
 import TrustUrgency from "@/components/sections/TrustUrgency";
 import SMARTMethodology from "@/components/sections/SMARTMethodology";
 import FinalCTA from "@/components/sections/FinalCTA";
-import ConstructionOverlay from "@/components/ConstructionOverlay";
+
 import { HomePageJsonLd } from "@/components/JsonLd";
 
 const ClientFloatingBadge = dynamic(
   () => import("@/components/sections/ClientFloatingBadge")
 );
+
+import NativeLanguageSupport from "@/components/sections/NativeLanguageSupport";
 
 export default function Home() {
   return (
@@ -19,7 +21,10 @@ export default function Home() {
       {/* Structured Data for SEO */}
       <HomePageJsonLd />
       {/* TEMPORARY: Construction Overlay - Remove when ready to launch */}
-      <ConstructionOverlay />
+      {/* <ConstructionOverlay /> */}
+
+      {/* Native Language Support Section */}
+      <NativeLanguageSupport />
 
       {/* Floating Pass Rate Badge */}
       <ClientFloatingBadge />

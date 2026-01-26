@@ -174,23 +174,23 @@ export default function Flashcard(props: FlashcardProps) {
                   </div>
                 </div>
                 <div className="flex items-center gap-1" >
-                  <div className="flex items-center gap-0.5 rounded-md border border-slate-700 bg-slate-800/50 p-0.5" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-1 rounded-md border border-purple-400/50 bg-slate-800/50 p-1 shadow-[0_0_8px_rgba(168,85,247,0.4)]" onClick={(e) => e.stopPropagation()}>
                     <Button
                       onClick={handleDecreaseFont}
                       disabled={fontScale <= -1}
                       variant="ghost"
                       size="sm"
-                      className={`h-6 w-7 text-[10px] px-0 hover:bg-purple-500/10 ${fontScale <= -1 ? 'text-slate-600' : 'text-slate-400 hover:text-purple-400'}`}
+                      className={`h-8 w-9 text-sm font-semibold px-0 hover:bg-purple-500/10 ${fontScale <= -1 ? 'text-slate-600' : 'text-slate-400 hover:text-purple-400'}`}
                     >
                       A-
                     </Button>
-                    <div className="w-px h-3 bg-slate-700" />
+                    <div className="w-px h-5 bg-purple-400/30" />
                     <Button
                       onClick={handleIncreaseFont}
                       disabled={fontScale >= 2}
                       variant="ghost"
                       size="sm"
-                      className={`h-6 w-7 text-[10px] px-0 hover:bg-purple-500/10 ${fontScale >= 2 ? 'text-slate-600' : 'text-slate-400 hover:text-purple-400'}`}
+                      className={`h-8 w-9 text-sm font-semibold px-0 hover:bg-purple-500/10 ${fontScale >= 2 ? 'text-slate-600' : 'text-slate-400 hover:text-purple-400'}`}
                     >
                       A+
                     </Button>
@@ -246,23 +246,23 @@ export default function Flashcard(props: FlashcardProps) {
                 {/* Action Buttons */}
                 <div className="flex items-center gap-1.5">
                   {/* Font Controls */}
-                  <div className="flex items-center gap-0.5 rounded-md border border-blue-500/20 bg-slate-900/30 p-0.5 mr-2" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-1 rounded-md border border-blue-400/50 bg-slate-900/30 p-1 mr-2 shadow-[0_0_8px_rgba(96,165,250,0.4)]" onClick={(e) => e.stopPropagation()}>
                     <Button
                       onClick={handleDecreaseFont}
                       disabled={fontScale <= -1}
                       variant="ghost"
                       size="sm"
-                      className={`h-6 w-7 text-[10px] px-0 hover:bg-blue-500/10 ${fontScale <= -1 ? 'text-slate-600' : 'text-slate-400 hover:text-blue-400'}`}
+                      className={`h-8 w-9 text-sm font-semibold px-0 hover:bg-blue-500/10 ${fontScale <= -1 ? 'text-slate-600' : 'text-slate-400 hover:text-blue-400'}`}
                     >
                       A-
                     </Button>
-                    <div className="w-px h-3 bg-blue-500/20" />
+                    <div className="w-px h-5 bg-blue-400/30" />
                     <Button
                       onClick={handleIncreaseFont}
                       disabled={fontScale >= 2}
                       variant="ghost"
                       size="sm"
-                      className={`h-6 w-7 text-[10px] px-0 hover:bg-blue-500/10 ${fontScale >= 2 ? 'text-slate-600' : 'text-slate-400 hover:text-blue-400'}`}
+                      className={`h-8 w-9 text-sm font-semibold px-0 hover:bg-blue-500/10 ${fontScale >= 2 ? 'text-slate-600' : 'text-slate-400 hover:text-blue-400'}`}
                     >
                       A+
                     </Button>

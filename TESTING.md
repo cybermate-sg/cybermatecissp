@@ -30,9 +30,50 @@ pnpm test:e2e:classes
 | `pnpm test:e2e:report` | View HTML test report |
 | `pnpm test:e2e:classes` | Run only admin class CRUD tests |
 
+## Unit Tests (API)
+
+API unit tests use Vitest and Bun to exercise Next.js route handlers directly.
+
+### Quick start
+
+```bash
+bun install
+bun test        # run all unit tests once
+bun test:watch  # run in watch mode
+```
+
+Tests are co-located with the route files as `route.test.ts`, for example:
+- `src/app/api/user/is-admin/route.test.ts`
+- `src/app/api/bookmarks/route.test.ts`
+- `src/app/api/bookmarks/[flashcardId]/route.test.ts`
+- `src/app/api/sessions/create/route.test.ts`
+- `src/app/api/sessions/end/route.test.ts`
+- `src/app/api/sessions/card/route.test.ts`
+- `src/app/api/progress/card/route.test.ts`
+- `src/app/api/progress/domain/[domainId]/route.test.ts`
+- `src/app/api/progress/update/route.test.ts`
+- `src/app/api/subscription/status/route.test.ts`
+
+Tests mock Clerk auth, database access, and Redis/cache so they run fast and do not touch real infrastructure.
+
 ## Test Suites
 
+### 0. Load Testing
+**File:** `load-tests/basic-test.js`
+
+Basic load testing using k6.
+
+**Prerequisites:**
+- Install k6: https://k6.io/docs/get-started/installation/ (or `winget install k6 --source winget`)
+- **Note:** If you just installed k6, you may need to restart your terminal/IDE for the command to be recognized.
+
+**Running:**
+```bash
+bun run test:load
+```
+
 ### 1. Admin Classes CRUD Tests
+
 
 **File:** `e2e/admin-classes-crud.spec.ts`
 
