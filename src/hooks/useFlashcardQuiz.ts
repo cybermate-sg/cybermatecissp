@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
 import { useQuizGamification } from "./useQuizGamification";
+import { shuffleQuestionOptions } from "@/lib/utils/shuffle";
 
 interface QuizOption {
   text: string;
@@ -87,6 +88,8 @@ export function useFlashcardQuiz({ flashcardId, isOpen, onClose }: UseFlashcardQ
     setAllAnswers([]);
     setQuestionStartTime(Date.now());
     gamification.resetSession();
+    // Reshuffle options for all questions on retake
+    setQuestions((prev) => shuffleQuestionOptions(prev));
   }, [gamification]);
 
   const fetchQuizQuestions = useCallback(async () => {
@@ -99,7 +102,8 @@ export function useFlashcardQuiz({ flashcardId, isOpen, onClose }: UseFlashcardQ
       const data = await res.json();
 
       if (data.questions && data.questions.length > 0) {
-        setQuestions(data.questions);
+        // Shuffle answer options for each question to prevent position memorization
+        setQuestions(shuffleQuestionOptions(data.questions));
         // Reset state inline to avoid circular dependency
         setCurrentQuestionIndex(0);
         setSelectedOption(null);

@@ -58,7 +58,22 @@ Tests mock Clerk auth, database access, and Redis/cache so they run fast and do 
 
 ## Test Suites
 
+### 0. Load Testing
+**File:** `load-tests/basic-test.js`
+
+Basic load testing using k6.
+
+**Prerequisites:**
+- Install k6: https://k6.io/docs/get-started/installation/ (or `winget install k6 --source winget`)
+- **Note:** If you just installed k6, you may need to restart your terminal/IDE for the command to be recognized.
+
+**Running:**
+```bash
+bun run test:load
+```
+
 ### 1. Admin Classes CRUD Tests
+
 
 **File:** `e2e/admin-classes-crud.spec.ts`
 

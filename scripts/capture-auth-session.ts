@@ -19,6 +19,7 @@ async function captureSession() {
 
   const browser = await chromium.launch({
     headless: false,
+    channel: 'msedge', // Try using installed Edge which is often more stable on Windows
     args: ['--start-maximized'],
   });
 
@@ -36,10 +37,17 @@ async function captureSession() {
 
   await page.goto('http://localhost:3000/sign-in');
 
-  // Wait for user input
+  // Wait for user input using readline which is more reliable across platforms
+  const readline = await import('readline');
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
   await new Promise<void>((resolve) => {
-    process.stdin.once('data', () => {
+    rl.question('Press ENTER in this terminal when you are ready...', () => {
       console.log('\n✅ Capturing session...');
+      rl.close();
       resolve();
     });
   });

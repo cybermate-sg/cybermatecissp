@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, FileCheck2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileCheck2, Search } from "lucide-react";
 import ConfidenceRating from "@/components/ConfidenceRating";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { QuizModal } from "@/components/QuizModal";
@@ -31,8 +31,9 @@ export default function DeckStudyPage() {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showRating, setShowRating] = useState(false);
-  const [studiedCards, setStudiedCards] = useState<Set<number>>(new Set());
+  const [studiedCards, setStudiedCards] = useState<Set<string>>(new Set());
   const [showQuizModal, setShowQuizModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Session tracking for stats
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -43,10 +44,28 @@ export default function DeckStudyPage() {
   const [showDeckQuizModal, setShowDeckQuizModal] = useState(false);
   const [deckHasQuiz, setDeckHasQuiz] = useState(false);
 
-  const currentCard = flashcards[currentIndex];
+  // Filter flashcards based on search query
+  const filteredFlashcards = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return flashcards;
+    }
+    const query = searchQuery.toLowerCase().trim();
+    return flashcards.filter(card =>
+      card.question.toLowerCase().includes(query) ||
+      card.answer.toLowerCase().includes(query)
+    );
+  }, [flashcards, searchQuery]);
+
+  const currentCard = filteredFlashcards[currentIndex];
   const progress = flashcards.length > 0 ? (studiedCards.size / flashcards.length) * 100 : 0;
 
 
+
+  // Reset current index when search query changes
+  useEffect(() => {
+    setCurrentIndex(0);
+    setShowRating(false);
+  }, [searchQuery]);
 
   // Check if deck has quiz on mount
   useEffect(() => {
@@ -162,15 +181,15 @@ export default function DeckStudyPage() {
       if (!res.ok) throw new Error("Failed to save progress");
 
       const newStudied = new Set(studiedCards);
-      newStudied.add(currentIndex);
+      newStudied.add(currentCard.id);
       setStudiedCards(newStudied);
 
-      // Move to next card
-      if (currentIndex < flashcards.length - 1) {
+      // Move to next card (within filtered set)
+      if (currentIndex < filteredFlashcards.length - 1) {
         setCurrentIndex(currentIndex + 1);
         setShowRating(false);
       } else {
-        // Completed all cards
+        // Completed all cards in filtered set
         setShowRating(false);
       }
     } catch (error) {
@@ -190,6 +209,7 @@ export default function DeckStudyPage() {
     setCurrentIndex(0);
     setStudiedCards(new Set());
     setShowRating(false);
+    setSearchQuery("");
     toast.success("Progress reset! Starting from card 1");
     console.log('Reset Progress clicked - After: currentIndex set to 0, studiedCards cleared');
   };
@@ -210,7 +230,7 @@ export default function DeckStudyPage() {
   };
 
   const handleNext = () => {
-    if (currentIndex < flashcards.length - 1) {
+    if (currentIndex < filteredFlashcards.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setShowRating(false);
     }
@@ -219,10 +239,11 @@ export default function DeckStudyPage() {
   const handleGoToCard = (cardNumber: number) => {
     // cardNumber is 1-indexed (user input), but currentIndex is 0-indexed
     const targetIndex = cardNumber - 1;
-    if (targetIndex >= 0 && targetIndex < flashcards.length) {
+    if (targetIndex >= 0 && targetIndex < filteredFlashcards.length) {
       setCurrentIndex(targetIndex);
       setShowRating(false);
-      toast.success(`Jumped to card ${cardNumber}`);
+      const label = searchQuery.trim() ? "result" : "card";
+      toast.success(`Jumped to ${label} ${cardNumber}`);
     }
   };
 
@@ -371,12 +392,17 @@ export default function DeckStudyPage() {
           }}
           stats={{
             currentIndex,
-            totalCards: flashcards.length,
+            totalCards: filteredFlashcards.length,
             progress,
             progressLabel: "Deck study progress",
           }}
           onReset={handleReset}
           onGoToCard={handleGoToCard}
+          search={{
+            searchQuery,
+            onSearchChange: setSearchQuery,
+            filteredCount: filteredFlashcards.length,
+          }}
           extraActions={
             deckHasQuiz && (
               <Button
@@ -394,7 +420,24 @@ export default function DeckStudyPage() {
         />
 
         {/* Flashcard or Completion */}
-        {!allCardsStudied ? (
+        {(filteredFlashcards.length === 0 || !currentCard) && searchQuery.trim() ? (
+          <div className="max-w-2xl mx-auto mt-12">
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8 text-center">
+              <Search className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-white mb-2">No results found</h3>
+              <p className="text-gray-400 mb-4">
+                No cards match &quot;{searchQuery}&quot; in this domain.
+              </p>
+              <Button
+                onClick={() => setSearchQuery("")}
+                variant="outline"
+                className="border-slate-600 text-gray-300 hover:text-white hover:bg-slate-700"
+              >
+                Clear search
+              </Button>
+            </div>
+          </div>
+        ) : !allCardsStudied && currentCard ? (
           <div className="space-y-8">
             {/* Navigation buttons and Flashcard */}
             <div className="flex items-center gap-4 max-w-7xl mx-auto">
@@ -440,7 +483,7 @@ export default function DeckStudyPage() {
               {/* Next Button */}
               <Button
                 onClick={handleNext}
-                disabled={currentIndex === flashcards.length - 1}
+                disabled={currentIndex === filteredFlashcards.length - 1}
                 variant="outline"
                 size="icon"
                 className="flex-shrink-0 h-12 w-12 rounded-full bg-slate-800 border-2 border-slate-600 text-white hover:bg-slate-700 hover:border-slate-500 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-slate-800"
@@ -456,13 +499,13 @@ export default function DeckStudyPage() {
               </div>
             )}
           </div>
-        ) : (
+        ) : allCardsStudied ? (
           <DeckCompletionState
             flashcardCount={flashcards.length}
             deck={deck}
             onReset={handleReset}
           />
-        )}
+        ) : null}
 
         {/* Study Tips - Removed backdrop-blur for better performance */}
         {!allCardsStudied && (

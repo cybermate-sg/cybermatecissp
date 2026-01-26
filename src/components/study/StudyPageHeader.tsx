@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, RotateCcw, ArrowRight } from "lucide-react";
+import { ArrowLeft, RotateCcw, ArrowRight, Search, X } from "lucide-react";
 import { useState } from "react";
 
 interface StudyNavigationProps {
@@ -19,11 +19,18 @@ interface StudyStatsProps {
     progressLabel?: string;
 }
 
+interface SearchProps {
+    searchQuery: string;
+    onSearchChange: (query: string) => void;
+    filteredCount: number;
+}
+
 interface StudyPageHeaderProps {
     navigation: StudyNavigationProps;
     stats: StudyStatsProps;
     onReset: () => void;
     onGoToCard?: (cardNumber: number) => void;
+    search?: SearchProps;
     extraActions?: React.ReactNode;
 }
 
@@ -32,11 +39,16 @@ export function StudyPageHeader({
     stats,
     onReset,
     onGoToCard,
+    search,
     extraActions,
 }: StudyPageHeaderProps) {
     const { backLink, backLabel, subtitle, title } = navigation;
     const { currentIndex, totalCards, progress, progressLabel = "Study session progress" } = stats;
     const [jumpToCard, setJumpToCard] = useState("");
+
+    const isSearchActive = search && search.searchQuery.length > 0;
+    const displayCount = isSearchActive ? search.filteredCount : totalCards;
+    const displayLabel = isSearchActive ? "Result" : "Card";
 
     const handleGoToCard = () => {
         const cardNumber = parseInt(jumpToCard, 10);
@@ -67,9 +79,9 @@ export function StudyPageHeader({
                     <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
                         {title}
                     </h1>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                         <p className="text-gray-400">
-                            Card {currentIndex + 1} of {totalCards}
+                            {displayLabel} {currentIndex + 1} of {displayCount}
                         </p>
                         {onGoToCard && totalCards > 1 && (
                             <div className="flex items-center gap-2">
@@ -77,7 +89,7 @@ export function StudyPageHeader({
                                 <Input
                                     type="number"
                                     min="1"
-                                    max={totalCards}
+                                    max={displayCount}
                                     value={jumpToCard}
                                     onChange={(e) => setJumpToCard(e.target.value)}
                                     onKeyPress={handleKeyPress}
@@ -89,10 +101,34 @@ export function StudyPageHeader({
                                     size="sm"
                                     variant="outline"
                                     className="h-8 px-3 border-slate-600 text-gray-300 hover:text-white hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled={!jumpToCard || parseInt(jumpToCard, 10) < 1 || parseInt(jumpToCard, 10) > totalCards}
+                                    disabled={!jumpToCard || parseInt(jumpToCard, 10) < 1 || parseInt(jumpToCard, 10) > displayCount}
                                 >
                                     <ArrowRight className="w-4 h-4" />
                                 </Button>
+                            </div>
+                        )}
+                        {search && (
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-500">|</span>
+                                <div className="relative">
+                                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                    <Input
+                                        type="text"
+                                        value={search.searchQuery}
+                                        onChange={(e) => search.onSearchChange(e.target.value)}
+                                        placeholder="Search this domain..."
+                                        className="w-48 h-8 pl-8 pr-8 bg-slate-800 border-slate-600 text-white placeholder:text-gray-500 text-sm"
+                                    />
+                                    {search.searchQuery && (
+                                        <button
+                                            onClick={() => search.onSearchChange("")}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                                            aria-label="Clear search"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         )}
                     </div>

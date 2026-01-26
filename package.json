@@ -31,7 +31,10 @@
     "test:e2e:payment:auth": "playwright test payment-authenticated-flow --project=chromium",
     "test:e2e:payment:failures": "playwright test payment-failure-scenarios",
     "test:e2e:payment:webhooks": "playwright test payment-webhook-handling",
-    "test:e2e:capture-auth": "bun run scripts/capture-auth-session.ts"
+    "test:e2e:capture-auth": "bun run scripts/capture-auth-session.ts",
+    "test:load": "k6 run load-tests/basic-test.js",
+    "test:load:user": "bun run scripts/run-load-test.ts",
+    "test:load:auth": "bun run scripts/capture-auth-session.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.35.5",
