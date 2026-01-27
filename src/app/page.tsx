@@ -14,6 +14,7 @@ const ClientFloatingBadge = dynamic(
 );
 
 import NativeLanguageSupport from "@/components/sections/NativeLanguageSupport";
+import ConstructionOverlay from "@/components/ConstructionOverlay";
 
 export default function Home() {
   return (
@@ -21,7 +22,7 @@ export default function Home() {
       {/* Structured Data for SEO */}
       <HomePageJsonLd />
       {/* TEMPORARY: Construction Overlay - Remove when ready to launch */}
-      {/* <ConstructionOverlay /> */}
+      <ConstructionOverlay />
 
       {/* Native Language Support Section */}
       <NativeLanguageSupport />
