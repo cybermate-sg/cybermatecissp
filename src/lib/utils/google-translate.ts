@@ -3,9 +3,86 @@
  */
 
 /**
- * Triggers Google Translate to re-translate the page or a specific element
- * This is useful for dynamically added content like modals
+ * Set Google Translate to a specific language
+ * @param langCode - The language code to translate to (e.g., 'es', 'fr', 'zh-CN')
+ * @returns Promise that resolves when the language change is triggered
  */
+export function setGoogleTranslateLanguage(langCode: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    // Find the Google Translate dropdown
+    const selectElement = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+
+    if (!selectElement) {
+      console.warn('Google Translate dropdown not found. Make sure the widget is loaded.');
+      resolve(false);
+      return;
+    }
+
+    // If setting to English, we need to reset/restore the original page
+    if (langCode === 'en') {
+      resetToEnglish();
+      resolve(true);
+      return;
+    }
+
+    // Check if the language is available in the dropdown
+    const options = Array.from(selectElement.options);
+    const languageExists = options.some(opt => opt.value === langCode);
+
+    if (!languageExists) {
+      console.warn(`Language "${langCode}" not found in Google Translate options.`);
+      resolve(false);
+      return;
+    }
+
+    // Set the language
+    selectElement.value = langCode;
+    selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+
+    // Verify the change was applied
+    setTimeout(() => {
+      if (selectElement.value === langCode) {
+        console.log(`Successfully switched to language: ${langCode}`);
+        resolve(true);
+      } else {
+        // Try once more
+        selectElement.value = langCode;
+        selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+        resolve(true);
+      }
+    }, 100);
+  });
+}
+
+/**
+ * Reset Google Translate back to English (show original)
+ * This clears the translation and restores the original page content
+ */
+function resetToEnglish(): void {
+  // Clear the googtrans cookie for all domain/path variations
+  const hostname = window.location.hostname;
+  const expiry = 'expires=Thu, 01 Jan 1970 00:00:00 UTC';
+
+  // Clear with various domain configurations
+  document.cookie = `googtrans=; ${expiry}; path=/`;
+  document.cookie = `googtrans=; ${expiry}; path=/; domain=${hostname}`;
+  document.cookie = `googtrans=; ${expiry}; path=/; domain=.${hostname}`;
+
+  // Also try without path
+  document.cookie = `googtrans=; ${expiry}`;
+  document.cookie = `googtrans=; ${expiry}; domain=${hostname}`;
+  document.cookie = `googtrans=; ${expiry}; domain=.${hostname}`;
+
+  // For localhost, also clear without domain
+  if (hostname === 'localhost') {
+    document.cookie = `googtrans=; ${expiry}; path=/`;
+  }
+
+  // Reload the page to restore original content
+  // This is the most reliable way to reset Google Translate
+  window.location.reload();
+}
+
 /**
  * Triggers Google Translate to re-translate the page or a specific element
  * This is useful for dynamically added content like modals
