@@ -42,9 +42,6 @@ export default function Home() {
       {/* Hero Section */}
       <HeroSection />
 
-      {/* Trust + Urgency Section */}
-      <TrustUrgency />
-
       {/* SMART Methodology Section */}
       <SMARTMethodology />
 
@@ -56,6 +53,9 @@ export default function Home() {
 
       {/* Why Students Pass Section */}
       <WhyStudentsPass />
+
+      {/* Trust + Urgency Section */}
+      <TrustUrgency />
 
       {/* Final CTA Section */}
       <FinalCTA />

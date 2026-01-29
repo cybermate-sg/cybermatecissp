@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.35.5",
-    "@next/third-parties": "^16.1.6",
+    "@next/third-parties": "15",
     "@openrouter/sdk": "^0.2.11",
     "@opentelemetry/context-async-hooks": "^2.2.0",
     "@radix-ui/react-avatar": "^1.1.11",
