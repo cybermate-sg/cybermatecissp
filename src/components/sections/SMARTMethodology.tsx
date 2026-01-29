@@ -84,22 +84,22 @@ export default function SMARTMethodology() {
             </h2>
 
             <div className="flex items-center justify-center gap-3 mb-8">
-                {/* <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+              {/* <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
                 </svg> */}
-                <Image
-                              src="/images/cybermate-logo-trans.png"
-                              alt="Cybermate Logo"
-                              width={40}
-                              height={40}
-                              className="rounded"
-                              quality={75}
-                              sizes="40px"
-                              priority
-                              fetchPriority="high"
-                            />
-              
-              <span className="text-2xl font-bold text-white">Cybermate Consulting</span>
+              <Image
+                src="/images/cybermate-logo-trans.png"
+                alt="Cybermate Logo"
+                width={40}
+                height={40}
+                className="rounded"
+                quality={75}
+                sizes="40px"
+                priority
+                fetchPriority="high"
+              />
+
+              <span className="text-2xl font-bold text-white">Cybermate Consulting (Singapore)</span>
             </div>
 
             <div className="max-w-5xl mx-auto bg-gradient-to-br from-[#1a2235]/80 to-[#0f1729]/80 border border-cyan-500/30 rounded-2xl p-6 lg:p-8">
