@@ -11,6 +11,21 @@ import { FlashcardDynamic as Flashcard } from "@/components/FlashcardDynamic";
 import { StudyPageHeader } from "@/components/study/StudyPageHeader";
 import { toast } from "sonner";
 
+// PERFORMANCE: Hoist static data outside component (rendering-hoist-jsx rule)
+const CONFIDENCE_OPTIONS = [
+  { level: 1, color: 'bg-red-600 hover:bg-red-700', label: 'Not at all', subtext: "I don't know this" },
+  { level: 2, color: 'bg-orange-600 hover:bg-orange-700', label: 'Barely', subtext: 'I barely remember' },
+  { level: 3, color: 'bg-yellow-600 hover:bg-yellow-700', label: 'Somewhat', subtext: 'I sort of know this' },
+  { level: 4, color: 'bg-lime-600 hover:bg-lime-700', label: 'Mostly', subtext: 'I know this well' },
+  { level: 5, color: 'bg-green-600 hover:bg-green-700', label: 'Perfectly', subtext: 'I know this perfectly' },
+] as const;
+
+const MODE_NAMES: Record<string, string> = {
+  progressive: 'Progressive',
+  random: 'Random',
+  all: 'All Cards',
+};
+
 interface FlashcardMedia {
   id: string;
   fileUrl: string;
@@ -136,18 +151,7 @@ export default function ClassStudyPage() {
     }
   };
 
-  const getModeName = () => {
-    switch (mode) {
-      case 'progressive':
-        return 'Progressive';
-      case 'random':
-        return 'Random';
-      case 'all':
-        return 'All Cards';
-      default:
-        return mode;
-    }
-  };
+  const getModeName = () => MODE_NAMES[mode] || mode;
 
   if (loading) {
     return (
@@ -288,13 +292,7 @@ export default function ClassStudyPage() {
               Be honest - this helps us optimize your learning
             </p>
             <div className="flex justify-center gap-2 sm:gap-4">
-              {[
-                { level: 1, color: 'bg-red-600 hover:bg-red-700', label: 'Not at all', subtext: "I don't know this" },
-                { level: 2, color: 'bg-orange-600 hover:bg-orange-700', label: 'Barely', subtext: 'I barely remember' },
-                { level: 3, color: 'bg-yellow-600 hover:bg-yellow-700', label: 'Somewhat', subtext: 'I sort of know this' },
-                { level: 4, color: 'bg-lime-600 hover:bg-lime-700', label: 'Mostly', subtext: 'I know this well' },
-                { level: 5, color: 'bg-green-600 hover:bg-green-700', label: 'Perfectly', subtext: 'I know this perfectly' },
-              ].map((option) => (
+              {CONFIDENCE_OPTIONS.map((option) => (
                 <button
                   key={option.level}
                   onClick={() => handleRate(option.level)}

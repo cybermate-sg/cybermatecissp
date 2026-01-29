@@ -1,5 +1,4 @@
 import dynamic from "next/dynamic";
-import HeroSection from "@/components/sections/HeroSection";
 import FeatureHighlights from "@/components/sections/FeatureHighlights";
 import Testimonials from "@/components/sections/Testimonials";
 import WhyStudentsPass from "@/components/sections/WhyStudentsPass";
@@ -9,11 +8,21 @@ import FinalCTA from "@/components/sections/FinalCTA";
 
 import { HomePageJsonLd } from "@/components/JsonLd";
 
+// Dynamic imports for client components (bundle-dynamic-imports rule)
+// HeroSection uses useAuth and is critical for LCP, but can be code-split
+const HeroSection = dynamic(
+  () => import("@/components/sections/HeroSection"),
+  { ssr: true }
+);
+
 const ClientFloatingBadge = dynamic(
   () => import("@/components/sections/ClientFloatingBadge")
 );
 
-import NativeLanguageSupport from "@/components/sections/NativeLanguageSupport";
+// NativeLanguageSupport contains heavy static data (19 countries) - code split
+const NativeLanguageSupport = dynamic(
+  () => import("@/components/sections/NativeLanguageSupport")
+);
 //import ConstructionOverlay from "@/components/ConstructionOverlay";
 
 export default function Home() {
@@ -33,9 +42,6 @@ export default function Home() {
       {/* Hero Section */}
       <HeroSection />
 
-      {/* Trust + Urgency Section */}
-      <TrustUrgency />
-
       {/* SMART Methodology Section */}
       <SMARTMethodology />
 
@@ -47,6 +53,9 @@ export default function Home() {
 
       {/* Why Students Pass Section */}
       <WhyStudentsPass />
+
+      {/* Trust + Urgency Section */}
+      <TrustUrgency />
 
       {/* Final CTA Section */}
       <FinalCTA />

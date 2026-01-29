@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -50,13 +50,8 @@ export default function DomainStudyPage() {
   const currentCard = flashcards[currentIndex];
   const progress = flashcards.length > 0 ? (studiedCards.size / flashcards.length) * 100 : 0;
 
-  // Load flashcards on mount
-  useEffect(() => {
-    loadFlashcards();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [domainId]);
-
-  const loadFlashcards = async () => {
+  // PERFORMANCE: Memoize fetch function to fix useEffect dependencies (rerender-dependencies rule)
+  const loadFlashcards = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/domains/${domainId}/flashcards`);
@@ -70,7 +65,12 @@ export default function DomainStudyPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [domainId]);
+
+  // Load flashcards on mount or when domainId changes
+  useEffect(() => {
+    loadFlashcards();
+  }, [loadFlashcards]);
 
   const handleRate = async (confidence: number) => {
     if (!currentCard) return;

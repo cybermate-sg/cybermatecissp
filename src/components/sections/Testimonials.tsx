@@ -7,27 +7,21 @@ const testimonials: Testimonial[] = [
     name: "Alex Johnson",
     role: "Security Architect, Fortune 500",
     quote: "This was the only resource I needed. The practice questions were incredibly similar to the real exam, and the adaptive learning helped me focus exactly where I needed to.",
-    gradientFrom: "purple-600",
-    gradientTo: "purple-400",
-    borderHover: "purple-500/50"
+    colorScheme: "purple"
   },
   {
     initials: "MP",
     name: "Maria Patel",
     role: "InfoSec Manager, FinTech",
     quote: "The adaptive system is a game-changer. It knew my weak spots before I did and forced me to address them. Passed with confidence on first attempt.",
-    gradientFrom: "cyan-500",
-    gradientTo: "cyan-400",
-    borderHover: "cyan-500/50"
+    colorScheme: "cyan"
   },
   {
     initials: "DK",
     name: "David Kim",
     role: "Cybersecurity Consultant",
     quote: "Best $197 I ever spent on my career. 180 days of access for this price is incredible value - just high-quality content that actually mirrors the exam. Passed on my first attempt!",
-    gradientFrom: "purple-600",
-    gradientTo: "purple-400",
-    borderHover: "purple-500/50"
+    colorScheme: "purple"
   }
 ];
 

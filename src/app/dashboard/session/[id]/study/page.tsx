@@ -13,7 +13,12 @@ export default async function StudySessionPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ decks?: string }>;
 }) {
-  const { userId } = await auth();
+  // PERFORMANCE: Parallelize auth and params unwrapping (async-parallel rule)
+  const [{ userId }, { id: sessionId }, { decks: deckIdsParam }] = await Promise.all([
+    auth(),
+    params,
+    searchParams,
+  ]);
 
   if (!userId) {
     redirect("/sign-in");
@@ -21,9 +26,6 @@ export default async function StudySessionPage({
 
   // Ensure user exists in database (fallback if webhook failed)
   await ensureUserExists(userId);
-
-  const { id: sessionId } = await params;
-  const { decks: deckIdsParam } = await searchParams;
 
   // Verify session belongs to user
   const [session] = await db

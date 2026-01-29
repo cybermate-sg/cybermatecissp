@@ -41,15 +41,30 @@ const features: Feature[] = [
   }
 ];
 
+const colorStyles = {
+  purple: {
+    border: "hover:border-purple-500/50",
+    overlay: "from-purple-600/10",
+    iconBg: "from-purple-600 to-purple-500",
+    shadow: "group-hover:shadow-purple-500/50",
+  },
+  cyan: {
+    border: "hover:border-cyan-500/50",
+    overlay: "from-cyan-500/10",
+    iconBg: "from-cyan-500 to-cyan-400",
+    shadow: "group-hover:shadow-cyan-500/50",
+  },
+} as const;
+
 function FeatureCard({ feature }: { feature: Feature }) {
   const { icon: Icon, title, description, colorScheme } = feature;
-  const isPurple = colorScheme === "purple";
+  const styles = colorStyles[colorScheme];
 
   return (
-    <div className={`group relative bg-gradient-to-br from-[#1a2235] to-[#0f1729] border border-gray-800 hover:border-${colorScheme}-500/50 rounded-2xl p-8 transition-all duration-300 hover:transform hover:scale-105`}>
-      <div className={`absolute inset-0 bg-gradient-to-br from-${colorScheme}-${isPurple ? '600' : '500'}/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity`} />
+    <div className={`group relative bg-gradient-to-br from-[#1a2235] to-[#0f1729] border border-gray-800 ${styles.border} rounded-2xl p-8 transition-all duration-300 hover:transform hover:scale-105`}>
+      <div className={`absolute inset-0 bg-gradient-to-br ${styles.overlay} to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity`} />
       <div className="relative">
-        <div className={`w-14 h-14 bg-gradient-to-br from-${colorScheme}-${isPurple ? '600' : '500'} to-${colorScheme}-${isPurple ? '500' : '400'} rounded-xl flex items-center justify-center mb-6 group-hover:shadow-lg group-hover:shadow-${colorScheme}-500/50 transition-shadow`}>
+        <div className={`w-14 h-14 bg-gradient-to-br ${styles.iconBg} rounded-xl flex items-center justify-center mb-6 group-hover:shadow-lg ${styles.shadow} transition-shadow`}>
           <Icon className="w-7 h-7 text-white" />
         </div>
         <h3 className="text-xl font-bold text-white mb-3">{title}</h3>

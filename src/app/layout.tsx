@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
-import Script from "next/script";
+import { Inter } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import LayoutWrapper from "@/components/LayoutWrapper";
 import Analytics from "@/components/Analytics";
 
-// Note: Using system fonts for better build compatibility
-// If Google Fonts are needed, they can be loaded via CDN in production
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.cisspmastery.com'
 
@@ -94,22 +97,10 @@ export default function RootLayout({
           <link rel="dns-prefetch" href="https://moving-doberman-55.clerk.accounts.dev" />
         </head>
         <body
-          className="font-sans antialiased"
+          className={`${inter.variable} font-sans antialiased`}
           suppressHydrationWarning
         >
-          {/* Google Tag Manager */}
-          <Script
-            src="https://www.googletagmanager.com/gtag/js?id=G-N83J5BNVV9"
-            strategy="afterInteractive"
-          />
-          <Script id="google-analytics" strategy="afterInteractive">
-            {`
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-N83J5BNVV9');
-            `}
-          </Script>
+          <GoogleAnalytics gaId="G-N83J5BNVV9" />
           <LayoutWrapper>{children}</LayoutWrapper>
           <Analytics />
         </body>

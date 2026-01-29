@@ -41,13 +41,24 @@ const reasons: Reason[] = [
   }
 ];
 
+const colorStyles = {
+  purple: {
+    iconBg: "from-purple-600 to-purple-500",
+    shadow: "shadow-purple-500/50",
+  },
+  cyan: {
+    iconBg: "from-cyan-500 to-cyan-400",
+    shadow: "shadow-cyan-500/50",
+  },
+} as const;
+
 function ReasonCard({ reason }: { reason: Reason }) {
   const { icon: Icon, title, description, colorScheme } = reason;
-  const isPurple = colorScheme === "purple";
+  const styles = colorStyles[colorScheme];
 
   return (
     <div className="text-center space-y-4">
-      <div className={`w-16 h-16 bg-gradient-to-br from-${colorScheme}-${isPurple ? '600' : '500'} to-${colorScheme}-${isPurple ? '500' : '400'} rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-${colorScheme}-500/50`}>
+      <div className={`w-16 h-16 bg-gradient-to-br ${styles.iconBg} rounded-2xl flex items-center justify-center mx-auto shadow-lg ${styles.shadow}`}>
         <Icon className="w-8 h-8 text-white" />
       </div>
       <h3 className="text-xl font-bold text-white">{title}</h3>
