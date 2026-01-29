@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, FileCheck2, Search } from "lucide-react";
@@ -39,6 +39,16 @@ export default function DeckStudyPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionEnded, setSessionEnded] = useState(false);
   const [sessionStartTime] = useState(Date.now());
+
+  // PERFORMANCE: Refs to avoid stale closures in cleanup (rerender-use-ref-transient-values rule)
+  const sessionIdRef = useRef(sessionId);
+  const sessionEndedRef = useRef(sessionEnded);
+  const studiedCardsRef = useRef(studiedCards);
+
+  // Keep refs in sync with state
+  useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
+  useEffect(() => { sessionEndedRef.current = sessionEnded; }, [sessionEnded]);
+  useEffect(() => { studiedCardsRef.current = studiedCards; }, [studiedCards]);
 
   // Deck quiz state
   const [showDeckQuizModal, setShowDeckQuizModal] = useState(false);
@@ -132,21 +142,25 @@ export default function DeckStudyPage() {
     }
   }, [studiedCards.size, flashcards.length, sessionId, sessionEnded]);
 
-  // Cleanup: End session on unmount
+  // Cleanup: End session on unmount (uses refs to avoid stale closures)
   useEffect(() => {
     return () => {
-      if (sessionId && !sessionEnded && studiedCards.size > 0) {
+      const currentSessionId = sessionIdRef.current;
+      const currentSessionEnded = sessionEndedRef.current;
+      const currentStudiedCards = studiedCardsRef.current;
+
+      if (currentSessionId && !currentSessionEnded && currentStudiedCards.size > 0) {
         fetch('/api/sessions/end', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            sessionId,
-            cardsStudied: studiedCards.size,
+            sessionId: currentSessionId,
+            cardsStudied: currentStudiedCards.size,
           }),
         }).catch(console.error);
       }
     };
-  }, [sessionId, sessionEnded, studiedCards.size]);
+  }, []); // Empty deps - cleanup reads from refs
 
 
 

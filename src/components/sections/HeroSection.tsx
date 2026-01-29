@@ -70,7 +70,7 @@ export default function HeroSection() {
                                 Battle-Tested.
                                 <br />
                                 <span className="bg-gradient-to-r from-purple-400 via-purple-300 to-cyan-400 bg-clip-text text-transparent">
-                                   Hand-Curated.
+                                    Hand-Curated.
                                 </span>
                                 <br />
                                 First-Attempt Proven.
@@ -122,6 +122,7 @@ export default function HeroSection() {
                                             height={400}
                                             className="rounded-2xl mx-auto"
                                             quality={90}
+                                            priority
                                         />
                                         <div className="space-y-1.5 pb-2">
                                             <p className="text-base font-semibold text-white">CISSP, CCNP Security Certified | Industry Practitioner (26 Years)</p>

@@ -64,3 +64,46 @@ next-env.d.ts
 
 # AI Model Configuration (keep example, ignore actual config)
 config/ai-models.json
+
+# Agent Skills (installed via bunx skills add)
+# Use pattern to match all agent skill directories
+**/.agents/skills/
+**/.agent/skills/
+**/.claude/skills/
+**/.gemini/skills/
+**/.cline/skills/
+**/.codebuddy/skills/
+**/.codex/skills/
+**/.commandcode/skills/
+**/.continue/skills/
+**/.crush/skills/
+**/.cursor/skills/
+**/.factory/skills/
+**/.goose/skills/
+**/.junie/skills/
+**/.kilocode/skills/
+**/.kiro/skills/
+**/.kode/skills/
+**/.mcpjam/skills/
+**/.mux/skills/
+**/.neovate/skills/
+**/.opencode/skills/
+**/.openhands/skills/
+**/.pi/skills/
+**/.pochi/skills/
+**/.qoder/skills/
+**/.qwen/skills/
+**/.roo/skills/
+**/.trae/skills/
+**/.windsurf/skills/
+**/.zencoder/skills/
+
+# Backup folders
+.claude_bak/
+.gemini_bak/
+
+# Windows artifacts
+nul
+
+# Skills template
+SKILL.md

@@ -125,23 +125,23 @@ async function getUserStats(userId: string) {
     const streak = stats.studyStreakDays || 0;
     const cardsToday = stats.dailyCardsStudiedToday || 0;
 
-    // Fetch today's study sessions
-    const todaySessions = await withRetry(
-      () => db.query.studySessions.findMany({
-        where: and(
-          eq(studySessions.clerkUserId, userId),
-          gte(studySessions.startedAt, getStartOfToday())
-        ),
-      }),
-      { queryName: 'fetch-today-sessions' }
-    );
+    // PERFORMANCE: Fetch today's sessions and 7-day activity in parallel (async-parallel rule)
+    const [todaySessions, last7DaysActivity] = await Promise.all([
+      withRetry(
+        () => db.query.studySessions.findMany({
+          where: and(
+            eq(studySessions.clerkUserId, userId),
+            gte(studySessions.startedAt, getStartOfToday())
+          ),
+        }),
+        { queryName: 'fetch-today-sessions' }
+      ),
+      getLast7DaysActivity(userId),
+    ]);
 
     const totalSecondsToday = calculateTotalSeconds(todaySessions);
     const minutesToday = Math.round(totalSecondsToday / 60);
     const accuracy = calculateAccuracy(todaySessions);
-
-    // Fetch last 7 days activity
-    const last7DaysActivity = await getLast7DaysActivity(userId);
 
     return { streak, minutesToday, cardsToday, accuracy, last7DaysActivity };
   } catch (error) {
@@ -177,9 +177,11 @@ export default async function ClassDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  // Get authentication
-  const { userId } = await auth();
-  const user = await currentUser();
+  // PERFORMANCE: Parallelize auth calls (async-parallel rule)
+  const [{ userId }, user] = await Promise.all([
+    auth(),
+    currentUser(),
+  ]);
 
   // Redirect if not authenticated
   if (!userId) {
@@ -207,24 +209,7 @@ export default async function ClassDetailPage({
   let daysLeft: number = ACCESS_DURATION_DAYS; // Default to ACCESS_DURATION_DAYS for users without active subscription
 
   try {
-    // First, check ALL subscriptions for this user (for debugging)
-    const allUserSubscriptions = await withRetry(
-      () => db.query.subscriptions.findMany({
-        where: eq(subscriptions.clerkUserId, userId),
-        orderBy: [desc(subscriptions.createdAt)]
-      }),
-      { queryName: 'fetch-all-user-subscriptions' }
-    );
-
-    console.log('[Subscription Debug] User ID:', userId);
-    console.log('[Subscription Debug] Total subscriptions found:', allUserSubscriptions.length);
-    if (allUserSubscriptions.length > 0) {
-      allUserSubscriptions.forEach((sub, index) => {
-        console.log('[Subscription Debug] Sub', index + 1, ': Status=', sub.status, ', CreatedAt=', sub.createdAt, ', ID=', sub.id);
-      });
-    }
-
-    // Now get the active one
+    // Fetch active subscription directly (removed debug queries for performance)
     const subscription = await withRetry(
       () => db.query.subscriptions.findFirst({
         where: and(
@@ -239,11 +224,7 @@ export default async function ClassDetailPage({
     // Calculate remaining days from subscription creation date using shared function
     if (subscription?.createdAt) {
       daysLeft = calculateDaysRemaining(subscription.createdAt);
-
-      // Debug logging to verify calculation
-      console.log(`[Days Calculation] Start: ${subscription.createdAt.toISOString()}, Days Left: ${daysLeft}, Access Duration: ${ACCESS_DURATION_DAYS} days`);
     } else {
-      console.log(`[Days Calculation] No active subscription found, using default ${ACCESS_DURATION_DAYS} days`);
       daysLeft = ACCESS_DURATION_DAYS; // Fallback if no active subscription
     }
   } catch (error) {
